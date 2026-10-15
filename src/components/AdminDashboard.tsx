@@ -355,7 +355,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           </div>
                         </td>
                         <td className="py-2.5 px-3 text-slate-500 whitespace-nowrap">
-                          {c.createdAt.slice(0, 10)}
+                          {(c.createdAt || '').slice(0, 10) || 'Recent'}
                         </td>
                         
                         {/* Effortless 1-Click Inline Status Dropdown */}

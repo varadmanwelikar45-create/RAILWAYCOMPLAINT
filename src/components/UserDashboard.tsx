@@ -19,22 +19,24 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
   const [search, setSearch] = useState('');
 
   // Filter complaints strictly belonging to the logged-in user
-  const userComplaints = complaints.filter((c) => c.userId === currentUser.id);
+  const userComplaints = (complaints || []).filter((c) => c && c.userId === currentUser?.id);
 
   // Compute metrics
   const total = userComplaints.length;
-  const pending = userComplaints.filter((c) => c.status === 'Pending').length;
-  const inProgress = userComplaints.filter((c) => c.status === 'In Progress').length;
-  const resolved = userComplaints.filter((c) => c.status === 'Resolved').length;
+  const pending = userComplaints.filter((c) => c?.status === 'Pending').length;
+  const inProgress = userComplaints.filter((c) => c?.status === 'In Progress').length;
+  const resolved = userComplaints.filter((c) => c?.status === 'Resolved').length;
 
-  // Filter by selected tab and search
+  // Filter by selected tab and search safely
   const displayedComplaints = userComplaints.filter((c) => {
+    if (!c) return false;
     const matchesStatus = filterStatus === 'All' || c.status === filterStatus;
+    const searchLower = (search || '').trim().toLowerCase();
     const matchesSearch =
-      !search ||
-      c.complaintId.toLowerCase().includes(search.toLowerCase()) ||
-      c.subject.toLowerCase().includes(search.toLowerCase()) ||
-      c.trainNumber.toLowerCase().includes(search.toLowerCase());
+      !searchLower ||
+      String(c.complaintId || '').toLowerCase().includes(searchLower) ||
+      String(c.subject || '').toLowerCase().includes(searchLower) ||
+      String(c.trainNumber || '').toLowerCase().includes(searchLower);
     return matchesStatus && matchesSearch;
   });
 
@@ -210,7 +212,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
                       {c.location && <div className="text-slate-400 text-[10px]">{c.location}</div>}
                     </td>
                     <td className="py-3 px-3 text-slate-500 whitespace-nowrap">
-                      {c.createdAt.slice(0, 10)}
+                      {(c.createdAt || '').slice(0, 10) || 'Recent'}
                     </td>
                     <td className="py-3 px-3 whitespace-nowrap">
                       {c.status === 'Pending' && (

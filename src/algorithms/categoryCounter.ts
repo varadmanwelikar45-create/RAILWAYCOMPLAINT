@@ -11,8 +11,8 @@ export function countByCategory(complaints: Complaint[]): Record<ComplaintCatego
     return acc;
   }, {} as Record<ComplaintCategory, number>);
 
-  for (const c of complaints) {
-    if (c.category in counts) {
+  for (const c of (complaints || [])) {
+    if (c && c.category && c.category in counts) {
       counts[c.category] = (counts[c.category] || 0) + 1;
     }
   }
@@ -30,14 +30,15 @@ export function countByStatus(complaints: Complaint[]): {
   let inProgress = 0;
   let resolved = 0;
 
-  for (const c of complaints) {
+  for (const c of (complaints || [])) {
+    if (!c) continue;
     if (c.status === 'Pending') pending++;
     else if (c.status === 'In Progress') inProgress++;
     else if (c.status === 'Resolved') resolved++;
   }
 
   return {
-    total: complaints.length,
+    total: (complaints || []).filter(Boolean).length,
     pending,
     inProgress,
     resolved,

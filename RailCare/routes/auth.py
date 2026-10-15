@@ -1,7 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
-from werkzeug.security import generate_password_hash, check_password_hash
 import re
-from database import get_db
+from database import get_db, generate_password_hash, check_password_hash
 from config import Config
 
 auth_bp = Blueprint('auth', __name__)
@@ -69,7 +68,7 @@ def register():
             return redirect(url_for('auth.login'))
         except Exception as e:
             conn.close()
-            flash('An unexpected error occurred while creating your account. Please try again.', 'danger')
+            flash('Registration could not be completed. Please verify your details and try again.', 'danger')
             return render_template('register.html', full_name=full_name, email=email, mobile=mobile)
 
     return render_template('register.html')
@@ -88,26 +87,30 @@ def login():
             flash('Please provide both email address and password.', 'warning')
             return render_template('login.html', email=email)
 
-        conn = get_db()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE email = ?;", (email,))
-        user = cursor.fetchone()
-        conn.close()
+        try:
+            conn = get_db()
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users WHERE email = ?;", (email,))
+            user = cursor.fetchone()
+            conn.close()
 
-        if user and check_password_hash(user['password_hash'], password):
-            # Set secure session
-            session.clear()
-            session['user_id'] = user['id']
-            session['user_name'] = user['full_name']
-            session['user_email'] = user['email']
-            session['is_admin'] = bool(user['is_admin'])
+            if user and check_password_hash(user['password_hash'], password):
+                # Set secure session
+                session.clear()
+                session['user_id'] = user['id']
+                session['user_name'] = user['full_name']
+                session['user_email'] = user['email']
+                session['is_admin'] = bool(user['is_admin'])
 
-            flash(f"Welcome back, {user['full_name']}!", 'success')
-            if user['is_admin']:
-                return redirect(url_for('admin.dashboard'))
-            return redirect(url_for('user.dashboard'))
-        else:
-            flash('Invalid email or password. Please verify your credentials and try again.', 'danger')
+                flash(f"Welcome back, {user['full_name']}!", 'success')
+                if user['is_admin']:
+                    return redirect(url_for('admin.dashboard'))
+                return redirect(url_for('user.dashboard'))
+            else:
+                flash('Invalid email or password. Please verify your credentials and try again.', 'danger')
+                return render_template('login.html', email=email)
+        except Exception as e:
+            flash('Unable to process login at this time. Please verify your credentials and try again.', 'danger')
             return render_template('login.html', email=email)
 
     return render_template('login.html')
@@ -126,23 +129,27 @@ def admin_login():
             flash('Admin credentials are required.', 'warning')
             return render_template('admin_login.html', email=email)
 
-        conn = get_db()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE email = ? AND is_admin = 1;", (email,))
-        admin = cursor.fetchone()
-        conn.close()
+        try:
+            conn = get_db()
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users WHERE email = ? AND is_admin = 1;", (email,))
+            admin = cursor.fetchone()
+            conn.close()
 
-        if admin and check_password_hash(admin['password_hash'], password):
-            session.clear()
-            session['user_id'] = admin['id']
-            session['user_name'] = admin['full_name']
-            session['user_email'] = admin['email']
-            session['is_admin'] = True
+            if admin and check_password_hash(admin['password_hash'], password):
+                session.clear()
+                session['user_id'] = admin['id']
+                session['user_name'] = admin['full_name']
+                session['user_email'] = admin['email']
+                session['is_admin'] = True
 
-            flash('Welcome to the RailCare Administrator Control Center.', 'success')
-            return redirect(url_for('admin.dashboard'))
-        else:
-            flash('Administrator authentication failed. Unauthorized access is prohibited.', 'danger')
+                flash('Welcome to the RailCare Administrator Control Center.', 'success')
+                return redirect(url_for('admin.dashboard'))
+            else:
+                flash('Administrator authentication failed. Unauthorized access is prohibited.', 'danger')
+                return render_template('admin_login.html', email=email)
+        except Exception as e:
+            flash('Administrator authentication encountered an issue. Please verify your credentials.', 'danger')
             return render_template('admin_login.html', email=email)
 
     return render_template('admin_login.html', default_email=Config.ADMIN_EMAIL)

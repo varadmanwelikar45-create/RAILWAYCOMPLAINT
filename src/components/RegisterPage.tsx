@@ -20,23 +20,26 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNaviga
     setError(null);
 
     // Form validations
-    if (!fullName.trim() || !email.trim() || !mobile.trim() || !password || !confirmPassword) {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanMobile = mobile.replace(/\D/g, '');
+
+    if (!fullName.trim() || !cleanEmail || !cleanMobile || !password || !confirmPassword) {
       setError('All fields are required. Please complete the form.');
       return;
     }
 
-    if (!/^\S+@\S+\.\S+$/.test(email)) {
+    if (!/^\S+@\S+\.\S+$/.test(cleanEmail)) {
       setError('Please provide a valid email address.');
       return;
     }
 
-    if (!/^\d{10}$/.test(mobile)) {
-      setError('Mobile number must be exactly 10 digits.');
+    if (cleanMobile.length < 10) {
+      setError('Please provide a valid 10-digit mobile number.');
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must contain at least 6 characters.');
+    if (password.length < 4) {
+      setError('Password must contain at least 4 characters.');
       return;
     }
 
@@ -47,8 +50,8 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNaviga
 
     const res = onRegister({
       fullName: fullName.trim(),
-      email: email.trim().toLowerCase(),
-      mobile: mobile.trim(),
+      email: cleanEmail,
+      mobile: cleanMobile.slice(-10),
       isAdmin: false,
     }, password);
 

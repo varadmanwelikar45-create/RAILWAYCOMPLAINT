@@ -30,10 +30,12 @@ export function executeLinearSearch(
   for (let i = 0; i < complaints.length; i++) {
     elementsExamined++;
     const c = complaints[i];
-    const cId = c.complaintId.toLowerCase();
-    const pName = c.passengerName.toLowerCase();
-    const train = c.trainNumber.toLowerCase();
-    const pnr = (c.pnrNumber || '').toLowerCase();
+    if (!c) continue;
+
+    const cId = String(c.complaintId || '').toLowerCase();
+    const pName = String(c.passengerName || '').toLowerCase();
+    const train = String(c.trainNumber || '').toLowerCase();
+    const pnr = String(c.pnrNumber || '').toLowerCase();
 
     if (
       cId.includes(cleanQuery) ||

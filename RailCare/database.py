@@ -3,14 +3,39 @@ import os
 import hashlib
 import binascii
 
-try:
-    from werkzeug.security import generate_password_hash
-except ImportError:
-    def generate_password_hash(password: str) -> str:
-        # Standard library PBKDF2-HMAC fallback
+def generate_password_hash(password: str) -> str:
+    """Generate secure password hash using PBKDF2-HMAC-SHA256."""
+    try:
+        from werkzeug.security import generate_password_hash as wz_gen
+        return wz_gen(password)
+    except Exception:
         salt = os.urandom(16)
         key = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100000)
         return 'pbkdf2:sha256:100000$' + binascii.hexlify(salt).decode('ascii') + '$' + binascii.hexlify(key).decode('ascii')
+
+def check_password_hash(stored_hash: str, password: str) -> bool:
+    """Verify password against stored hash supporting both PBKDF2 and Werkzeug formats."""
+    if not stored_hash or not password:
+        return False
+    try:
+        # Check custom PBKDF2 format: pbkdf2:sha256:100000$salt$key
+        parts = stored_hash.split('$')
+        if len(parts) == 3 and parts[0].startswith('pbkdf2:'):
+            salt = binascii.unhexlify(parts[1].encode('ascii'))
+            expected_key = binascii.unhexlify(parts[2].encode('ascii'))
+            computed_key = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100000)
+            return hashlib.sha256(computed_key).digest() == hashlib.sha256(expected_key).digest()
+
+        # Werkzeug hash format fallback
+        try:
+            from werkzeug.security import check_password_hash as wz_chk
+            return wz_chk(stored_hash, password)
+        except Exception:
+            pass
+
+        return False
+    except Exception:
+        return False
 
 from config import Config
 

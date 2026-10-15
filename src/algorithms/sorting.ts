@@ -23,8 +23,10 @@ function merge(
 
   while (i < left.length && j < right.length) {
     counter.comparisons++;
-    const leftVal = String(left[i][sortKey] ?? '');
-    const rightVal = String(right[j][sortKey] ?? '');
+    const leftItem = left[i];
+    const rightItem = right[j];
+    const leftVal = leftItem ? String(leftItem[sortKey] ?? '') : '';
+    const rightVal = rightItem ? String(rightItem[sortKey] ?? '') : '';
 
     const condition = reverse ? leftVal >= rightVal : leftVal <= rightVal;
 
