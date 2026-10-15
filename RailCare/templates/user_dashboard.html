@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}Passenger Dashboard — RailCare{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h1 style="font-size: 1.75rem; color: var(--color-primary); font-weight: 700;">Welcome, {{ user_name }}</h1>
+    <p style="color: var(--color-text-muted); font-size: 0.95rem;">Manage and monitor the progress of your registered railway grievances.</p>
+  </div>
+  <a href="{{ url_for('complaints.register_complaint') }}" class="btn btn-primary" style="padding: 0.7rem 1.4rem; font-size: 0.95rem;">
+    + Register New Complaint
+  </a>
+</div>
+
+<!-- Summary Metrics Cards -->
+<div class="metrics-grid">
+  <div class="metric-card">
+    <div class="metric-label">Total Filed</div>
+    <div class="metric-value">{{ summary.total }}</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Pending Review</div>
+    <div class="metric-value pending">{{ summary.pending }}</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">In Progress</div>
+    <div class="metric-value in-progress">{{ summary.in_progress }}</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Resolved</div>
+    <div class="metric-value resolved">{{ summary.resolved }}</div>
+  </div>
+</div>
+
+<!-- Previous Complaints Table -->
+<div class="card">
+  <div class="card-header">
+    <h3>My Registered Complaints</h3>
+    <span style="font-size: 0.85rem; color: var(--color-text-muted);">
+      Showing {{ complaints|length }} record{% if complaints|length != 1 %}s{% endif %}
+    </span>
+  </div>
+
+  <div class="card-body" style="padding: 0;">
+    {% if complaints %}
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Complaint ID</th>
+              <th>Category</th>
+              <th>Subject</th>
+              <th>Train / Location</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th style="text-align: right;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in complaints %}
+              <tr>
+                <td><strong>{{ c.complaint_id }}</strong></td>
+                <td>{{ c.category }}</td>
+                <td>
+                  <div style="max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ c.subject }}">
+                    {{ c.subject }}
+                  </div>
+                </td>
+                <td>
+                  <span style="font-size: 0.85rem;">{{ c.train_number }}</span>
+                  {% if c.location %}
+                    <span style="color: var(--color-text-muted); font-size: 0.8rem;">({{ c.location }})</span>
+                  {% endif %}
+                </td>
+                <td style="font-size: 0.85rem; color: var(--color-text-muted);">
+                  {{ c.created_at[:10] }}
+                </td>
+                <td>
+                  {% if c.status == 'Pending' %}
+                    <span class="status-indicator status-pending"><span class="status-dot"></span>Pending</span>
+                  {% elif c.status == 'In Progress' %}
+                    <span class="status-indicator status-in-progress"><span class="status-dot"></span>In Progress</span>
+                  {% else %}
+                    <span class="status-indicator status-resolved"><span class="status-dot"></span>Resolved</span>
+                  {% endif %}
+                </td>
+                <td style="text-align: right;">
+                  <a href="{{ url_for('complaints.track_complaint', complaint_id=c.complaint_id) }}" class="btn btn-secondary btn-sm">
+                    View Details
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 3rem 1.5rem;">
+        <h4 style="color: var(--color-primary); margin-bottom: 0.5rem;">No Complaints Lodged Yet</h4>
+        <p style="color: var(--color-text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
+          You have not submitted any railway complaints under this account.
+        </p>
+        <a href="{{ url_for('complaints.register_complaint') }}" class="btn btn-primary">
+          Register Your First Complaint
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

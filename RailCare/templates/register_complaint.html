@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Register New Complaint — RailCare{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+  <div style="margin-bottom: 1.5rem;">
+    <a href="{{ url_for('user.dashboard') }}" style="color: var(--color-secondary); text-decoration: none; font-size: 0.9rem;">
+      &larr; Back to Dashboard
+    </a>
+    <h1 style="font-size: 1.75rem; color: var(--color-primary); margin-top: 0.5rem; font-weight: 700;">
+      Register a Railway Complaint
+    </h1>
+    <p style="color: var(--color-text-muted); font-size: 0.9rem;">
+      Provide accurate travel details and clear descriptions to facilitate rapid grievance resolution.
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('complaints.register_complaint') }}">
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="train_number">
+              Train Number or Name <span class="required">*</span>
+            </label>
+            <input type="text" id="train_number" name="train_number" class="form-control" placeholder="e.g. 12951 Mumbai Rajdhani" value="{{ (form_data and form_data.train_number) or '' }}" required autofocus>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="pnr_number">
+              PNR Number <span style="color: var(--color-text-muted); font-weight: 400;">(Optional)</span>
+            </label>
+            <input type="text" id="pnr_number" name="pnr_number" class="form-control" placeholder="10-digit PNR" pattern="[0-9]{10}" maxlength="10" value="{{ (form_data and form_data.pnr_number) or '' }}">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="journey_date">
+              Journey Date <span class="required">*</span>
+            </label>
+            <input type="date" id="journey_date" name="journey_date" class="form-control" value="{{ (form_data and form_data.journey_date) or '' }}" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="category">
+              Complaint Category <span class="required">*</span>
+            </label>
+            <select id="category" name="category" class="form-select" required>
+              <option value="" disabled {% if not form_data or not form_data.category %}selected{% endif %}>Select category...</option>
+              {% for cat in categories %}
+                <option value="{{ cat }}" {% if form_data and form_data.category == cat %}selected{% endif %}>{{ cat }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="location">
+            Coach & Berth / Station Location <span style="color: var(--color-text-muted); font-weight: 400;">(Optional)</span>
+          </label>
+          <input type="text" id="location" name="location" class="form-control" placeholder="e.g. Coach B3, Berth 24 or Platform 2" value="{{ (form_data and form_data.location) or '' }}">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="subject">
+            Complaint Subject <span class="required">*</span>
+          </label>
+          <input type="text" id="subject" name="subject" class="form-control" placeholder="Brief summary of your grievance" maxlength="150" value="{{ (form_data and form_data.subject) or '' }}" required>
+        </div>
+
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <label class="form-label" for="description">
+              Detailed Description <span class="required">*</span>
+            </label>
+            <span id="char-counter" style="font-size: 0.75rem; color: var(--color-text-muted);">0 characters</span>
+          </div>
+          <textarea id="description" name="description" class="form-control" placeholder="Please describe the incident in detail, including time, coach environment, or staff interaction..." rows="5" required>{{ (form_data and form_data.description) or '' }}</textarea>
+        </div>
+
+        <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+          <a href="{{ url_for('user.dashboard') }}" class="btn btn-secondary">
+            Cancel
+          </a>
+          <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.75rem;">
+            Submit Complaint
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

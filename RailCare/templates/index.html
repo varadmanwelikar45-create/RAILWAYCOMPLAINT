@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}RailCare — Railway Complaint Management System{% endblock %}
+
+{% block content %}
+<section style="padding: 2.5rem 0 3.5rem 0; text-align: center;">
+  <div style="max-width: 780px; margin: 0 auto;">
+    <span style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--color-secondary);">
+      Data Structures Mini-Project • Python & Flask
+    </span>
+    <h1 style="font-size: 2.75rem; font-weight: 800; color: var(--color-primary); margin: 0.75rem 0 1rem 0; line-height: 1.2;">
+      RailCare Complaint Portal
+    </h1>
+    <p style="font-size: 1.15rem; color: #475569; margin-bottom: 2rem; line-height: 1.6;">
+      A modern, transparent grievance redressal portal for railway passengers. Submit complaints across 9 categories, track resolution progress in real time, and experience efficient FIFO queue processing.
+    </p>
+
+    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+      <a href="{{ url_for('complaints.register_complaint') }}" class="btn btn-primary" style="padding: 0.75rem 1.75rem; font-size: 1rem;">
+        Register Complaint
+      </a>
+      <a href="{{ url_for('auth.login') }}" class="btn btn-secondary" style="padding: 0.75rem 1.75rem; font-size: 1rem;">
+        Passenger Login
+      </a>
+      <a href="{{ url_for('auth.admin_login') }}" class="btn btn-navy" style="padding: 0.75rem 1.75rem; font-size: 1rem;">
+        Admin Portal
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Three Core Feature Cards -->
+<section style="margin-bottom: 3.5rem;">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+    
+    <div class="card" style="margin-bottom: 0;">
+      <div class="card-body">
+        <div style="font-size: 1.75rem; margin-bottom: 0.75rem; color: var(--color-secondary);">01</div>
+        <h3 style="font-size: 1.2rem; margin-bottom: 0.5rem; color: var(--color-primary);">1. Register Grievance</h3>
+        <p style="color: var(--color-text-muted); font-size: 0.9rem; line-height: 1.6;">
+          Quickly file grievances regarding cleanliness, catering, electrical faults, delays, or security. Every complaint receives a unique tracking ID and enters the processing queue.
+        </p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 0;">
+      <div class="card-body">
+        <div style="font-size: 1.75rem; margin-bottom: 0.75rem; color: var(--color-secondary);">02</div>
+        <h3 style="font-size: 1.2rem; margin-bottom: 0.5rem; color: var(--color-primary);">2. Live Status Tracking</h3>
+        <p style="color: var(--color-text-muted); font-size: 0.9rem; line-height: 1.6;">
+          Follow your grievance from initial <em>Pending</em> review through <em>In Progress</em> divisional dispatch to final <em>Resolved</em> closure with full timestamp records.
+        </p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 0;">
+      <div class="card-body">
+        <div style="font-size: 1.75rem; margin-bottom: 0.75rem; color: var(--color-secondary);">03</div>
+        <h3 style="font-size: 1.2rem; margin-bottom: 0.5rem; color: var(--color-primary);">3. FIFO Admin Queue</h3>
+        <p style="color: var(--color-text-muted); font-size: 0.9rem; line-height: 1.6;">
+          Railway administrators inspect complaints using First-In, First-Out (FIFO) queue order, search by ID or passenger name, and sort submission dates with Merge Sort.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Data Structures in Python Highlight Banner -->
+<section class="card" style="background: linear-gradient(135deg, #12304A 0%, #1E4976 100%); color: #ffffff; border: none;">
+  <div class="card-body" style="padding: 2.5rem;">
+    <h2 style="color: #ffffff; font-size: 1.5rem; margin-bottom: 0.75rem;">Practical Data Structures Applied</h2>
+    <p style="color: #BAE6FD; font-size: 0.95rem; margin-bottom: 1.5rem; max-width: 800px;">
+      This project demonstrates theoretical Computer Science concepts in a production-ready application context:
+    </p>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem;">
+      <div style="background: rgba(255, 255, 255, 0.08); padding: 1rem; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.12);">
+        <strong style="color: #93C5FD; display: block; margin-bottom: 0.25rem;">FIFO Queue (O(1))</strong>
+        <span style="font-size: 0.85rem; color: #E2E8F0;"><code>collections.deque</code> for pending complaints order.</span>
+      </div>
+      <div style="background: rgba(255, 255, 255, 0.08); padding: 1rem; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.12);">
+        <strong style="color: #93C5FD; display: block; margin-bottom: 0.25rem;">Merge Sort (O(n log n))</strong>
+        <span style="font-size: 0.85rem; color: #E2E8F0;">Recursive divide-and-conquer sorting by submission timestamp.</span>
+      </div>
+      <div style="background: rgba(255, 255, 255, 0.08); padding: 1rem; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.12);">
+        <strong style="color: #93C5FD; display: block; margin-bottom: 0.25rem;">Linear Search (O(n))</strong>
+        <span style="font-size: 0.85rem; color: #E2E8F0;">Search by complaint ID or passenger name across records.</span>
+      </div>
+      <div style="background: rgba(255, 255, 255, 0.08); padding: 1rem; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.12);">
+        <strong style="color: #93C5FD; display: block; margin-bottom: 0.25rem;">Dict & Set Validation</strong>
+        <span style="font-size: 0.85rem; color: #E2E8F0;">O(1) category validation sets and category frequency counters.</span>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
