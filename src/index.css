@@ -1,1 +1,25 @@
 @import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-primary: #FFFDF5;
+    --bg-secondary: #FFF5DC;
+    --color-navy: #142B4A;
+    --color-navy-light: #243F63;
+    --color-gold: #E9B949;
+    --color-gold-light: #F8E7B0;
+    --color-card: #FFFFFF;
+    --color-text-primary: #253247;
+    --color-text-secondary: #6B7280;
+    --color-border: #E8E2D3;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #FFFDF5;
+    color: #253247;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+}

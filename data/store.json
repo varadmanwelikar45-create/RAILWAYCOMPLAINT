@@ -1,0 +1,43 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "fullName": "Senior Divisional Officer (Admin)",
+      "email": "admin@railcare.gov.in",
+      "mobile": "9876543210",
+      "isAdmin": true
+    },
+    {
+      "id": 1792163973952,
+      "fullName": "Rahul Sharma",
+      "email": "rahul@test.com",
+      "mobile": "9876543210",
+      "isAdmin": false
+    }
+  ],
+  "passwords": {
+    "admin@railcare.gov.in": "Admin@1234",
+    "rahul@test.com": "password123"
+  },
+  "complaints": [
+    {
+      "id": 1792163978425,
+      "complaintId": "RC1001",
+      "userId": 1792163973952,
+      "passengerName": "Rahul Sharma",
+      "passengerEmail": "rahul@test.com",
+      "passengerMobile": "9876543210",
+      "trainNumber": "12951 / Mumbai Rajdhani",
+      "pnrNumber": "2458901234",
+      "journeyDate": "2026-10-16",
+      "category": "Cleanliness",
+      "subject": "Washroom waterlogged in coach B3",
+      "description": "Washroom in Coach B3 has no water and needs urgent cleaning.",
+      "location": "",
+      "status": "In Progress",
+      "createdAt": "2026-10-16 15:19:38",
+      "updatedAt": "2026-10-16 15:19:51"
+    }
+  ],
+  "counter": 1001
+}

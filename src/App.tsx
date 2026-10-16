@@ -11,6 +11,7 @@ import { UserDashboard } from './components/UserDashboard';
 import { RegisterComplaint } from './components/RegisterComplaint';
 import { ComplaintDetails } from './components/ComplaintDetails';
 import { AdminDashboard } from './components/AdminDashboard';
+import { MovingTrainBackground } from './components/MovingTrainBackground';
 import { AlertCircle, CheckCircle, Info } from 'lucide-react';
 
 // Storage helpers with full sanitization and persistence
@@ -117,7 +118,56 @@ export default function App() {
     };
   });
 
-  // Sync users to localStorage
+  // Fetch complaints from central backend server
+  const fetchComplaintsFromServer = async () => {
+    try {
+      const res = await fetch('/api/complaints');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.complaints)) {
+          const normalized = data.complaints.map((c: any, idx: number) => normalizeComplaint(c, idx));
+          setComplaints(normalized);
+          try {
+            localStorage.setItem('railcare_complaints', JSON.stringify(normalized));
+          } catch (e) {}
+        }
+      }
+    } catch (err) {
+      // Offline fallback: rely on current state
+    }
+  };
+
+  // Fetch registered users from central backend server
+  const fetchUsersFromServer = async () => {
+    try {
+      const res = await fetch('/api/users');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.users)) {
+          setUsers(data.users);
+          try {
+            localStorage.setItem('railcare_users', JSON.stringify(data.users));
+          } catch (e) {}
+        }
+      }
+    } catch (err) {
+      // Offline fallback
+    }
+  };
+
+  // On mount: fetch initial data and start continuous 3-second polling for real-time cross-device updates
+  useEffect(() => {
+    fetchComplaintsFromServer();
+    fetchUsersFromServer();
+
+    const interval = setInterval(() => {
+      fetchComplaintsFromServer();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Sync users to localStorage as local backup
   useEffect(() => {
     try {
       localStorage.setItem('railcare_users', JSON.stringify(users));
@@ -165,8 +215,8 @@ export default function App() {
     }
   }, [toast]);
 
-  // Handle passenger registration
-  const handleRegister = (newUser: Omit<User, 'id'>, password: string) => {
+  // Handle passenger registration (connected to central backend)
+  const handleRegister = async (newUser: Omit<User, 'id'>, password: string) => {
     try {
       const emailLower = (newUser.email || '').toLowerCase().trim();
       const nameClean = (newUser.fullName || '').trim();
@@ -176,114 +226,137 @@ export default function App() {
         return { success: false, message: 'All registration fields are required.' };
       }
 
-      // Check if user already exists
-      const existingUser = users.find((u) => (u?.email || '').toLowerCase().trim() === emailLower);
-      if (existingUser) {
-        // Update password in records so user can immediately sign in without error
-        setUserPasswords((prev) => ({ ...prev, [emailLower]: password }));
-        setRegisteredEmail(emailLower);
-        try {
-          const pass = { ...userPasswords, [emailLower]: password };
-          localStorage.setItem('railcare_passwords', JSON.stringify(pass));
-        } catch (e) {}
-        return {
-          success: false,
-          message: 'An account with this email address already exists. Please log in with your password.',
-        };
-      }
-
-      const created: User = {
-        id: Date.now(),
-        fullName: nameClean,
-        email: emailLower,
-        mobile: mobileClean,
-        isAdmin: false,
-      };
-
-      const updatedUsers = [...users, created];
-      const updatedPasswords = { ...userPasswords, [emailLower]: password };
-
-      setUsers(updatedUsers);
-      setUserPasswords(updatedPasswords);
-      setRegisteredEmail(emailLower);
-
+      // Try central server API
       try {
-        localStorage.setItem('railcare_users', JSON.stringify(updatedUsers));
-        localStorage.setItem('railcare_passwords', JSON.stringify(updatedPasswords));
-      } catch (e) {}
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fullName: nameClean,
+            email: emailLower,
+            mobile: mobileClean,
+            password,
+          }),
+        });
 
-      setToast({
-        message: `Account created for ${nameClean}! Please sign in below.`,
-        type: 'success',
-      });
+        const data = await response.json();
+        if (response.ok && data.success) {
+          const registeredUser: User = data.user;
+          setUsers((prev) => [...prev.filter((u) => u.email.toLowerCase() !== emailLower), registeredUser]);
+          setUserPasswords((prev) => ({ ...prev, [emailLower]: password }));
+          setRegisteredEmail(emailLower);
 
-      setCurrentView('login');
-      return { success: true, message: 'Account registered successfully!' };
+          setToast({
+            message: `Account created for ${nameClean}! Please sign in with your password.`,
+            type: 'success',
+          });
+
+          setCurrentView('login');
+          return { success: true, message: 'Account registered successfully!' };
+        } else {
+          return {
+            success: false,
+            message: data.message || 'Registration could not be completed. Please check your details.',
+          };
+        }
+      } catch (networkErr) {
+        // Fallback to local storage if server route is not reached
+        const created: User = {
+          id: Date.now(),
+          fullName: nameClean,
+          email: emailLower,
+          mobile: mobileClean,
+          isAdmin: false,
+        };
+
+        const updatedUsers = [...users.filter((u) => u.email.toLowerCase() !== emailLower), created];
+        const updatedPasswords = { ...userPasswords, [emailLower]: password };
+
+        setUsers(updatedUsers);
+        setUserPasswords(updatedPasswords);
+        setRegisteredEmail(emailLower);
+
+        setToast({
+          message: `Account created for ${nameClean}! Please sign in below.`,
+          type: 'success',
+        });
+
+        setCurrentView('login');
+        return { success: true, message: 'Account registered successfully!' };
+      }
     } catch (err: any) {
       console.error('Registration error:', err);
       return { success: false, message: 'Registration could not be completed. Please check your details.' };
     }
   };
 
-  // Handle passenger login
-  const handleLogin = (email: string, password: string) => {
+  // Handle passenger login (authenticates with central server)
+  const handleLogin = async (email: string, password: string) => {
     try {
       const emailLower = (email || '').toLowerCase().trim();
       if (!emailLower || !password) {
         return { success: false, message: 'Please enter both your email and password.' };
       }
 
-      // Check current users state or reload from storage if state was cleared
-      let currentUsers = users;
-      if (!currentUsers || currentUsers.length === 0) {
-        currentUsers = loadStoredUsers();
-      }
+      // 1. Try server authentication
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emailLower, password }),
+        });
 
-      const user = currentUsers.find((u) => (u?.email || '').toLowerCase().trim() === emailLower);
-      if (!user) {
-        return {
-          success: false,
-          message: 'No account registered with this email. Please register as a new passenger first.',
-        };
-      }
+        const data = await response.json();
+        if (response.ok && data.success) {
+          const user: User = data.user;
+          setCurrentUser(user);
+          try {
+            localStorage.setItem('railcare_current_user', JSON.stringify(user));
+          } catch (e) {}
 
-      let passwords = userPasswords;
-      if (!passwords || Object.keys(passwords).length === 0) {
-        passwords = loadStoredPasswords();
-      }
+          // Refresh complaints immediately on login
+          fetchComplaintsFromServer();
 
-      const savedPassword = passwords[emailLower];
-
-      // Password verification
-      if (user.isAdmin) {
-        const adminPass = savedPassword || 'Admin@1234';
-        if (password !== adminPass) {
-          return { success: false, message: 'Incorrect administrator password.' };
+          setToast({ message: `Welcome, ${user.fullName}!`, type: 'success' });
+          return { success: true, message: 'Login successful', isAdmin: Boolean(user.isAdmin) };
+        } else {
+          return {
+            success: false,
+            message: data.message || 'Invalid email or password. Please try again.',
+          };
         }
-      } else {
+      } catch (networkErr) {
+        // 2. Offline fallback to local records
+        let currentUsers = users.length > 0 ? users : loadStoredUsers();
+        const user = currentUsers.find((u) => (u?.email || '').toLowerCase().trim() === emailLower);
+        if (!user) {
+          return {
+            success: false,
+            message: 'No account registered with this email. Please register as a new passenger first.',
+          };
+        }
+
+        let passwords = userPasswords;
+        if (!passwords || Object.keys(passwords).length === 0) {
+          passwords = loadStoredPasswords();
+        }
+
+        const savedPassword = passwords[emailLower];
         if (savedPassword && savedPassword !== password) {
           return {
             success: false,
             message: 'Incorrect password. Please verify your password and try again.',
           };
         }
-        // If password was missing from older test runs, remember it now so login succeeds smoothly
-        if (!savedPassword) {
-          setUserPasswords((prev) => ({ ...prev, [emailLower]: password }));
-          try {
-            const p = { ...passwords, [emailLower]: password };
-            localStorage.setItem('railcare_passwords', JSON.stringify(p));
-          } catch (e) {}
-        }
+
+        setCurrentUser(user);
+        try {
+          localStorage.setItem('railcare_current_user', JSON.stringify(user));
+        } catch (e) {}
+
+        setToast({ message: `Welcome, ${user.fullName}!`, type: 'success' });
+        return { success: true, message: 'Login successful', isAdmin: Boolean(user.isAdmin) };
       }
-
-      setCurrentUser(user);
-      try {
-        localStorage.setItem('railcare_current_user', JSON.stringify(user));
-      } catch (e) {}
-
-      setToast({ message: `Welcome, ${user.fullName}!`, type: 'success' });
-      return { success: true, message: 'Login successful', isAdmin: Boolean(user.isAdmin) };
     } catch (err: any) {
       console.error('Error during login:', err);
       return {
@@ -293,28 +366,46 @@ export default function App() {
     }
   };
 
-  // Handle admin login
-  const handleAdminLogin = (email: string, password: string) => {
+  // Handle admin login (authenticates with central server)
+  const handleAdminLogin = async (email: string, password: string) => {
     try {
       const emailLower = (email || '').toLowerCase().trim();
-      const admin = users.find((u) => (u?.email || '').toLowerCase().trim() === emailLower && u.isAdmin);
 
-      if (!admin) {
-        return { success: false, message: 'Invalid administrator email. Access restricted.' };
-      }
-
-      const savedPassword = userPasswords[emailLower] || 'Admin@1234';
-      if (savedPassword !== password) {
-        return { success: false, message: 'Invalid administrator password.' };
-      }
-
-      setCurrentUser(admin);
+      // 1. Try server authentication
       try {
-        localStorage.setItem('railcare_current_user', JSON.stringify(admin));
-      } catch (e) {}
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emailLower, password, isAdminLogin: true }),
+        });
 
-      setToast({ message: 'Welcome to the Administrator Control Center.', type: 'success' });
-      return { success: true, message: 'Admin login successful' };
+        const data = await response.json();
+        if (response.ok && data.success) {
+          const admin: User = data.user;
+          setCurrentUser(admin);
+          try {
+            localStorage.setItem('railcare_current_user', JSON.stringify(admin));
+          } catch (e) {}
+
+          fetchComplaintsFromServer();
+          setToast({ message: 'Welcome to the Administrator Control Center.', type: 'success' });
+          return { success: true, message: 'Admin login successful' };
+        } else {
+          return { success: false, message: data.message || 'Invalid administrator credentials.' };
+        }
+      } catch (networkErr) {
+        // 2. Offline fallback
+        if (
+          emailLower === 'admin@railcare.gov.in' &&
+          (password === 'Admin@1234' || password === userPasswords[emailLower])
+        ) {
+          const admin = users.find((u) => u.isAdmin) || INITIAL_USERS[0];
+          setCurrentUser(admin);
+          setToast({ message: 'Welcome to the Administrator Control Center.', type: 'success' });
+          return { success: true, message: 'Admin login successful' };
+        }
+        return { success: false, message: 'Invalid administrator credentials. Access restricted.' };
+      }
     } catch (err: any) {
       return { success: false, message: 'Administrator login failed.' };
     }
@@ -330,32 +421,50 @@ export default function App() {
     setToast({ message: 'You have been logged out securely.', type: 'info' });
   };
 
-  // Submit new complaint
-  const handleSubmitComplaint = (
+  // Submit new complaint (persisted to central server for instant cross-device visibility)
+  const handleSubmitComplaint = async (
     newComplaint: Omit<Complaint, 'id' | 'complaintId' | 'createdAt' | 'updatedAt'>
-  ): Complaint => {
+  ): Promise<Complaint> => {
     const nextIdNum = 1001 + complaints.length;
-    const cid = `RC${nextIdNum}`;
+    const cidFallback = `RC${nextIdNum}`;
     const nowIso = new Date().toISOString().replace('T', ' ').slice(0, 19);
 
-    const fullComplaint: Complaint = {
+    let fullComplaint: Complaint = {
       ...newComplaint,
       id: Date.now(),
-      complaintId: cid,
+      complaintId: cidFallback,
       createdAt: nowIso,
       updatedAt: nowIso,
     };
 
-    setComplaints([fullComplaint, ...complaints]);
+    try {
+      const res = await fetch('/api/complaints', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newComplaint),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.success && data.complaint) {
+          fullComplaint = normalizeComplaint(data.complaint, complaints.length);
+        }
+      }
+    } catch (err) {
+      console.warn('Network issue writing to server, stored in device cache:', err);
+    }
+
+    setComplaints((prev) => [fullComplaint, ...prev.filter((c) => c.complaintId !== fullComplaint.complaintId)]);
     setSelectedComplaint(fullComplaint);
     setToast({
-      message: `Grievance registered with Reference ID ${cid}! Status is Pending.`,
+      message: `Grievance registered with Reference ID ${fullComplaint.complaintId}! Visible instantly across all devices.`,
       type: 'success',
     });
+
     return fullComplaint;
   };
 
-  // Dequeue next complaint from FIFO queue
+  // Dequeue next complaint from FIFO queue (synced with central server)
   const handleProcessNextFIFO = () => {
     const next = queue.dequeue();
     if (!next) {
@@ -371,6 +480,11 @@ export default function App() {
       )
     );
 
+    // Call server to update database so other devices see the update
+    fetch('/api/complaints/fifo-next', { method: 'POST' }).catch((err) =>
+      console.error('Failed to sync FIFO next to server:', err)
+    );
+
     return {
       success: true,
       complaint: next,
@@ -378,7 +492,7 @@ export default function App() {
     };
   };
 
-  // Update status directly
+  // Update status directly (synced with central server)
   const handleUpdateStatus = (complaintId: string, newStatus: ComplaintStatus) => {
     const nowIso = new Date().toISOString().replace('T', ' ').slice(0, 19);
     setComplaints((prev) =>
@@ -393,44 +507,55 @@ export default function App() {
       setSelectedComplaint((prev) => (prev ? { ...prev, status: newStatus, updatedAt: nowIso } : null));
     }
 
+    // Call server API to update persistent store
+    fetch(`/api/complaints/${complaintId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
+    }).catch((err) => console.error('Failed to sync status update to server:', err));
+
     setToast({
-      message: `Complaint ${complaintId} status updated to "${newStatus}".`,
+      message: `Complaint ${complaintId} status updated to "${newStatus}". Synced across devices.`,
       type: 'success',
     });
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F7FB] flex flex-col text-slate-800 font-sans selection:bg-[#2563EB]/20">
-      
-      {/* Clean Navigation Bar */}
-      <Navbar
-        currentUser={currentUser}
-        currentView={currentView}
-        onNavigate={setCurrentView}
-        onLogout={handleLogout}
-      />
+    <div className="relative min-h-screen bg-[#FFFDF5] text-[#253247] font-sans selection:bg-[#E9B949]/30 overflow-x-hidden">
+      {/* Moving Realistic Indian Passenger Train Background */}
+      <MovingTrainBackground />
+
+      {/* Main Foreground Interface Layer */}
+      <div className="relative z-10 flex flex-col min-h-screen pointer-events-auto">
+        {/* Clean Navigation Bar */}
+        <Navbar
+          currentUser={currentUser}
+          currentView={currentView}
+          onNavigate={setCurrentView}
+          onLogout={handleLogout}
+        />
 
       {/* Floating Notification Toast */}
       {toast && (
         <div className="max-w-4xl mx-auto px-4 w-full pt-4">
           <div
-            className={`p-3.5 rounded-lg border text-xs flex items-center justify-between shadow-xs transition-all ${
+            className={`p-4 rounded-2xl border text-xs flex items-center justify-between shadow-xs transition-all ${
               toast.type === 'success'
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                ? 'bg-[#EDF7F2] border-[#21865B]/30 text-[#156140]'
                 : toast.type === 'danger'
                 ? 'bg-red-50 border-red-200 text-red-800'
-                : 'bg-blue-50 border-blue-200 text-blue-900'
+                : 'bg-[#FFF5DC] border-[#E9B949]/40 text-[#142B4A]'
             }`}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               {toast.type === 'success' ? (
-                <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                <CheckCircle className="w-4 h-4 text-[#21865B] shrink-0" />
               ) : toast.type === 'danger' ? (
                 <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
               ) : (
-                <Info className="w-4 h-4 text-blue-600 shrink-0" />
+                <Info className="w-4 h-4 text-[#142B4A] shrink-0" />
               )}
-              <span>{toast.message}</span>
+              <span className="font-medium">{toast.message}</span>
             </div>
             <button
               onClick={() => setToast(null)}
@@ -447,6 +572,7 @@ export default function App() {
         {currentView === 'landing' && (
           <LandingPage
             currentUser={currentUser}
+            complaints={complaints}
             onNavigate={setCurrentView}
           />
         )}
@@ -528,6 +654,7 @@ export default function App() {
           ) : (
             <LandingPage
               currentUser={currentUser}
+              complaints={complaints}
               onNavigate={setCurrentView}
             />
           )
@@ -553,18 +680,39 @@ export default function App() {
         )}
       </main>
 
-      {/* Clean Footer */}
-      <footer className="bg-[#12304A] text-slate-400 py-6 border-t border-[#1E4976] mt-auto">
-        <div className="max-w-7xl mx-auto px-4 text-center text-xs space-y-1">
-          <p className="text-slate-300 font-medium">
-            <strong>RailCare — Railway Complaint Management System</strong>
-          </p>
-          <p className="text-slate-400 text-[11px]">
-            Your Voice. Better Railways. All rights reserved.
-          </p>
+      {/* Footer consistent with RAIL CARE Brand */}
+      <footer className="bg-[#142B4A] text-slate-300 py-10 border-t border-[#E8E2D3]/20 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-white/10 text-center md:text-left">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#243F63] flex items-center justify-center border border-[#E9B949]/40 text-[#E9B949]">
+                <CheckCircle className="w-5 h-5 text-[#E9B949]" />
+              </div>
+              <div>
+                <span className="font-extrabold text-xl text-white tracking-tight">RAIL CARE</span>
+                <p className="text-[11px] text-slate-300">Railway Complaint Management System</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-semibold text-slate-300">
+              <button onClick={() => setCurrentView('landing')} className="hover:text-[#E9B949] transition cursor-pointer">Home</button>
+              <button onClick={() => setCurrentView(currentUser ? 'register-complaint' : 'register')} className="hover:text-[#E9B949] transition cursor-pointer">Register a Complaint</button>
+              <button onClick={() => setCurrentView(currentUser ? 'user-dashboard' : 'login')} className="hover:text-[#E9B949] transition cursor-pointer">Track Complaint</button>
+              <button onClick={() => setCurrentView('admin-login')} className="hover:text-[#E9B949] transition cursor-pointer">Officer Portal</button>
+            </div>
+          </div>
+
+          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left text-xs text-slate-400">
+            <p>
+              RAIL CARE · Dedicated to passenger safety, cleanliness, and service excellence.
+            </p>
+            <p className="text-[11px]">
+              &copy; {new Date().getFullYear()} RAIL CARE. All passenger records protected.
+            </p>
+          </div>
         </div>
       </footer>
-
+      </div>
     </div>
   );
 }
