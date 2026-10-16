@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import trainJourneyImg from '../assets/images/rail_care_train_journey_1792164300619.jpg';
 import { ViewMode } from '../types';
 import { LogIn, AlertCircle, Eye, EyeOff, CheckCircle2, TrainTrack, UserPlus, Shield } from 'lucide-react';
 
@@ -89,7 +90,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialEmail = '', onLogin
           {/* Railway Visual */}
           <div className="rounded-2xl overflow-hidden border-2 border-white shadow-sm mt-4">
             <img
-              src="/src/assets/images/rail_care_train_journey_1792164300619.jpg"
+              src={trainJourneyImg}
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (target.src !== '/images/rail_care_train_journey.jpg') {
+                  target.src = '/images/rail_care_train_journey.jpg';
+                }
+              }}
               alt="Passenger Train at platform"
               referrerPolicy="no-referrer"
               className="w-full h-44 object-cover object-center"

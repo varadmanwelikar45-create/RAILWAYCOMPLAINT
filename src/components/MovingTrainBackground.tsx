@@ -1,4 +1,7 @@
 import React from 'react';
+import trainHeroImg from '../assets/images/rail_care_train_hero_1792164300650.jpg';
+import trainSideImg from '../assets/images/indian_express_train_side_1792164978734.jpg';
+import trainMovingImg from '../assets/images/indian_train_moving_asset_1792164949642.jpg';
 
 /**
  * MovingTrainBackground
@@ -22,7 +25,13 @@ export const MovingTrainBackground: React.FC = () => {
       {/* Panoramic Railway Landscape Layer */}
       <div className="absolute inset-x-0 bottom-0 h-[480px] sm:h-[540px] opacity-25">
         <img
-          src="/src/assets/images/rail_care_train_hero_1792164300650.jpg"
+          src={trainHeroImg}
+          onError={(e) => {
+            const target = e.currentTarget;
+            if (target.src !== '/images/rail_care_train_hero.jpg') {
+              target.src = '/images/rail_care_train_hero.jpg';
+            }
+          }}
           alt=""
           referrerPolicy="no-referrer"
           className="w-full h-full object-cover object-bottom filter blur-[1px] brightness-105"
@@ -64,7 +73,13 @@ export const MovingTrainBackground: React.FC = () => {
             
             {/* Realistic Indian Passenger Train High-Res Visual */}
             <img
-              src="/src/assets/images/indian_express_train_side_1792164978734.jpg"
+              src={trainSideImg}
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (target.src !== '/images/indian_express_train_side.jpg') {
+                  target.src = '/images/indian_express_train_side.jpg';
+                }
+              }}
               alt="Moving Indian passenger train"
               referrerPolicy="no-referrer"
               className="w-full h-auto object-cover rounded-xl shadow-md opacity-90 drop-shadow-[0_8px_16px_rgba(20,43,74,0.18)]"
@@ -86,7 +101,13 @@ export const MovingTrainBackground: React.FC = () => {
             <div className="absolute -bottom-2 inset-x-4 h-4 bg-black/25 blur-sm rounded-full" />
             
             <img
-              src="/src/assets/images/indian_train_moving_asset_1792164949642.jpg"
+              src={trainMovingImg}
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (target.src !== '/images/indian_train_moving_asset.jpg') {
+                  target.src = '/images/indian_train_moving_asset.jpg';
+                }
+              }}
               alt="Indian Railways Express Train"
               referrerPolicy="no-referrer"
               className="w-full h-auto object-cover rounded-xl shadow-md opacity-85 drop-shadow-[0_8px_16px_rgba(20,43,74,0.18)]"

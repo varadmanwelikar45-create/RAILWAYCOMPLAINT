@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import trainJourneyImg from '../assets/images/rail_care_train_journey_1792164300619.jpg';
 import { ViewMode, User } from '../types';
 import { UserPlus, ArrowLeft, AlertCircle, TrainTrack, Shield, CheckCircle2 } from 'lucide-react';
 
@@ -112,7 +113,13 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNaviga
           {/* Railway Train Visual Thumbnail */}
           <div className="rounded-2xl overflow-hidden border-2 border-white shadow-sm mt-4">
             <img
-              src="/src/assets/images/rail_care_train_journey_1792164300619.jpg"
+              src={trainJourneyImg}
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (target.src !== '/images/rail_care_train_journey.jpg') {
+                  target.src = '/images/rail_care_train_journey.jpg';
+                }
+              }}
               alt="Passenger Train at station"
               referrerPolicy="no-referrer"
               className="w-full h-44 object-cover object-center"

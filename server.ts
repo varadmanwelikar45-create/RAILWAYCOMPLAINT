@@ -376,6 +376,45 @@ async function startServer() {
     res.json({ success: true, users: store.users });
   });
 
+  // Explicit image route to reliably serve images across all devices and preview environments
+  const imagesDir = path.resolve(__dirname, 'public/images');
+  const srcImagesDir = path.resolve(__dirname, 'src/assets/images');
+
+  // Helper to serve image with headers
+  const serveImageFile = (filename: string, res: Response): boolean => {
+    const cleanName = path.basename(filename);
+    const pubPath = path.join(imagesDir, cleanName);
+    const srcPath = path.join(srcImagesDir, cleanName);
+
+    let targetFile = '';
+    if (fs.existsSync(pubPath)) {
+      targetFile = pubPath;
+    } else if (fs.existsSync(srcPath)) {
+      targetFile = srcPath;
+    }
+
+    if (targetFile) {
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.sendFile(targetFile);
+      return true;
+    }
+    return false;
+  };
+
+  app.get(['/images/:filename', '/src/assets/images/:filename', '/public/images/:filename'], (req: Request, res: Response, next) => {
+    const served = serveImageFile(req.params.filename, res);
+    if (!served) {
+      next();
+    }
+  });
+
+  app.use('/images', express.static(imagesDir));
+  app.use('/src/assets/images', express.static(srcImagesDir));
+  app.use('/public/images', express.static(imagesDir));
+  app.use(express.static(path.resolve(__dirname, 'public')));
+
   // Vite Integration:
   // In development, mount Vite's connect middleware to serve index.html and assets
   if (process.env.NODE_ENV !== 'production') {

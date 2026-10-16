@@ -1,4 +1,5 @@
 import React from 'react';
+import trainHeroImg from '../assets/images/rail_care_train_hero_1792164300650.jpg';
 import { ViewMode, User, Complaint } from '../types';
 import { 
   FileText, 
@@ -92,7 +93,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               
               {/* Train Photo */}
               <img
-                src="/src/assets/images/rail_care_train_hero_1792164300650.jpg"
+                src={trainHeroImg}
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  if (target.src !== '/images/rail_care_train_hero.jpg') {
+                    target.src = '/images/rail_care_train_hero.jpg';
+                  }
+                }}
                 alt="Realistic Indian Passenger Train traveling along tracks during golden hour sunrise"
                 referrerPolicy="no-referrer"
                 className="w-full h-auto max-h-[460px] object-cover object-center transform hover:scale-[1.02] transition-transform duration-700"
