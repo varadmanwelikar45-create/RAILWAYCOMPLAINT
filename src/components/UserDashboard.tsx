@@ -521,9 +521,23 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
                           Coach: {req.coachNumber || 'N/A'} · Seat: {req.seatNumber || 'N/A'}
                         </span>
                         {req.relatedComplaintId && (
-                          <p className="text-[11px] text-[#6B7280] mt-0.5">
-                            Ticket: #{req.relatedComplaintId}
-                          </p>
+                          <div className="mt-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const match = complaints.find((c) => c.complaintId === req.relatedComplaintId);
+                                if (match) {
+                                  onSelectComplaint(match);
+                                  onNavigate('complaint-details');
+                                }
+                              }}
+                              className="text-[11px] text-[#142B4A] hover:underline font-bold inline-flex items-center gap-1 cursor-pointer"
+                              title="View linked grievance details"
+                            >
+                              <span>Linked Grievance #{req.relatedComplaintId}</span>
+                              <ArrowRight className="w-3 h-3 text-[#E9B949]" />
+                            </button>
+                          </div>
                         )}
                       </div>
 

@@ -48,6 +48,7 @@ export type WorkerSkillCategory =
   | 'Railway Coach Plumber & Sanitation Worker'
   | 'Coach Cleaning & Housekeeping Worker'
   | 'Coach Mechanical Technician'
+  | 'Approved Pantry & Food Delivery Assistant'
   | 'General Passenger & Luggage Assistance Worker'
   | 'Emergency First-Aid & Medical Assistant';
 
@@ -61,28 +62,40 @@ export interface Worker {
   fullName: string;
   email: string;
   mobile: string;
+  headline?: string;
+  bio?: string;
   skillCategory: WorkerSkillCategory;
+  skills?: string[];
   stationCode: string;
+  stationCodes?: string[];
   stationName: string;
   city: string;
   experienceYears?: number;
+  qualifications?: string;
+  verificationDocuments?: string;
   verificationStatus: WorkerVerificationStatus;
+  rejectionReason?: string;
+  verificationDate?: string;
+  verifiedBy?: string;
   availability: WorkerAvailabilityStatus;
   activeJobId?: string | null;
   rating?: number;
   totalJobsCompleted: number;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export type WorkerRequestStatus =
   | 'Requested'
+  | 'Awaiting Worker Confirmation'
   | 'Finding Worker'
   | 'Worker Assigned'
   | 'On the Way'
   | 'Arrived at Station'
   | 'Service In Progress'
   | 'Completed'
-  | 'Cancelled';
+  | 'Cancelled'
+  | 'Declined';
 
 export interface WorkerServiceRequest {
   id: number;
@@ -100,6 +113,7 @@ export interface WorkerServiceRequest {
   stationName: string;
   expectedArrivalTime?: string;
   serviceCategory: WorkerSkillCategory;
+  requestedSkill?: string;
   description: string;
   status: WorkerRequestStatus;
   assignedWorkerId?: number | null;
