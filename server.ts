@@ -751,7 +751,8 @@ async function startServer() {
       }
 
       writeStore(store);
-      res.json({ success: true, worker: foundWorker, message: `Worker ${foundWorker.fullName} status updated to ${foundWorker.verificationStatus}.` });
+      const savedWorker: Worker = foundWorker;
+      res.json({ success: true, worker: savedWorker, message: `Worker ${savedWorker.fullName} status updated to ${savedWorker.verificationStatus}.` });
     } catch (err: any) {
       console.error('Worker status update error:', err);
       res.status(500).json({ success: false, message: 'Error updating worker verification status.' });
@@ -784,7 +785,8 @@ async function startServer() {
       }
 
       writeStore(store);
-      res.json({ success: true, worker: foundWorker, message: `Availability status set to ${foundWorker.availability}.` });
+      const savedWorker: Worker = foundWorker;
+      res.json({ success: true, worker: savedWorker, message: `Availability status set to ${savedWorker.availability}.` });
     } catch (err: any) {
       console.error('Worker availability update error:', err);
       res.status(500).json({ success: false, message: 'Error updating availability.' });

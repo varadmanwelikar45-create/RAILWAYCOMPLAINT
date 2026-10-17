@@ -1,6 +1,7 @@
 import React from 'react';
 import trainHeroImg from '../assets/images/rail_care_train_hero_1792164300650.jpg';
 import { ViewMode, User, Complaint } from '../types';
+import { PortalSelector } from './PortalSelector';
 import { 
   FileText, 
   ShieldCheck, 
@@ -12,7 +13,8 @@ import {
   Train,
   Check,
   Building2,
-  Users
+  Users,
+  Briefcase
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -68,6 +70,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               >
                 <span>Register a Complaint</span>
                 <ArrowRight className="w-4 h-4 text-[#E9B949] group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              <button
+                onClick={() => onNavigate(currentUser ? 'book-worker' : 'portal-selection')}
+                className="px-6 py-3.5 rounded-xl bg-[#E9B949] hover:bg-[#d6a537] text-[#142B4A] font-extrabold text-sm shadow-xs transition-all flex items-center gap-2 cursor-pointer border border-[#142B4A]/20"
+              >
+                <Briefcase className="w-4 h-4 text-[#142B4A]" />
+                <span>Gig Worker Services</span>
               </button>
 
               <button
@@ -166,6 +176,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
         </div>
+      </section>
+
+      {/* THREE USER PORTALS SHOWCASE (PASSENGER, WORKER, ADMIN) */}
+      <section>
+        <PortalSelector
+          currentView="landing"
+          currentUser={currentUser}
+          currentWorker={null}
+          onNavigate={onNavigate}
+        />
       </section>
 
       {/* SECTION C: SERVICE HIGHLIGHTS (4 Clean White Cards with Subtle Borders) */}

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Complaint, ComplaintCategory, ComplaintStatus, User, ViewMode } from '../types';
+import { Complaint, ComplaintCategory, ComplaintStatus, User, ViewMode, Worker, WorkerServiceRequest } from '../types';
 import { ALLOWED_CATEGORIES } from '../data/mockData';
 import { FIFOQueue } from '../algorithms/queue';
 import { executeMergeSort } from '../algorithms/sorting';
@@ -17,13 +17,25 @@ import {
   Eye,
   Check,
   RotateCcw,
-  TrainTrack
+  TrainTrack,
+  Briefcase,
+  UserCheck,
+  UserX,
+  UserMinus,
+  Sparkles,
+  FileText,
+  Phone,
+  Mail,
+  MapPin
 } from 'lucide-react';
 
 interface AdminDashboardProps {
   currentUser: User;
   complaints: Complaint[];
   queue: FIFOQueue;
+  workers?: Worker[];
+  workerRequests?: WorkerServiceRequest[];
+  onUpdateWorkerVerification?: (workerId: string, status: 'Pending Verification' | 'Verified' | 'Rejected' | 'Suspended') => void;
   onProcessNextFIFO: () => { success: boolean; complaint?: Complaint; message: string };
   onUpdateStatus: (complaintId: string, newStatus: ComplaintStatus) => void;
   onSelectComplaint: (complaint: Complaint) => void;
@@ -34,11 +46,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   currentUser,
   complaints,
   queue,
+  workers = [],
+  workerRequests = [],
+  onUpdateWorkerVerification,
   onProcessNextFIFO,
   onUpdateStatus,
   onSelectComplaint,
   onNavigate,
 }) => {
+  const [adminTab, setAdminTab] = useState<'complaints' | 'gig-workers'>('complaints');
+  const [workerSearch, setWorkerSearch] = useState('');
+  const [workerStatusFilter, setWorkerStatusFilter] = useState<'All' | 'Pending Verification' | 'Verified' | 'Rejected' | 'Suspended'>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [statusTab, setStatusTab] = useState<'All' | 'Pending' | 'In Progress' | 'Resolved'>('All');
@@ -90,6 +108,46 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setTimeout(() => setActionNotice(null), 3000);
   };
 
+  // Gig Worker Management Metrics & Filters
+  const pendingWorkersCount = useMemo(
+    () => (workers || []).filter((w) => w.verificationStatus === 'Pending Verification').length,
+    [workers]
+  );
+  const verifiedWorkersCount = useMemo(
+    () => (workers || []).filter((w) => w.verificationStatus === 'Verified').length,
+    [workers]
+  );
+  const activeJobsCount = useMemo(
+    () =>
+      (workerRequests || []).filter((r) =>
+        ['Worker Assigned', 'On the Way', 'Arrived at Station', 'Service In Progress'].includes(r.status)
+      ).length,
+    [workerRequests]
+  );
+
+  const displayedWorkers = useMemo(() => {
+    return (workers || []).filter((w) => {
+      const matchesStatus = workerStatusFilter === 'All' || w.verificationStatus === workerStatusFilter;
+      const q = workerSearch.toLowerCase().trim();
+      const matchesSearch =
+        !q ||
+        w.fullName.toLowerCase().includes(q) ||
+        w.workerId.toLowerCase().includes(q) ||
+        w.stationCode.toLowerCase().includes(q) ||
+        w.stationName.toLowerCase().includes(q) ||
+        w.skillCategory.toLowerCase().includes(q);
+      return matchesStatus && matchesSearch;
+    });
+  }, [workers, workerStatusFilter, workerSearch]);
+
+  const handleWorkerVerificationAction = (workerId: string, status: 'Pending Verification' | 'Verified' | 'Rejected' | 'Suspended') => {
+    if (onUpdateWorkerVerification) {
+      onUpdateWorkerVerification(workerId, status);
+      setActionNotice(`Worker #${workerId} verification status set to "${status}".`);
+      setTimeout(() => setActionNotice(null), 3000);
+    }
+  };
+
   return (
     <div className="space-y-8 py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       
@@ -100,7 +158,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <span className="px-2.5 py-0.5 bg-[#142B4A] text-[#E9B949] text-[10px] font-extrabold rounded-md tracking-wider uppercase border border-[#E9B949]/30">
               OFFICIAL CONTROL CENTER
             </span>
-            <span className="text-xs text-[#6B7280] font-medium">RAIL CARE Grievance Redressal</span>
+            <span className="text-xs text-[#6B7280] font-medium">RAIL CARE Grievance & Workforce Administration</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#142B4A] tracking-tight">
             Administrator Dashboard
@@ -143,12 +201,45 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <Check className="w-4 h-4 text-emerald-600 shrink-0" />
             {actionNotice}
           </span>
-          <button onClick={() => setActionNotice(null)} className="text-emerald-700 hover:text-emerald-900 font-bold ml-2 cursor-pointer">×</button>
         </div>
       )}
 
-      {/* Summary Metrics Cards (1-Click Filtering) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      {/* Module Switcher Tabs */}
+      <div className="flex border-b border-[#E8E2D3] gap-2">
+        <button
+          onClick={() => setAdminTab('complaints')}
+          className={`pb-3 px-4 text-xs font-bold transition border-b-2 cursor-pointer flex items-center gap-2 ${
+            adminTab === 'complaints'
+              ? 'border-[#142B4A] text-[#142B4A]'
+              : 'border-transparent text-[#6B7280] hover:text-[#142B4A]'
+          }`}
+        >
+          <Shield className="w-4 h-4 text-[#E9B949]" />
+          <span>Grievance Redressal & Queue ({complaints.length})</span>
+        </button>
+
+        <button
+          onClick={() => setAdminTab('gig-workers')}
+          className={`pb-3 px-4 text-xs font-bold transition border-b-2 cursor-pointer flex items-center gap-2 ${
+            adminTab === 'gig-workers'
+              ? 'border-[#142B4A] text-[#142B4A]'
+              : 'border-transparent text-[#6B7280] hover:text-[#142B4A]'
+          }`}
+        >
+          <Briefcase className="w-4 h-4 text-[#E9B949]" />
+          <span>Gig Worker Management ({workers.length})</span>
+          {pendingWorkersCount > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-extrabold animate-pulse">
+              {pendingWorkersCount} Pending
+            </span>
+          )}
+        </button>
+      </div>
+
+      {adminTab === 'complaints' ? (
+        <>
+          {/* Summary Metrics Cards (1-Click Filtering) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         
         <button
           onClick={() => setStatusTab('All')}
@@ -453,10 +544,328 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               );
             })}
           </div>
+        </div>
+      </div>
+    </>
+  ) : (
+        /* Gig Worker Management Module */
+        <div className="space-y-8">
+          
+          {/* Worker KPI Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="bg-white rounded-2xl border border-[#E8E2D3] p-5 shadow-xs">
+              <div className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">
+                Total Workers
+              </div>
+              <div className="text-2xl font-extrabold text-[#142B4A] mt-1 font-mono">
+                {workers.length}
+              </div>
+              <p className="text-[11px] text-[#6B7280] mt-1">Across all junctions</p>
+            </div>
+
+            <div className={`rounded-2xl border p-5 shadow-xs ${
+              pendingWorkersCount > 0
+                ? 'bg-amber-50 border-amber-300'
+                : 'bg-white border-[#E8E2D3]'
+            }`}>
+              <div className="text-xs font-bold text-amber-800 uppercase tracking-wider flex items-center justify-between">
+                <span>Pending Review</span>
+                {pendingWorkersCount > 0 && (
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                )}
+              </div>
+              <div className="text-2xl font-extrabold text-amber-900 mt-1 font-mono">
+                {pendingWorkersCount}
+              </div>
+              <p className="text-[11px] text-amber-700 mt-1 font-semibold">Requires verification</p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-[#E8E2D3] p-5 shadow-xs">
+              <div className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">
+                Verified Active
+              </div>
+              <div className="text-2xl font-extrabold text-[#21865B] mt-1 font-mono">
+                {verifiedWorkersCount}
+              </div>
+              <p className="text-[11px] text-[#21865B] mt-1 font-semibold">Ready for dispatch</p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-[#E8E2D3] p-5 shadow-xs">
+              <div className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">
+                Active Jobs
+              </div>
+              <div className="text-2xl font-extrabold text-[#142B4A] mt-1 font-mono">
+                {activeJobsCount}
+              </div>
+              <p className="text-[11px] text-[#6B7280] mt-1">Currently on trains</p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-[#E8E2D3] p-5 shadow-xs col-span-2 lg:col-span-1">
+              <div className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">
+                Total Requests
+              </div>
+              <div className="text-2xl font-extrabold text-[#142B4A] mt-1 font-mono">
+                {workerRequests.length}
+              </div>
+              <p className="text-[11px] text-[#6B7280] mt-1">Passenger calls</p>
+            </div>
+          </div>
+
+          {/* Workers Directory & Administrative Verification Table */}
+          <div className="bg-white rounded-3xl border border-[#E8E2D3] shadow-xs p-6 sm:p-8 space-y-6">
+            
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#E8E2D3]">
+              <div>
+                <h2 className="text-xl font-extrabold text-[#142B4A]">
+                  Registered Railway Workers Directory
+                </h2>
+                <p className="text-xs text-[#6B7280] mt-0.5">
+                  Verify, approve, or suspend station gig worker profiles. Only verified workers receive passenger service requests.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                {/* Search */}
+                <div className="relative">
+                  <Search className="w-4 h-4 text-[#6B7280] absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    value={workerSearch}
+                    onChange={(e) => setWorkerSearch(e.target.value)}
+                    placeholder="Search name, ID, station, skill..."
+                    className="pl-9 pr-3 py-2 text-xs bg-[#FFFDF5] border border-[#E8E2D3] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#142B4A] w-full sm:w-60"
+                  />
+                </div>
+
+                {/* Filter */}
+                <div className="flex flex-wrap gap-1 bg-[#FFFDF5] p-1 rounded-xl border border-[#E8E2D3]">
+                  {(['All', 'Pending Verification', 'Verified', 'Suspended'] as const).map((st) => (
+                    <button
+                      key={st}
+                      onClick={() => setWorkerStatusFilter(st)}
+                      className={`px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+                        workerStatusFilter === st
+                          ? 'bg-[#142B4A] text-white shadow-2xs'
+                          : 'text-[#6B7280] hover:text-[#142B4A]'
+                      }`}
+                    >
+                      {st === 'Pending Verification' ? 'Pending' : st}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Workers Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-[#E8E2D3] text-[#6B7280] font-bold uppercase tracking-wider text-[10px]">
+                    <th className="py-3 px-3">Worker ID</th>
+                    <th className="py-3 px-3">Worker Name</th>
+                    <th className="py-3 px-3">Skill Category</th>
+                    <th className="py-3 px-3">Assigned Station</th>
+                    <th className="py-3 px-3">Contact</th>
+                    <th className="py-3 px-3 text-center">Status</th>
+                    <th className="py-3 px-3 text-center">Availability</th>
+                    <th className="py-3 px-3 text-right">Administrative Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E8E2D3]">
+                  {displayedWorkers.map((w) => (
+                    <tr key={w.id} className="hover:bg-[#FFFDF5] transition">
+                      <td className="py-3.5 px-3 font-mono font-bold text-[#142B4A]">
+                        {w.workerId}
+                      </td>
+                      <td className="py-3.5 px-3">
+                        <div className="font-bold text-[#253247]">{w.fullName}</div>
+                        <div className="text-[10px] text-[#6B7280]">{w.city} · {w.experienceYears || 1}y exp</div>
+                      </td>
+                      <td className="py-3.5 px-3 font-semibold text-[#142B4A]">
+                        {w.skillCategory}
+                      </td>
+                      <td className="py-3.5 px-3">
+                        <span className="font-bold text-[#253247]">{w.stationCode}</span>
+                        <div className="text-[10px] text-[#6B7280] truncate max-w-[130px]">{w.stationName}</div>
+                      </td>
+                      <td className="py-3.5 px-3 text-[#6B7280]">
+                        <div>{w.mobile}</div>
+                        <div className="text-[10px] truncate max-w-[120px]">{w.email}</div>
+                      </td>
+                      <td className="py-3.5 px-3 text-center">
+                        <span className={`inline-block px-2.5 py-1 text-[11px] font-bold rounded-full ${
+                          w.verificationStatus === 'Verified'
+                            ? 'bg-[#EDF7F2] text-[#156140] border border-[#21865B]/30'
+                            : w.verificationStatus === 'Pending Verification'
+                            ? 'bg-amber-50 text-amber-800 border border-amber-300'
+                            : 'bg-red-50 text-red-700 border border-red-200'
+                        }`}>
+                          {w.verificationStatus}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-3 text-center">
+                        <span className={`inline-block px-2 py-0.5 text-[10px] font-extrabold rounded-md ${
+                          w.availability === 'Available'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : w.availability === 'Busy'
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-slate-100 text-slate-700'
+                        }`}>
+                          {w.availability}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {w.verificationStatus !== 'Verified' && (
+                            <button
+                              onClick={() => handleWorkerVerificationAction(w.workerId, 'Verified')}
+                              className="px-2.5 py-1 bg-[#21865B] hover:bg-emerald-700 text-white font-bold rounded-lg transition text-[11px] cursor-pointer shadow-2xs flex items-center gap-1"
+                              title="Approve and verify worker"
+                            >
+                              <UserCheck className="w-3 h-3" />
+                              <span>Verify</span>
+                            </button>
+                          )}
+
+                          {w.verificationStatus === 'Pending Verification' && (
+                            <button
+                              onClick={() => handleWorkerVerificationAction(w.workerId, 'Rejected')}
+                              className="px-2.5 py-1 bg-red-100 hover:bg-red-200 text-red-800 font-bold rounded-lg transition text-[11px] cursor-pointer"
+                              title="Reject registration"
+                            >
+                              <UserX className="w-3 h-3" />
+                              <span>Reject</span>
+                            </button>
+                          )}
+
+                          {w.verificationStatus === 'Verified' && (
+                            <button
+                              onClick={() => handleWorkerVerificationAction(w.workerId, 'Suspended')}
+                              className="px-2.5 py-1 bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-800 font-bold rounded-lg transition text-[11px] cursor-pointer"
+                              title="Suspend worker access"
+                            >
+                              <UserMinus className="w-3 h-3" />
+                              <span>Suspend</span>
+                            </button>
+                          )}
+
+                          {w.verificationStatus === 'Suspended' && (
+                            <button
+                              onClick={() => handleWorkerVerificationAction(w.workerId, 'Verified')}
+                              className="px-2.5 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold rounded-lg transition text-[11px] cursor-pointer"
+                              title="Reactivate worker"
+                            >
+                              <span>Reactivate</span>
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {displayedWorkers.length === 0 && (
+                <div className="py-12 text-center text-xs text-[#6B7280]">
+                  No railway workers found matching the current filter.
+                </div>
+              )}
+            </div>
+
+          </div>
+
+          {/* Station Service Requests Oversight Table */}
+          <div className="bg-white rounded-3xl border border-[#E8E2D3] shadow-xs p-6 sm:p-8 space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-[#E8E2D3]">
+              <div>
+                <h3 className="text-base font-extrabold text-[#142B4A]">
+                  All Station Gig Service Requests
+                </h3>
+                <p className="text-xs text-[#6B7280]">
+                  Live monitoring of passenger assistance calls and worker fulfillment across stations.
+                </p>
+              </div>
+              <span className="text-xs font-mono font-bold text-[#142B4A] bg-[#FFF5DC] px-2.5 py-1 rounded-lg border border-[#E9B949]/40">
+                Total: {workerRequests.length}
+              </span>
+            </div>
+
+            {workerRequests.length === 0 ? (
+              <div className="py-12 text-center text-xs text-[#6B7280]">
+                No passenger service requests recorded yet. Incoming requests from passengers will appear here.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-[#E8E2D3] text-[#6B7280] font-bold uppercase tracking-wider text-[10px]">
+                      <th className="py-3 px-3">Req ID</th>
+                      <th className="py-3 px-3">Passenger</th>
+                      <th className="py-3 px-3">Train & Coach</th>
+                      <th className="py-3 px-3">Station</th>
+                      <th className="py-3 px-3">Service</th>
+                      <th className="py-3 px-3">Assigned Worker</th>
+                      <th className="py-3 px-3 text-center">Status</th>
+                      <th className="py-3 px-3">Time</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E8E2D3]">
+                    {workerRequests.map((r) => (
+                      <tr key={r.id} className="hover:bg-[#FFFDF5] transition">
+                        <td className="py-3 px-3 font-mono font-bold text-[#142B4A]">
+                          {r.requestId}
+                        </td>
+                        <td className="py-3 px-3">
+                          <div className="font-semibold text-[#253247]">{r.passengerName}</div>
+                          <div className="text-[10px] text-[#6B7280]">{r.passengerMobile}</div>
+                        </td>
+                        <td className="py-3 px-3 text-[#253247]">
+                          <div className="font-bold">Train {r.trainNumber}</div>
+                          <div className="text-[10px] text-[#6B7280]">
+                            Coach: {r.coachNumber || 'N/A'} · Seat: {r.seatNumber || 'N/A'}
+                          </div>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className="font-bold text-[#142B4A]">{r.stationCode}</span>
+                          <div className="text-[10px] text-[#6B7280]">{r.stationName}</div>
+                        </td>
+                        <td className="py-3 px-3 font-medium text-[#253247]">
+                          {r.serviceCategory}
+                        </td>
+                        <td className="py-3 px-3">
+                          {r.assignedWorkerName ? (
+                            <span className="font-bold text-[#21865B] flex items-center gap-1">
+                              <UserCheck className="w-3.5 h-3.5" />
+                              {r.assignedWorkerName}
+                            </span>
+                          ) : (
+                            <span className="text-[#6B7280] italic">Unassigned</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 text-center">
+                          <span className={`inline-block px-2.5 py-0.5 text-[10px] font-extrabold rounded-full ${
+                            r.status === 'Completed'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : r.status === 'Cancelled'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}>
+                            {r.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-[#6B7280] text-[11px]">
+                          {r.createdAt.slice(11, 16)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
 
         </div>
-
-      </div>
+      )}
 
     </div>
   );
