@@ -64,6 +64,9 @@ interface Worker {
   verifiedBy?: string;
   availability: 'Available' | 'Busy' | 'Unavailable';
   activeJobId?: string | null;
+  profileImage?: string;
+  verificationPhoto?: string;
+  photoUpdatedAt?: string;
   rating?: number;
   totalJobsCompleted: number;
   createdAt: string;
@@ -503,7 +506,8 @@ async function startServer() {
   const app = express();
   const PORT = parseInt(process.env.PORT || '3000', 10);
 
-  app.use(express.json());
+  app.use(express.json({ limit: '15mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
   // API Routes
   app.get('/api/health', (_req: Request, res: Response) => {
@@ -915,10 +919,10 @@ async function startServer() {
     }
   });
 
-  // 4. Worker Login
+  // 4. Worker Login (with verification photo update)
   app.post('/api/workers/login', (req: Request, res: Response) => {
     try {
-      const { email, password } = req.body;
+      const { email, password, photo, verificationPhoto } = req.body;
       const store = readStore();
       const cleanEmail = String(email || '').toLowerCase().trim();
       const cleanPass = String(password || '').trim();
@@ -927,8 +931,8 @@ async function startServer() {
         return res.status(400).json({ success: false, message: 'Please provide both email and password.' });
       }
 
-      const worker = (store.workers || []).find((w) => w.email.toLowerCase().trim() === cleanEmail);
-      if (!worker) {
+      const workerIndex = (store.workers || []).findIndex((w) => w.email.toLowerCase().trim() === cleanEmail);
+      if (workerIndex === -1) {
         return res.status(401).json({ success: false, message: 'No registered railway worker found with this email. Please register your profile first.' });
       }
 
@@ -936,6 +940,18 @@ async function startServer() {
       if (savedPass && savedPass !== cleanPass) {
         return res.status(401).json({ success: false, message: 'Incorrect worker password. Please try again.' });
       }
+
+      const nowIso = new Date().toISOString().replace('T', ' ').slice(0, 19);
+      const incomingPhoto = photo || verificationPhoto;
+      if (incomingPhoto && typeof incomingPhoto === 'string' && incomingPhoto.length > 30) {
+        store.workers[workerIndex].verificationPhoto = incomingPhoto;
+        store.workers[workerIndex].profileImage = incomingPhoto;
+        store.workers[workerIndex].photoUpdatedAt = nowIso;
+        store.workers[workerIndex].updatedAt = nowIso;
+        writeStore(store);
+      }
+
+      const worker = store.workers[workerIndex];
 
       res.json({
         success: true,
@@ -945,6 +961,50 @@ async function startServer() {
     } catch (err: any) {
       console.error('Worker login error:', err);
       res.status(500).json({ success: false, message: 'Server error during worker authentication.' });
+    }
+  });
+
+  // 4b. Worker Photo Upload & Verification Image Update
+  app.put('/api/workers/:id/photo', (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { photo, verificationPhoto } = req.body;
+      const store = readStore();
+      const nowIso = new Date().toISOString().replace('T', ' ').slice(0, 19);
+
+      const targetPhoto = photo || verificationPhoto;
+      if (!targetPhoto || typeof targetPhoto !== 'string') {
+        return res.status(400).json({ success: false, message: 'Invalid or missing photo data.' });
+      }
+
+      let updatedWorker: Worker | null = null;
+      store.workers = (store.workers || []).map((w) => {
+        if (String(w.id) === String(id) || (w.workerId && w.workerId.toLowerCase() === String(id).toLowerCase())) {
+          updatedWorker = {
+            ...w,
+            verificationPhoto: targetPhoto,
+            profileImage: targetPhoto,
+            photoUpdatedAt: nowIso,
+            updatedAt: nowIso,
+          };
+          return updatedWorker;
+        }
+        return w;
+      });
+
+      if (!updatedWorker) {
+        return res.status(404).json({ success: false, message: 'Worker record not found.' });
+      }
+
+      writeStore(store);
+      res.json({
+        success: true,
+        worker: updatedWorker,
+        message: 'Verification photo updated successfully and submitted for divisional verification.',
+      });
+    } catch (err: any) {
+      console.error('Error updating worker photo:', err);
+      res.status(500).json({ success: false, message: 'Failed to save verification photo.' });
     }
   });
 
@@ -968,6 +1028,9 @@ async function startServer() {
             experienceYears: typeof body.experienceYears === 'number' ? body.experienceYears : w.experienceYears,
             qualifications: body.qualifications !== undefined ? String(body.qualifications).trim() : w.qualifications,
             city: body.city !== undefined ? String(body.city).trim() : w.city,
+            profileImage: body.profileImage || body.verificationPhoto || w.profileImage,
+            verificationPhoto: body.verificationPhoto || body.profileImage || w.verificationPhoto,
+            photoUpdatedAt: body.verificationPhoto || body.profileImage ? nowIso : w.photoUpdatedAt,
             availability: ['Available', 'Busy', 'Unavailable'].includes(body.availability) ? body.availability : w.availability,
             updatedAt: nowIso,
           };
@@ -992,23 +1055,53 @@ async function startServer() {
   app.put('/api/workers/:id/verify', (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const { action, rejectionReason, adminName } = req.body;
+      const { action, rejectionReason, adminName, verificationStatus, status: reqStatus } = req.body;
       const store = readStore();
       const nowIso = new Date().toISOString().replace('T', ' ').slice(0, 19);
 
+      // Determine requested verification state
+      let resolvedStatus = verificationStatus || reqStatus;
+      if (!resolvedStatus && action) {
+        if (action === 'approve' || action === 'reactivate') resolvedStatus = 'Verified';
+        else if (action === 'reject') resolvedStatus = 'Rejected';
+        else if (action === 'suspend') resolvedStatus = 'Suspended';
+        else if (action === 'pending') resolvedStatus = 'Pending Verification';
+      }
+      if (!resolvedStatus) {
+        resolvedStatus = 'Verified'; // Default verification action is approve
+      }
+
       let targetWorker: Worker | null = null;
+      const rawParamId = String(id || '').trim().toLowerCase();
+      const rawBodyWorkerId = req.body.workerId ? String(req.body.workerId).trim().toLowerCase() : '';
+      const rawParamDigits = rawParamId.replace(/\D/g, '');
+
       store.workers = (store.workers || []).map((w) => {
-        if (String(w.id) === id || w.workerId === id) {
-          if (action === 'approve') {
+        const wWorkerId = (w.workerId || '').toLowerCase();
+        const wEmail = (w.email || '').toLowerCase();
+        const wIdStr = String(w.id || '');
+        const wIdDigits = wIdStr.replace(/\D/g, '');
+        const wWorkerDigits = wWorkerId.replace(/\D/g, '');
+
+        const idMatches =
+          (wWorkerId && wWorkerId === rawParamId) ||
+          (rawBodyWorkerId && wWorkerId === rawBodyWorkerId) ||
+          wIdStr === rawParamId ||
+          (wEmail && wEmail === rawParamId) ||
+          (rawParamDigits && (wIdDigits === rawParamDigits || wWorkerDigits === rawParamDigits));
+
+        if (idMatches && !targetWorker) {
+          if (resolvedStatus === 'Verified') {
             targetWorker = {
               ...w,
               verificationStatus: 'Verified',
               verificationDate: nowIso,
               verifiedBy: adminName || 'Senior Divisional Officer (Admin)',
               rejectionReason: undefined,
+              availability: w.availability === 'Unavailable' ? 'Available' : (w.availability || 'Available'),
               updatedAt: nowIso,
             };
-          } else if (action === 'reject') {
+          } else if (resolvedStatus === 'Rejected') {
             targetWorker = {
               ...w,
               verificationStatus: 'Rejected',
@@ -1019,22 +1112,21 @@ async function startServer() {
                 : 'Application credentials did not satisfy railway identity and qualification requirements.',
               updatedAt: nowIso,
             };
-          } else if (action === 'suspend') {
+          } else if (resolvedStatus === 'Suspended') {
             targetWorker = {
               ...w,
               verificationStatus: 'Suspended',
               availability: 'Unavailable',
               updatedAt: nowIso,
             };
-          } else if (action === 'reactivate') {
+          } else {
             targetWorker = {
               ...w,
-              verificationStatus: 'Verified',
-              availability: 'Available',
+              verificationStatus: 'Pending Verification',
               updatedAt: nowIso,
             };
           }
-          return targetWorker || w;
+          return targetWorker;
         }
         return w;
       });
@@ -1065,8 +1157,25 @@ async function startServer() {
       const nowIso = new Date().toISOString().replace('T', ' ').slice(0, 19);
 
       let foundWorker: Worker | null = null;
+      const rawParamId = String(id || '').trim().toLowerCase();
+      const rawBodyWorkerId = req.body.workerId ? String(req.body.workerId).trim().toLowerCase() : '';
+      const rawParamDigits = rawParamId.replace(/\D/g, '');
+
       store.workers = (store.workers || []).map((w) => {
-        if (String(w.id) === id || w.workerId === id) {
+        const wWorkerId = (w.workerId || '').toLowerCase();
+        const wEmail = (w.email || '').toLowerCase();
+        const wIdStr = String(w.id || '');
+        const wIdDigits = wIdStr.replace(/\D/g, '');
+        const wWorkerDigits = wWorkerId.replace(/\D/g, '');
+
+        const idMatches =
+          (wWorkerId && wWorkerId === rawParamId) ||
+          (rawBodyWorkerId && wWorkerId === rawBodyWorkerId) ||
+          wIdStr === rawParamId ||
+          (wEmail && wEmail === rawParamId) ||
+          (rawParamDigits && (wIdDigits === rawParamDigits || wWorkerDigits === rawParamDigits));
+
+        if (idMatches && !foundWorker) {
           foundWorker = {
             ...w,
             verificationStatus: ['Pending Verification', 'Verified', 'Rejected', 'Suspended'].includes(verificationStatus)

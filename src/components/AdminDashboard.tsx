@@ -26,13 +26,19 @@ import {
   FileText,
   Phone,
   Mail,
-  MapPin
+  MapPin,
+  Users,
+  Camera,
+  X,
+  Smartphone,
+  ExternalLink
 } from 'lucide-react';
 
 interface AdminDashboardProps {
   currentUser: User;
   complaints: Complaint[];
   queue: FIFOQueue;
+  users?: User[];
   workers?: Worker[];
   workerRequests?: WorkerServiceRequest[];
   onUpdateWorkerVerification?: (workerId: string, status: 'Pending Verification' | 'Verified' | 'Rejected' | 'Suspended') => void;
@@ -46,6 +52,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   currentUser,
   complaints,
   queue,
+  users = [],
   workers = [],
   workerRequests = [],
   onUpdateWorkerVerification,
@@ -54,9 +61,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onSelectComplaint,
   onNavigate,
 }) => {
-  const [adminTab, setAdminTab] = useState<'complaints' | 'gig-workers'>('complaints');
+  const [adminTab, setAdminTab] = useState<'complaints' | 'gig-workers' | 'passengers'>('complaints');
   const [workerSearch, setWorkerSearch] = useState('');
   const [workerStatusFilter, setWorkerStatusFilter] = useState<'All' | 'Pending Verification' | 'Verified' | 'Rejected' | 'Suspended'>('All');
+  const [passengerSearch, setPassengerSearch] = useState('');
+  const [inspectingWorkerPhoto, setInspectingWorkerPhoto] = useState<Worker | null>(null);
+  const [verifyingWorkerId, setVerifyingWorkerId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [statusTab, setStatusTab] = useState<'All' | 'Pending' | 'In Progress' | 'Resolved'>('All');
@@ -140,11 +150,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     });
   }, [workers, workerStatusFilter, workerSearch]);
 
-  const handleWorkerVerificationAction = (workerId: string, status: 'Pending Verification' | 'Verified' | 'Rejected' | 'Suspended') => {
+  const displayedPassengers = useMemo(() => {
+    const q = passengerSearch.toLowerCase().trim();
+    return (users || []).filter((u) => {
+      if (u.isAdmin) return false;
+      if (!q) return true;
+      return (
+        u.fullName.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        (u.mobile && u.mobile.includes(q)) ||
+        String(u.id).includes(q)
+      );
+    });
+  }, [users, passengerSearch]);
+
+  const handleWorkerVerificationAction = async (
+    workerId: string, 
+    status: 'Pending Verification' | 'Verified' | 'Rejected' | 'Suspended'
+  ) => {
     if (onUpdateWorkerVerification) {
-      onUpdateWorkerVerification(workerId, status);
-      setActionNotice(`Worker #${workerId} verification status set to "${status}".`);
-      setTimeout(() => setActionNotice(null), 3000);
+      setVerifyingWorkerId(workerId);
+      try {
+        await onUpdateWorkerVerification(workerId, status);
+        setActionNotice(`Worker #${workerId} status updated to "${status}". Changes synced across devices.`);
+        setTimeout(() => setActionNotice(null), 4000);
+      } finally {
+        setVerifyingWorkerId(null);
+      }
     }
   };
 
@@ -233,6 +265,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               {pendingWorkersCount} Pending
             </span>
           )}
+        </button>
+
+        <button
+          onClick={() => setAdminTab('passengers')}
+          className={`pb-3 px-4 text-xs font-bold transition border-b-2 cursor-pointer flex items-center gap-2 ${
+            adminTab === 'passengers'
+              ? 'border-[#142B4A] text-[#142B4A]'
+              : 'border-transparent text-[#6B7280] hover:text-[#142B4A]'
+          }`}
+        >
+          <Users className="w-4 h-4 text-[#E9B949]" />
+          <span>Registered Passengers ({users.filter((u) => !u.isAdmin).length})</span>
         </button>
       </div>
 
@@ -662,6 +706,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <thead>
                   <tr className="border-b border-[#E8E2D3] text-[#6B7280] font-bold uppercase tracking-wider text-[10px]">
                     <th className="py-3 px-3">Worker ID</th>
+                    <th className="py-3 px-3">Verification Photo</th>
                     <th className="py-3 px-3">Worker Name</th>
                     <th className="py-3 px-3">Skill Category</th>
                     <th className="py-3 px-3">Assigned Station</th>
@@ -677,6 +722,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <td className="py-3.5 px-3 font-mono font-bold text-[#142B4A]">
                         {w.workerId}
                       </td>
+
+                      {/* Photo Column */}
+                      <td className="py-3.5 px-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setInspectingWorkerPhoto(w)}
+                            className="relative w-11 h-11 rounded-xl overflow-hidden border border-[#E8E2D3] hover:border-[#142B4A] shadow-2xs group cursor-pointer shrink-0 bg-slate-100"
+                            title="Click to inspect verification photo"
+                          >
+                            {w.verificationPhoto || w.profileImage ? (
+                              <img
+                                src={w.verificationPhoto || w.profileImage}
+                                alt={w.fullName}
+                                className="w-full h-full object-cover group-hover:scale-110 transition duration-200"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-[#FFF5DC] flex items-center justify-center text-[#142B4A]">
+                                <Camera className="w-4 h-4 text-[#6B7280]" />
+                              </div>
+                            )}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                              <Eye className="w-3.5 h-3.5 text-white" />
+                            </div>
+                          </button>
+                          {w.photoUpdatedAt && (
+                            <span className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-emerald-50 text-[9px] font-bold text-emerald-800 border border-emerald-200">
+                              Live
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
                       <td className="py-3.5 px-3">
                         <div className="font-bold text-[#253247]">{w.fullName}</div>
                         <div className="text-[10px] text-[#6B7280]">{w.city} · {w.experienceYears || 1}y exp</div>
@@ -718,12 +796,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <div className="flex items-center justify-end gap-1.5">
                           {w.verificationStatus !== 'Verified' && (
                             <button
+                              disabled={verifyingWorkerId === w.workerId}
                               onClick={() => handleWorkerVerificationAction(w.workerId, 'Verified')}
-                              className="px-2.5 py-1 bg-[#21865B] hover:bg-emerald-700 text-white font-bold rounded-lg transition text-[11px] cursor-pointer shadow-2xs flex items-center gap-1"
+                              className={`px-3 py-1.5 bg-[#21865B] hover:bg-emerald-700 text-white font-bold rounded-lg transition text-xs cursor-pointer shadow-xs flex items-center gap-1.5 ${
+                                verifyingWorkerId === w.workerId ? 'opacity-70 cursor-not-allowed' : ''
+                              }`}
                               title="Approve and verify worker"
                             >
-                              <UserCheck className="w-3 h-3" />
-                              <span>Verify</span>
+                              <UserCheck className="w-3.5 h-3.5" />
+                              <span>{verifyingWorkerId === w.workerId ? 'Verifying...' : 'Verify'}</span>
                             </button>
                           )}
 
@@ -739,14 +820,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           )}
 
                           {w.verificationStatus === 'Verified' && (
-                            <button
-                              onClick={() => handleWorkerVerificationAction(w.workerId, 'Suspended')}
-                              className="px-2.5 py-1 bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-800 font-bold rounded-lg transition text-[11px] cursor-pointer"
-                              title="Suspend worker access"
-                            >
-                              <UserMinus className="w-3 h-3" />
-                              <span>Suspend</span>
-                            </button>
+                            <div className="flex items-center gap-1.5">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-[#156140] bg-[#EDF7F2] border border-[#21865B]/30 rounded-lg">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-[#21865B]" />
+                                <span>Verified</span>
+                              </span>
+                              <button
+                                onClick={() => handleWorkerVerificationAction(w.workerId, 'Suspended')}
+                                className="px-2 py-1 bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-800 font-bold rounded-lg transition text-[11px] cursor-pointer"
+                                title="Suspend worker access"
+                              >
+                                <UserMinus className="w-3 h-3" />
+                                <span>Suspend</span>
+                              </button>
+                            </div>
                           )}
 
                           {w.verificationStatus === 'Suspended' && (
@@ -864,6 +951,278 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             )}
           </div>
 
+        </div>
+      )}
+
+      {/* MODULE 3: REGISTERED PASSENGERS DIRECTORY */}
+      {adminTab === 'passengers' && (
+        <div className="space-y-6">
+          {/* Top KPI Cards for Passengers */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="bg-white rounded-2xl border border-[#E8E2D3] p-5 shadow-xs">
+              <div className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">
+                Total Passengers
+              </div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#142B4A] mt-1 font-mono">
+                {users.filter((u) => !u.isAdmin).length}
+              </div>
+              <p className="text-[11px] text-[#6B7280] mt-1">Multi-device registered accounts</p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-[#E8E2D3] p-5 shadow-xs">
+              <div className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">
+                Passenger Grievances
+              </div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#142B4A] mt-1 font-mono">
+                {complaints.length}
+              </div>
+              <p className="text-[11px] text-[#21865B] mt-1 font-semibold">Tracked in FIFO queue</p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-[#E8E2D3] p-5 shadow-xs">
+              <div className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">
+                Worker Assistance Calls
+              </div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#142B4A] mt-1 font-mono">
+                {workerRequests.length}
+              </div>
+              <p className="text-[11px] text-[#6B7280] mt-1">Gig worker service requests</p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-[#E8E2D3] p-5 shadow-xs">
+              <div className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">
+                Cross-Device Sync
+              </div>
+              <div className="text-lg font-extrabold text-[#21865B] mt-1 flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#21865B] animate-pulse"></span>
+                <span>Active 3s Sync</span>
+              </div>
+              <p className="text-[11px] text-[#6B7280] mt-1">Phones & Laptops interconnected</p>
+            </div>
+          </div>
+
+          {/* Passengers Table */}
+          <div className="bg-white rounded-3xl border border-[#E8E2D3] shadow-xs p-6 sm:p-8 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#E8E2D3]">
+              <div>
+                <h2 className="text-xl font-extrabold text-[#142B4A]">
+                  Registered Railway Passengers Directory
+                </h2>
+                <p className="text-xs text-[#6B7280] mt-0.5">
+                  Real-time list of passengers logged in across mobile devices and platforms.
+                </p>
+              </div>
+
+              {/* Passenger Search */}
+              <div className="relative">
+                <Search className="w-4 h-4 text-[#6B7280] absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  value={passengerSearch}
+                  onChange={(e) => setPassengerSearch(e.target.value)}
+                  placeholder="Search passenger name, email, mobile..."
+                  className="pl-9 pr-3 py-2 text-xs bg-[#FFFDF5] border border-[#E8E2D3] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#142B4A] w-full sm:w-72"
+                />
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-[#E8E2D3] text-[#6B7280] font-bold uppercase tracking-wider text-[10px]">
+                    <th className="py-3 px-3">User ID</th>
+                    <th className="py-3 px-3">Passenger Name</th>
+                    <th className="py-3 px-3">Email Address</th>
+                    <th className="py-3 px-3">Mobile Contact</th>
+                    <th className="py-3 px-3 text-center">Grievances Filed</th>
+                    <th className="py-3 px-3 text-center">Worker Bookings</th>
+                    <th className="py-3 px-3 text-center">System Interconnection</th>
+                    <th className="py-3 px-3 text-right">View Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E8E2D3]">
+                  {displayedPassengers.map((passenger) => {
+                    const passengerComplaintsCount = complaints.filter(
+                      (c) =>
+                        (passenger.id && c.userId === passenger.id) ||
+                        (passenger.email && c.passengerEmail && c.passengerEmail.toLowerCase().trim() === passenger.email.toLowerCase().trim())
+                    ).length;
+
+                    const passengerRequestsCount = workerRequests.filter(
+                      (r) =>
+                        (passenger.id && r.passengerId === passenger.id) ||
+                        (passenger.email && r.passengerEmail && r.passengerEmail.toLowerCase().trim() === passenger.email.toLowerCase().trim())
+                    ).length;
+
+                    return (
+                      <tr key={passenger.id} className="hover:bg-[#FFFDF5] transition">
+                        <td className="py-3.5 px-3 font-mono font-bold text-[#142B4A]">
+                          #{passenger.id}
+                        </td>
+                        <td className="py-3.5 px-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-[#142B4A] text-[#E9B949] flex items-center justify-center font-bold text-xs shrink-0">
+                              {passenger.fullName.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="font-bold text-[#253247]">{passenger.fullName}</div>
+                              <div className="text-[10px] text-[#6B7280]">Registered Passenger</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-3 font-medium text-[#253247]">
+                          {passenger.email}
+                        </td>
+                        <td className="py-3.5 px-3 font-mono text-[#6B7280]">
+                          {passenger.mobile || '9876543210'}
+                        </td>
+                        <td className="py-3.5 px-3 text-center">
+                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                            passengerComplaintsCount > 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'
+                          }`}>
+                            {passengerComplaintsCount}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-3 text-center">
+                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                            passengerRequestsCount > 0 ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-600'
+                          }`}>
+                            {passengerRequestsCount}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-3 text-center">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-[11px] font-bold text-emerald-800 border border-emerald-200">
+                            <Smartphone className="w-3 h-3 text-[#21865B]" />
+                            <span>Mobile Connected</span>
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-3 text-right">
+                          <button
+                            onClick={() => {
+                              setSearchQuery(passenger.fullName);
+                              setAdminTab('complaints');
+                            }}
+                            className="px-2.5 py-1 text-xs font-bold text-[#142B4A] hover:bg-[#FFF5DC] rounded-lg transition border border-[#E8E2D3] cursor-pointer"
+                            title="Filter complaints for this passenger"
+                          >
+                            Filter Complaints
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+
+              {displayedPassengers.length === 0 && (
+                <div className="py-12 text-center text-xs text-[#6B7280]">
+                  No registered passengers found matching "{passengerSearch}".
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* INSPECT WORKER PHOTO MODAL */}
+      {inspectingWorkerPhoto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl border border-[#E8E2D3] max-w-lg w-full p-6 shadow-2xl relative space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <button
+              onClick={() => setInspectingWorkerPhoto(null)}
+              className="absolute top-4 right-4 p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 bg-[#E9B949] text-[#142B4A] text-[10px] font-extrabold uppercase rounded">
+                IDENTITY AUDIT
+              </span>
+              <span className="text-xs font-mono text-[#6B7280]">
+                Worker ID: {inspectingWorkerPhoto.workerId}
+              </span>
+            </div>
+
+            <h3 className="text-xl font-extrabold text-[#142B4A]">
+              {inspectingWorkerPhoto.fullName}
+            </h3>
+
+            {/* Large Verification Image */}
+            <div className="relative rounded-2xl overflow-hidden border-2 border-[#142B4A] bg-slate-100 max-h-72 flex items-center justify-center">
+              {inspectingWorkerPhoto.verificationPhoto || inspectingWorkerPhoto.profileImage ? (
+                <img
+                  src={inspectingWorkerPhoto.verificationPhoto || inspectingWorkerPhoto.profileImage}
+                  alt={inspectingWorkerPhoto.fullName}
+                  className="w-full h-72 object-cover object-top"
+                />
+              ) : (
+                <div className="py-16 text-center text-[#6B7280]">
+                  <Camera className="w-12 h-12 mx-auto text-slate-400 mb-2" />
+                  <p className="text-xs">No verification photo uploaded yet</p>
+                </div>
+              )}
+            </div>
+
+            {/* Worker Details Summary */}
+            <div className="bg-[#FFFDF5] p-3.5 rounded-xl border border-[#E8E2D3] space-y-1.5 text-xs">
+              <div className="flex justify-between">
+                <span className="text-[#6B7280]">Station:</span>
+                <span className="font-bold text-[#142B4A]">
+                  {inspectingWorkerPhoto.stationName} ({inspectingWorkerPhoto.stationCode})
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#6B7280]">Skill Category:</span>
+                <span className="font-bold text-[#142B4A]">
+                  {inspectingWorkerPhoto.skillCategory}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#6B7280]">Verification Status:</span>
+                <span className={`font-bold ${
+                  inspectingWorkerPhoto.verificationStatus === 'Verified' ? 'text-[#21865B]' : 'text-amber-700'
+                }`}>
+                  {inspectingWorkerPhoto.verificationStatus}
+                </span>
+              </div>
+              {inspectingWorkerPhoto.photoUpdatedAt && (
+                <div className="flex justify-between">
+                  <span className="text-[#6B7280]">Photo Updated:</span>
+                  <span className="font-mono text-[11px] text-[#253247]">
+                    {inspectingWorkerPhoto.photoUpdatedAt}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setInspectingWorkerPhoto(null)}
+                className="px-4 py-2 text-xs font-bold text-[#6B7280] hover:text-[#142B4A] rounded-xl hover:bg-slate-100 cursor-pointer"
+              >
+                Close
+              </button>
+
+              {inspectingWorkerPhoto.verificationStatus !== 'Verified' && (
+                <button
+                  type="button"
+                  disabled={verifyingWorkerId === inspectingWorkerPhoto.workerId}
+                  onClick={async () => {
+                    await handleWorkerVerificationAction(inspectingWorkerPhoto.workerId, 'Verified');
+                    setInspectingWorkerPhoto(null);
+                  }}
+                  className="px-5 py-2.5 bg-[#21865B] hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5 cursor-pointer"
+                >
+                  <UserCheck className="w-4 h-4" />
+                  <span>Approve & Verify Worker</span>
+                </button>
+              )}
+            </div>
+
+          </div>
         </div>
       )}
 

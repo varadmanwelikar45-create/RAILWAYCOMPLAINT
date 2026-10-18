@@ -160,7 +160,7 @@ export default function App() {
     if (savedWorker) {
       return 'worker-dashboard';
     }
-    return 'register';
+    return 'landing';
   });
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'danger' | 'info' } | null>(() => {
@@ -226,6 +226,24 @@ export default function App() {
           try {
             localStorage.setItem('railcare_workers', JSON.stringify(data.workers));
           } catch (e) {}
+
+          // Real-time synchronization of logged-in worker across devices
+          setCurrentWorker((prevWorker) => {
+            if (!prevWorker) return null;
+            const updated = data.workers.find(
+              (w: Worker) =>
+                (w.workerId && w.workerId === prevWorker.workerId) ||
+                w.id === prevWorker.id ||
+                w.email.toLowerCase() === prevWorker.email.toLowerCase()
+            );
+            if (updated) {
+              try {
+                localStorage.setItem('railcare_current_worker', JSON.stringify(updated));
+              } catch (e) {}
+              return updated;
+            }
+            return prevWorker;
+          });
         }
       }
     } catch (err) {}
@@ -245,6 +263,8 @@ export default function App() {
         }
       }
     } catch (err) {}
+  };
+
   // On mount: fetch initial data and start continuous 3-second polling for real-time cross-device updates
   useEffect(() => {
     fetchComplaintsFromServer();
@@ -254,6 +274,7 @@ export default function App() {
 
     const interval = setInterval(() => {
       fetchComplaintsFromServer();
+      fetchUsersFromServer();
       fetchWorkersFromServer();
       fetchWorkerRequestsFromServer();
     }, 3000);
@@ -639,19 +660,23 @@ export default function App() {
     });
   };
 
-  // Gig Worker authentication
-  const handleWorkerLogin = async (email: string, password: string) => {
+  // Gig Worker authentication with photo update
+  const handleWorkerLogin = async (email: string, password: string, photo?: string) => {
     try {
       const res = await fetch('/api/workers/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, photo, verificationPhoto: photo }),
       });
       const data = await res.json();
       if (res.ok && data.success && data.worker) {
         setCurrentWorker(data.worker);
+        try {
+          localStorage.setItem('railcare_current_worker', JSON.stringify(data.worker));
+        } catch (e) {}
+        fetchWorkersFromServer();
         setToast({
-          message: `Welcome, ${data.worker.fullName}! Connected to ${data.worker.stationCode} station hub.`,
+          message: `Welcome, ${data.worker.fullName}! Verification photo updated and connected to ${data.worker.stationCode} station hub.`,
           type: 'success',
         });
         setCurrentView('worker-dashboard');
@@ -662,10 +687,11 @@ export default function App() {
       // Offline fallback
       const found = workers.find((w) => w.email.toLowerCase() === email.toLowerCase());
       if (found) {
-        setCurrentWorker(found);
+        const updated = photo ? { ...found, verificationPhoto: photo, profileImage: photo } : found;
+        setCurrentWorker(updated);
         setToast({ message: `Welcome back, ${found.fullName}!`, type: 'success' });
         setCurrentView('worker-dashboard');
-        return { success: true, message: 'Login successful', worker: found };
+        return { success: true, message: 'Login successful', worker: updated };
       }
       return { success: false, message: 'Unable to connect to worker services.' };
     }
@@ -805,27 +831,49 @@ export default function App() {
     workerId: string,
     status: 'Pending Verification' | 'Verified' | 'Rejected' | 'Suspended'
   ) => {
+    const action = status === 'Verified' ? 'approve' : status === 'Rejected' ? 'reject' : status === 'Suspended' ? 'suspend' : 'pending';
     try {
-      const res = await fetch(`/api/workers/${workerId}/verify`, {
+      const res = await fetch(`/api/workers/${encodeURIComponent(workerId)}/verify`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ verificationStatus: status }),
+        body: JSON.stringify({ 
+          verificationStatus: status,
+          action,
+          workerId,
+          adminName: currentUser?.fullName || 'Senior Divisional Officer (Admin)'
+        }),
       });
       const data = await res.json();
       if (res.ok && data.success && data.worker) {
-        setWorkers((prev) => prev.map((w) => (w.workerId === workerId || w.id === data.worker.id ? data.worker : w)));
-        if (currentWorker && (currentWorker.workerId === workerId || currentWorker.id === data.worker.id)) {
-          setCurrentWorker(data.worker);
+        const savedWorker: Worker = data.worker;
+        setWorkers((prev) => {
+          const next = prev.map((w) => (w.workerId === workerId || w.id === savedWorker.id ? savedWorker : w));
+          try {
+            localStorage.setItem('railcare_workers', JSON.stringify(next));
+          } catch (e) {}
+          return next;
+        });
+        if (currentWorker && (currentWorker.workerId === workerId || currentWorker.id === savedWorker.id)) {
+          setCurrentWorker(savedWorker);
+          try {
+            localStorage.setItem('railcare_current_worker', JSON.stringify(savedWorker));
+          } catch (e) {}
         }
-        setToast({ message: `Worker ${workerId} verification status set to "${status}".`, type: 'success' });
+        setToast({ message: `Worker ${savedWorker.fullName} verification status set to "${status}".`, type: 'success' });
+        fetchWorkersFromServer();
         return;
       }
     } catch (e) {}
     // Fallback local update
-    setWorkers((prev) =>
-      prev.map((w) => (w.workerId === workerId || String(w.id) === String(workerId) ? { ...w, verificationStatus: status } : w))
-    );
+    setWorkers((prev) => {
+      const next = prev.map((w) => (w.workerId === workerId || String(w.id) === String(workerId) ? { ...w, verificationStatus: status } : w));
+      try {
+        localStorage.setItem('railcare_workers', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
     setToast({ message: `Worker verification status updated to "${status}".`, type: 'success' });
+    fetchWorkersFromServer();
   };
 
   return (
@@ -991,6 +1039,7 @@ export default function App() {
               currentUser={currentUser}
               complaints={complaints}
               queue={queue}
+              users={users}
               workers={workers}
               workerRequests={workerRequests}
               onUpdateWorkerVerification={handleUpdateWorkerVerification}
@@ -1048,6 +1097,7 @@ export default function App() {
               currentUser={currentUser}
               complaints={complaints}
               queue={queue}
+              users={users}
               workers={workers}
               workerRequests={workerRequests}
               onUpdateWorkerVerification={handleUpdateWorkerVerification}

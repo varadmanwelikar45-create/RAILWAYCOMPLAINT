@@ -13,11 +13,19 @@
       "email": "rahul@test.com",
       "mobile": "9876543210",
       "isAdmin": false
+    },
+    {
+      "id": 1792312573530,
+      "fullName": "varad manwelikar",
+      "email": "varadmanwelikar45@gmail.com",
+      "mobile": "1234567890",
+      "isAdmin": false
     }
   ],
   "passwords": {
     "admin@railcare.gov.in": "Admin@1234",
-    "rahul@test.com": "password123"
+    "rahul@test.com": "password123",
+    "varadmanwelikar45@gmail.com": "4518"
   },
   "complaints": [
     {
@@ -39,5 +47,426 @@
       "updatedAt": "2026-10-16 15:19:51"
     }
   ],
-  "counter": 1001
+  "counter": 1001,
+  "workers": [
+    {
+      "id": 1792312505760,
+      "workerId": "WRK-117",
+      "fullName": "ADITYA NAWADE",
+      "email": "adi@gmail.com",
+      "mobile": "8790654312",
+      "headline": "Coach Cleaning & Housekeeping Worker Specialist",
+      "bio": "Certified railway services provider stationed at Pune Junction.",
+      "skillCategory": "Coach Cleaning & Housekeeping Worker",
+      "skills": [
+        "Coach Cleaning & Housekeeping Worker"
+      ],
+      "stationCode": "PUNE",
+      "stationCodes": [
+        "PUNE"
+      ],
+      "stationName": "Pune Junction",
+      "city": "Pune",
+      "experienceYears": 3,
+      "qualifications": "Certified Railway Contractor / Technician",
+      "verificationDocuments": "Government Identity & Police Clearance Submitted",
+      "verificationStatus": "Verified",
+      "availability": "Available",
+      "rating": 5,
+      "totalJobsCompleted": 1,
+      "createdAt": "2026-10-18 08:35:05",
+      "updatedAt": "2026-10-18 08:51:38",
+      "verificationDate": "2026-10-18 08:48:11",
+      "verifiedBy": "Senior Divisional Officer (Admin)",
+      "activeJobId": null
+    },
+    {
+      "id": 101,
+      "workerId": "WRK-101",
+      "fullName": "Ramesh Kumar Verma",
+      "email": "ramesh.verma@worker.railcare.gov.in",
+      "mobile": "9871122334",
+      "headline": "Senior AC & Electrical Coach Specialist",
+      "bio": "Certified Indian Railways coach electrician with over 6 years of experience troubleshooting high-voltage LHB AC coaches, power cars, and berth charging circuits.",
+      "skillCategory": "Coach Electrician & AC Technician",
+      "skills": [
+        "Coach AC Cooling Troubleshooting",
+        "Berth Mobile/Laptop Charging Socket Repair",
+        "Cabin Reading Light & Fluorescent Fixture Repair",
+        "Switchboard & Fuse Box Inspection"
+      ],
+      "stationCode": "NDLS",
+      "stationCodes": [
+        "NDLS",
+        "CNB"
+      ],
+      "stationName": "New Delhi Junction",
+      "city": "New Delhi",
+      "experienceYears": 6,
+      "qualifications": "Govt ITI Electrical Diploma #ITI-ND-4412 · High-Voltage Certified",
+      "verificationDocuments": "Aadhar Verified · Railway Contractor Identity Card #IR-NDLS-E-09",
+      "verificationStatus": "Verified",
+      "verificationDate": "2026-09-15 08:30:00",
+      "verifiedBy": "Senior Divisional Officer (Admin)",
+      "availability": "Available",
+      "rating": 4.9,
+      "totalJobsCompleted": 142,
+      "createdAt": "2026-09-15 08:30:00"
+    },
+    {
+      "id": 102,
+      "workerId": "WRK-102",
+      "fullName": "Suresh Babu Patil",
+      "email": "suresh.patil@worker.railcare.gov.in",
+      "mobile": "9820033445",
+      "headline": "Certified Railway Sanitation & Plumbing Technician",
+      "bio": "Specialist in rapid bio-toilet maintenance, overhead water tank filling pipelines, and emergency washroom unclogging on mail/express trains.",
+      "skillCategory": "Railway Coach Plumber & Sanitation Worker",
+      "skills": [
+        "Overhead Tank Water Flow Restoration",
+        "Toilet Flush Valve Servicing & Pressure Repair",
+        "Washbasin Tap Leakage & Drainage Unclogging"
+      ],
+      "stationCode": "CSMT",
+      "stationCodes": [
+        "CSMT",
+        "PUNE"
+      ],
+      "stationName": "Chhatrapati Shivaji Maharaj Terminus",
+      "city": "Mumbai",
+      "experienceYears": 4,
+      "qualifications": "Maharashtra State Vocational Sanitation Certification #VTC-2022-P",
+      "verificationDocuments": "Govt Identity Card #CSMT-SAN-881 · Police Clearance Verified",
+      "verificationStatus": "Verified",
+      "verificationDate": "2026-09-20 10:15:00",
+      "verifiedBy": "Senior Divisional Officer (Admin)",
+      "availability": "Available",
+      "rating": 4.8,
+      "totalJobsCompleted": 98,
+      "createdAt": "2026-09-20 10:15:00"
+    },
+    {
+      "id": 103,
+      "workerId": "WRK-103",
+      "fullName": "Anand Mohan Rao",
+      "email": "anand.rao@worker.railcare.gov.in",
+      "mobile": "9448855667",
+      "headline": "Senior Carriage & Wagon Mechanical Technician",
+      "bio": "Ex-railway mechanical fitter specializing in coach berth mechanisms, sliding door tracks, and structural vestibule connections.",
+      "skillCategory": "Coach Mechanical Technician",
+      "skills": [
+        "Upper & Middle Berth Chain/Hinge Lock Repair",
+        "Coach Vestibule Door Slider & Latch Maintenance",
+        "Luggage Rack Fastening & Safety Check",
+        "Toilet Door Lock & Bolt Repair"
+      ],
+      "stationCode": "PUNE",
+      "stationCodes": [
+        "PUNE",
+        "CSMT"
+      ],
+      "stationName": "Pune Junction",
+      "city": "Pune",
+      "experienceYears": 7,
+      "qualifications": "Diploma in Mechanical Engineering (Automotive/Fitter) #DME-8841",
+      "verificationDocuments": "Central Railway Mechanical Division Badge #CR-M-412",
+      "verificationStatus": "Verified",
+      "verificationDate": "2026-08-10 11:00:00",
+      "verifiedBy": "Senior Divisional Officer (Admin)",
+      "availability": "Available",
+      "rating": 4.95,
+      "totalJobsCompleted": 210,
+      "createdAt": "2026-08-10 11:00:00"
+    },
+    {
+      "id": 104,
+      "workerId": "WRK-104",
+      "fullName": "Pooja Sunita Devi",
+      "email": "pooja.devi@worker.railcare.gov.in",
+      "mobile": "9830044556",
+      "headline": "On-Board Housekeeping (OBHS) Supervisor",
+      "bio": "Trained in deep coach disinfection, allergen-free berth wiping, and rapid bio-waste containment during station halts.",
+      "skillCategory": "Coach Cleaning & Housekeeping Worker",
+      "skills": [
+        "On-Board Coach Floor Deep Cleaning & Mopping",
+        "Berth Sanitization & Spill Neutralization",
+        "Coach Dustbin Emptying & Bio-Waste Bag Collection",
+        "Odour Neutralizer Spray Treatment"
+      ],
+      "stationCode": "HWH",
+      "stationCodes": [
+        "HWH"
+      ],
+      "stationName": "Howrah Junction",
+      "city": "Kolkata",
+      "experienceYears": 3,
+      "qualifications": "Eastern Railway Swachh Rail Sanitation Training Certified",
+      "verificationDocuments": "Contractor Workforce ID #ER-HWH-CLN-19 · Verified",
+      "verificationStatus": "Verified",
+      "verificationDate": "2026-10-01 09:40:00",
+      "verifiedBy": "Senior Divisional Officer (Admin)",
+      "availability": "Available",
+      "rating": 4.75,
+      "totalJobsCompleted": 85,
+      "createdAt": "2026-10-01 09:40:00"
+    },
+    {
+      "id": 105,
+      "workerId": "WRK-105",
+      "fullName": "Manjunath Gowda",
+      "email": "manju.gowda@worker.railcare.gov.in",
+      "mobile": "9980077889",
+      "headline": "Licensed Station Attendant & Passenger Escort",
+      "bio": "Authorised porter and passenger assistant at SBC platform. Expert in wheelchair assistance, bulky luggage boarding, and elderly passenger transfers.",
+      "skillCategory": "General Passenger & Luggage Assistance Worker",
+      "skills": [
+        "Platform-to-Coach Heavy Luggage Porter Service",
+        "Senior Citizen / Divyangjan Wheelchair Escort",
+        "Berth Exchange & Seat Guidance Assistance"
+      ],
+      "stationCode": "SBC",
+      "stationCodes": [
+        "SBC"
+      ],
+      "stationName": "KSR Bengaluru City Junction",
+      "city": "Bengaluru",
+      "experienceYears": 5,
+      "qualifications": "South Western Railway Licensed Passenger Assistant #SWR-SBC-42",
+      "verificationDocuments": "Official Brass Badge #SBC-42 · Police Background Checked",
+      "verificationStatus": "Verified",
+      "verificationDate": "2026-09-05 14:20:00",
+      "verifiedBy": "Senior Divisional Officer (Admin)",
+      "availability": "Available",
+      "rating": 4.9,
+      "totalJobsCompleted": 167,
+      "createdAt": "2026-09-05 14:20:00"
+    },
+    {
+      "id": 106,
+      "workerId": "WRK-106",
+      "fullName": "Dr. Vivek Saxena (First Aid)",
+      "email": "vivek.saxena@worker.railcare.gov.in",
+      "mobile": "9810088990",
+      "headline": "St. John Ambulance Certified Station Paramedic",
+      "bio": "Station emergency first-aid provider. Trained in motion sickness management, minor fracture splints, digital vitals monitoring, and emergency stretcher coordination.",
+      "skillCategory": "Emergency First-Aid & Medical Assistant",
+      "skills": [
+        "Motion Sickness, Nausea & ORS Hydration Kit",
+        "Minor Wound Dressing & Sterile Antiseptic Bandaging",
+        "Digital BP & Pulse Oximeter Quick Check",
+        "Certified First-Aid Attendant Support"
+      ],
+      "stationCode": "NDLS",
+      "stationCodes": [
+        "NDLS",
+        "CNB"
+      ],
+      "stationName": "New Delhi Junction",
+      "city": "New Delhi",
+      "experienceYears": 8,
+      "qualifications": "First Aid & CPR Certified (St. John Ambulance) #SJA-ND-2021",
+      "verificationDocuments": "Medical Council Reg #MC-7712-FA · Verified Govt ID",
+      "verificationStatus": "Verified",
+      "verificationDate": "2026-08-01 07:00:00",
+      "verifiedBy": "Senior Divisional Officer (Admin)",
+      "availability": "Available",
+      "rating": 5,
+      "totalJobsCompleted": 120,
+      "createdAt": "2026-08-01 07:00:00"
+    },
+    {
+      "id": 107,
+      "workerId": "WRK-107",
+      "fullName": "Mohd Irfan Khan",
+      "email": "irfan.khan@worker.railcare.gov.in",
+      "mobile": "9792211334",
+      "headline": "IRCTC Approved Pantry & Meal Coordinator",
+      "bio": "Station platform coordinator for hot sealed meals, special dietary packets, and baby food water assistance for long-distance trains.",
+      "skillCategory": "Approved Pantry & Food Delivery Assistant",
+      "skills": [
+        "Approved Sealed Meal Boarding at Station Platform",
+        "Hot Water & Tea/Coffee Service to Berth",
+        "FSSAI-Certified Packaged Refreshment Delivery"
+      ],
+      "stationCode": "CNB",
+      "stationCodes": [
+        "CNB",
+        "NDLS"
+      ],
+      "stationName": "Kanpur Central",
+      "city": "Kanpur",
+      "experienceYears": 4,
+      "qualifications": "FSSAI Food Handling Certificate #FSSAI-2023-CNB-99",
+      "verificationDocuments": "IRCTC Vendor Badge #IRCTC-CNB-04 · Health Certificate Verified",
+      "verificationStatus": "Verified",
+      "verificationDate": "2026-09-10 11:20:00",
+      "verifiedBy": "Senior Divisional Officer (Admin)",
+      "availability": "Available",
+      "rating": 4.85,
+      "totalJobsCompleted": 114,
+      "createdAt": "2026-09-10 11:20:00"
+    },
+    {
+      "id": 108,
+      "workerId": "WRK-108",
+      "fullName": "Deepak Subhash Chougule",
+      "email": "deepak.chougule@worker.railcare.gov.in",
+      "mobile": "9890123456",
+      "headline": "Junior Coach Electrician (Trainee)",
+      "bio": "Apprentice coach electrician registered for Pune Junction platform services.",
+      "skillCategory": "Coach Electrician & AC Technician",
+      "skills": [
+        "Berth Mobile/Laptop Charging Socket Repair",
+        "Cabin Reading Light & Fluorescent Fixture Repair"
+      ],
+      "stationCode": "PUNE",
+      "stationCodes": [
+        "PUNE"
+      ],
+      "stationName": "Pune Junction",
+      "city": "Pune",
+      "experienceYears": 1,
+      "qualifications": "ITI Electrician Trade Certificate submitted for verification",
+      "verificationDocuments": "Aadhar Card Scan uploaded · Awaiting Admin verification",
+      "verificationStatus": "Verified",
+      "availability": "Available",
+      "rating": 5,
+      "totalJobsCompleted": 0,
+      "createdAt": "2026-10-15 14:00:00",
+      "verificationDate": "2026-10-18 08:58:43",
+      "verifiedBy": "Senior Divisional Officer (Admin)",
+      "updatedAt": "2026-10-18 08:58:43"
+    }
+  ],
+  "workerPasswords": {
+    "ramesh.verma@worker.railcare.gov.in": "Worker@1234",
+    "suresh.patil@worker.railcare.gov.in": "Worker@1234",
+    "anand.rao@worker.railcare.gov.in": "Worker@1234",
+    "pooja.devi@worker.railcare.gov.in": "Worker@1234",
+    "manju.gowda@worker.railcare.gov.in": "Worker@1234",
+    "vivek.saxena@worker.railcare.gov.in": "Worker@1234",
+    "irfan.khan@worker.railcare.gov.in": "Worker@1234",
+    "deepak.chougule@worker.railcare.gov.in": "Worker@1234",
+    "adi@gmail.com": "0987654321"
+  },
+  "workerRequests": [
+    {
+      "id": 1792312663928,
+      "requestId": "BK-5001",
+      "passengerId": 1792312573530,
+      "passengerName": "varad manwelikar",
+      "passengerEmail": "varadmanwelikar45@gmail.com",
+      "passengerMobile": "1234567890",
+      "trainNumber": "56789",
+      "trainName": "bnhj",
+      "coachNumber": "f5 45",
+      "seatNumber": "89",
+      "stationCode": "PUNE",
+      "stationName": "Pune Junction",
+      "expectedArrivalTime": "6",
+      "serviceCategory": "Coach Cleaning & Housekeeping Worker",
+      "description": "pillow",
+      "status": "Completed",
+      "assignedWorkerId": 1792312505760,
+      "assignedWorkerName": "ADITYA NAWADE",
+      "assignedWorkerMobile": "8790654312",
+      "createdAt": "2026-10-18 08:37:43",
+      "updatedAt": "2026-10-18 08:51:38",
+      "completedAt": "2026-10-18 08:51:38"
+    }
+  ],
+  "workerCounter": 117,
+  "requestCounter": 5001,
+  "stations": [
+    {
+      "code": "NDLS",
+      "name": "New Delhi Junction",
+      "city": "New Delhi",
+      "state": "Delhi"
+    },
+    {
+      "code": "CSMT",
+      "name": "Chhatrapati Shivaji Maharaj Terminus",
+      "city": "Mumbai",
+      "state": "Maharashtra"
+    },
+    {
+      "code": "HWH",
+      "name": "Howrah Junction",
+      "city": "Kolkata",
+      "state": "West Bengal"
+    },
+    {
+      "code": "MAS",
+      "name": "Puratchi Thalaivar Dr. MGR Central (Chennai)",
+      "city": "Chennai",
+      "state": "Tamil Nadu"
+    },
+    {
+      "code": "SBC",
+      "name": "KSR Bengaluru City Junction",
+      "city": "Bengaluru",
+      "state": "Karnataka"
+    },
+    {
+      "code": "PUNE",
+      "name": "Pune Junction",
+      "city": "Pune",
+      "state": "Maharashtra"
+    },
+    {
+      "code": "ADI",
+      "name": "Ahmedabad Junction",
+      "city": "Ahmedabad",
+      "state": "Gujarat"
+    },
+    {
+      "code": "BSB",
+      "name": "Varanasi Junction",
+      "city": "Varanasi",
+      "state": "Uttar Pradesh"
+    },
+    {
+      "code": "CNB",
+      "name": "Kanpur Central",
+      "city": "Kanpur",
+      "state": "Uttar Pradesh"
+    },
+    {
+      "code": "GHY",
+      "name": "Guwahati Junction",
+      "city": "Guwahati",
+      "state": "Assam"
+    },
+    {
+      "code": "PNBE",
+      "name": "Patna Junction",
+      "city": "Patna",
+      "state": "Bihar"
+    },
+    {
+      "code": "BPL",
+      "name": "Bhopal Junction",
+      "city": "Bhopal",
+      "state": "Madhya Pradesh"
+    },
+    {
+      "code": "NGP",
+      "name": "Nagpur Junction",
+      "city": "Nagpur",
+      "state": "Maharashtra"
+    },
+    {
+      "code": "HYB",
+      "name": "Hyderabad Deccan / Secunderabad",
+      "city": "Hyderabad",
+      "state": "Telangana"
+    },
+    {
+      "code": "JP",
+      "name": "Jaipur Junction",
+      "city": "Jaipur",
+      "state": "Rajasthan"
+    }
+  ]
 }

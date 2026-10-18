@@ -79,6 +79,9 @@ export interface Worker {
   verifiedBy?: string;
   availability: WorkerAvailabilityStatus;
   activeJobId?: string | null;
+  profileImage?: string;
+  verificationPhoto?: string;
+  photoUpdatedAt?: string;
   rating?: number;
   totalJobsCompleted: number;
   createdAt: string;
