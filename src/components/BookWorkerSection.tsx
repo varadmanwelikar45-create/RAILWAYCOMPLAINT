@@ -30,7 +30,7 @@ import {
 
 interface BookWorkerSectionProps {
   currentUser: User;
-  userComplaints: Complaint[];
+  userComplaints?: any[];
   allWorkers: Worker[];
   onSubmitRequest: (requestData: {
     passengerId: number;
@@ -56,13 +56,11 @@ interface BookWorkerSectionProps {
 
 export const BookWorkerSection: React.FC<BookWorkerSectionProps> = ({
   currentUser,
-  userComplaints,
   allWorkers,
   onSubmitRequest,
   onNavigate,
   onSuccessRedirect,
 }) => {
-  const [selectedComplaintId, setSelectedComplaintId] = useState<string>('');
   const [trainNumber, setTrainNumber] = useState('');
   const [trainName, setTrainName] = useState('');
   const [stationCode, setStationCode] = useState<string>(RAILWAY_STATIONS[0].code);
@@ -80,30 +78,6 @@ export const BookWorkerSection: React.FC<BookWorkerSectionProps> = ({
 
   const selectedStation = RAILWAY_STATIONS.find((s) => s.code === stationCode) || RAILWAY_STATIONS[0];
   const availableSkills = SKILLS_BY_CATEGORY[serviceCategory] || [];
-
-  // Auto-fill from selected complaint if passenger chooses to link one
-  const handleLinkComplaint = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const cid = e.target.value;
-    setSelectedComplaintId(cid);
-
-    if (cid) {
-      const match = userComplaints.find((c) => c.complaintId === cid);
-      if (match) {
-        if (match.trainNumber && match.trainNumber !== 'N/A') {
-          setTrainNumber(match.trainNumber);
-        }
-        if (match.description && !description) {
-          setDescription(`Assistance requested for complaint #${match.complaintId} (${match.category}): ${match.description}`);
-        }
-        // Automatic Complaint-to-Service Mapping
-        const mapping = COMPLAINT_TO_SERVICE_MAP[match.category];
-        if (mapping) {
-          setServiceCategory(mapping.serviceCategory);
-          setSelectedSkill(mapping.defaultSkill);
-        }
-      }
-    }
-  };
 
   // Real-time station & skill matching: Show ONLY verified workers serving this station and category
   const eligibleStationWorkers = useMemo(() => {
@@ -140,7 +114,6 @@ export const BookWorkerSection: React.FC<BookWorkerSectionProps> = ({
         passengerName: currentUser.fullName,
         passengerEmail: currentUser.email,
         passengerMobile: currentUser.mobile,
-        relatedComplaintId: selectedComplaintId || undefined,
         trainNumber: trainNumber.trim(),
         trainName: trainName.trim() || undefined,
         coachNumber: coachNumber.trim() || undefined,
@@ -253,38 +226,11 @@ export const BookWorkerSection: React.FC<BookWorkerSectionProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-8">
           
-          {/* STEP 1: Link with Complaint (Optional) */}
-          {userComplaints.length > 0 && (
-            <div className="bg-[#FFFDF5] p-5 rounded-2xl border border-[#E8E2D3] space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-bold text-[#142B4A] uppercase tracking-wider">
-                  Step 1: Link to an Existing Grievance (Optional)
-                </label>
-                <span className="text-[10px] text-[#6B7280]">Auto-maps category & train</span>
-              </div>
-              <p className="text-[11px] text-[#6B7280]">
-                If this request is related to an issue you previously lodged, link it below to automatically configure the service category and journey details.
-              </p>
-              <select
-                value={selectedComplaintId}
-                onChange={handleLinkComplaint}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-[#E8E2D3] bg-white text-xs focus:outline-none focus:ring-2 focus:ring-[#142B4A]"
-              >
-                <option value="">-- None (Standalone On-Demand Service Request) --</option>
-                {userComplaints.map((c) => (
-                  <option key={c.complaintId} value={c.complaintId}>
-                    #{c.complaintId} · {c.category} · {c.subject} (Tr: {c.trainNumber})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* STEP 2: Service Category & Specific Skill */}
+          {/* STEP 1: Service Category & Specific Skill */}
           <div className="space-y-4">
             <h3 className="text-xs font-bold text-[#142B4A] uppercase tracking-wider flex items-center gap-1.5 border-b border-[#E8E2D3] pb-2">
               <Briefcase className="w-4 h-4 text-[#E9B949]" />
-              <span>Step 2: Service Category & Required Skill</span>
+              <span>Step 1: Service Category & Required Skill</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -330,11 +276,11 @@ export const BookWorkerSection: React.FC<BookWorkerSectionProps> = ({
             </div>
           </div>
 
-          {/* STEP 3: Train Journey & Meeting Station */}
+          {/* STEP 2: Train Journey & Meeting Station */}
           <div className="space-y-4">
             <h3 className="text-xs font-bold text-[#142B4A] uppercase tracking-wider flex items-center gap-1.5 border-b border-[#E8E2D3] pb-2">
               <Train className="w-4 h-4 text-[#E9B949]" />
-              <span>Step 3: Train Journey & Meeting Station</span>
+              <span>Step 2: Train Journey & Meeting Station</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -426,12 +372,12 @@ export const BookWorkerSection: React.FC<BookWorkerSectionProps> = ({
             </div>
           </div>
 
-          {/* STEP 4: Select Matching Worker (Direct Selection) */}
+          {/* STEP 3: Select Matching Worker (Direct Selection) */}
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-[#E8E2D3] pb-2">
               <h3 className="text-xs font-bold text-[#142B4A] uppercase tracking-wider flex items-center gap-1.5">
                 <Users className="w-4 h-4 text-[#E9B949]" />
-                <span>Step 4: Discover & Select Verified Specialist</span>
+                <span>Step 3: Discover & Select Verified Specialist</span>
               </h3>
               <span className="text-[11px] text-[#6B7280]">
                 Showing verified workers at {selectedStation.name}
@@ -610,11 +556,11 @@ export const BookWorkerSection: React.FC<BookWorkerSectionProps> = ({
             )}
           </div>
 
-          {/* STEP 5: Problem Description */}
+          {/* STEP 4: Problem Description */}
           <div className="space-y-4">
             <h3 className="text-xs font-bold text-[#142B4A] uppercase tracking-wider flex items-center gap-1.5 border-b border-[#E8E2D3] pb-2">
               <FileText className="w-4 h-4 text-[#E9B949]" />
-              <span>Step 5: Problem Description & Instructions</span>
+              <span>Step 4: Problem Description & Instructions</span>
             </h3>
 
             <div>
@@ -632,10 +578,10 @@ export const BookWorkerSection: React.FC<BookWorkerSectionProps> = ({
             </div>
           </div>
 
-          {/* STEP 6: Review Booking Details & Confirm */}
+          {/* STEP 5: Review Booking Details & Confirm */}
           <div className="bg-[#FFFDF5] p-5 rounded-2xl border border-[#E8E2D3] space-y-3">
             <h3 className="text-xs font-bold text-[#142B4A] uppercase tracking-wider">
-              Step 6: Review Booking Summary
+              Step 5: Review Booking Summary
             </h3>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">

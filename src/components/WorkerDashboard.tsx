@@ -40,7 +40,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
   onWorkerLogout,
   onNavigate,
 }) => {
-  const [activeTab, setActiveTab] = useState<'active-job' | 'incoming-requests' | 'history'>('active-job');
+  const [activeTab, setActiveTab] = useState<'active-job' | 'incoming-requests' | 'feedback' | 'history'>('active-job');
   const [actionLoading, setActionLoading] = useState(false);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
   const [completionNotes, setCompletionNotes] = useState('');
@@ -66,6 +66,41 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
   const completedJobs = requests.filter(
     (r) => r.assignedWorkerId === currentWorker.id && r.status === 'Completed'
   );
+
+  // 4. Passenger Feedbacks for this worker
+  const requestFeedbacks = (requests || [])
+    .filter((r) => r.assignedWorkerId === currentWorker.id && r.feedback)
+    .map((r) => ({
+      id: r.feedback!.id || Date.now(),
+      requestId: r.requestId,
+      trainNumber: r.trainNumber,
+      coachNumber: r.coachNumber,
+      passengerName: r.feedback!.passengerName || r.passengerName,
+      rating: r.feedback!.rating,
+      tags: r.feedback!.tags || [],
+      comment: r.feedback!.comment,
+      createdAt: r.feedback!.createdAt,
+      stationName: r.stationName,
+    }));
+
+  const allReviews = [
+    ...requestFeedbacks,
+    ...((currentWorker.reviews || [])
+      .filter((rev) => !requestFeedbacks.some((rf) => rf.requestId === rev.requestId))
+      .map((rev) => ({
+        ...rev,
+        trainNumber: 'Assigned Duty',
+        coachNumber: 'Coach',
+        stationName: currentWorker.stationName,
+      }))),
+  ];
+
+  const averageRating =
+    allReviews.length > 0
+      ? Math.round(
+          (allReviews.reduce((sum, r) => sum + (Number(r.rating) || 5), 0) / allReviews.length) * 10
+        ) / 10
+      : currentWorker.rating || 5.0;
 
   const handleAvailabilityChange = async (newAvail: WorkerAvailabilityStatus) => {
     setActionLoading(true);
@@ -151,9 +186,9 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
               {currentWorker.stationName} ({currentWorker.stationCode})
             </span>
             <span>·</span>
-            <span className="inline-flex items-center gap-1">
+            <span className="inline-flex items-center gap-1 font-semibold text-[#142B4A]">
               <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-              {currentWorker.rating || 5.0} Rating ({currentWorker.totalJobsCompleted} jobs)
+              <span>{averageRating} ★ ({allReviews.length} passenger reviews)</span>
             </span>
           </div>
         </div>
@@ -249,11 +284,14 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
         </div>
 
         <div className="bg-white rounded-2xl border border-[#E8E2D3] p-5 shadow-xs">
-          <div className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">Station Hub</div>
-          <div className="text-xl sm:text-2xl font-extrabold text-[#142B4A] mt-1 truncate">
-            {currentWorker.stationCode}
+          <div className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">Passenger Rating</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-amber-600 mt-1 flex items-center gap-1">
+            <span>{averageRating}</span>
+            <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
           </div>
-          <p className="text-[11px] text-[#6B7280] mt-1 truncate">{currentWorker.stationName}</p>
+          <p className="text-[11px] text-[#6B7280] mt-1 truncate">
+            {allReviews.length} passenger reviews
+          </p>
         </div>
       </div>
 
@@ -281,6 +319,18 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
         >
           <Sparkles className="w-4 h-4 text-[#E9B949]" />
           <span>Incoming Station Requests ({incomingRequests.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('feedback')}
+          className={`pb-3 px-4 text-xs font-bold transition border-b-2 cursor-pointer flex items-center gap-2 ${
+            activeTab === 'feedback'
+              ? 'border-[#142B4A] text-[#142B4A]'
+              : 'border-transparent text-[#6B7280] hover:text-[#142B4A]'
+          }`}
+        >
+          <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+          <span>Passenger Reviews ({allReviews.length})</span>
         </button>
 
         <button
@@ -526,7 +576,120 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
         </div>
       )}
 
-      {/* TAB 3: SERVICE HISTORY */}
+      {/* TAB 3: PASSENGER FEEDBACK & REVIEWS */}
+      {activeTab === 'feedback' && (
+        <div className="bg-white rounded-3xl border border-[#E8E2D3] p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-[#E8E2D3]">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="px-2 py-0.5 bg-[#FFF5DC] text-[#142B4A] text-[10px] font-extrabold uppercase rounded border border-[#E9B949]/50">
+                  REAL-TIME PASSENGER RATINGS
+                </span>
+                <span className="text-xs text-[#6B7280]">Station On-Duty Verification</span>
+              </div>
+              <h3 className="text-xl font-extrabold text-[#142B4A]">
+                Passenger Reviews & Feedback
+              </h3>
+              <p className="text-xs text-[#6B7280] mt-0.5">
+                Ratings and reviews submitted directly by passengers after coach technician & sahayak assistance.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 bg-[#FFFDF5] border border-[#E9B949]/50 px-4 py-2.5 rounded-2xl shadow-2xs">
+              <div className="text-right">
+                <div className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">
+                  Overall Score
+                </div>
+                <div className="text-xs text-[#21865B] font-semibold">
+                  100% Verified
+                </div>
+              </div>
+              <div className="flex items-center gap-1 text-2xl font-extrabold text-amber-600 font-mono">
+                <span>{averageRating}</span>
+                <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+              </div>
+            </div>
+          </div>
+
+          {allReviews.length === 0 ? (
+            <div className="py-16 text-center space-y-3">
+              <div className="w-14 h-14 rounded-2xl bg-[#FFF5DC] text-[#142B4A] flex items-center justify-center mx-auto border border-[#E9B949]/30">
+                <Star className="w-7 h-7 text-[#E9B949]" />
+              </div>
+              <h4 className="font-bold text-base text-[#142B4A]">No Passenger Reviews Yet</h4>
+              <p className="text-xs text-[#6B7280] max-w-md mx-auto">
+                When you complete assistance for passengers and they submit their feedback on their mobile devices, their ratings, tags, and reviews will show up here automatically.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {allReviews.map((rev, idx) => (
+                <div
+                  key={rev.id || idx}
+                  className="rounded-2xl border border-[#E8E2D3] bg-[#FFFDF5] p-5 space-y-3 shadow-2xs hover:border-[#142B4A]/30 transition-all"
+                >
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-[#142B4A] text-[#E9B949] flex items-center justify-center font-bold text-xs">
+                        {rev.passengerName.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <span className="font-extrabold text-sm text-[#142B4A]">
+                          {rev.passengerName}
+                        </span>
+                        <div className="text-[11px] text-[#6B7280]">
+                          {rev.trainNumber} · {rev.coachNumber} · {rev.stationName}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`w-4 h-4 ${
+                            star <= rev.rating
+                              ? 'text-amber-500 fill-amber-500'
+                              : 'text-gray-300'
+                          }`}
+                        />
+                      ))}
+                      <span className="text-xs font-extrabold text-[#142B4A] ml-1">
+                        {rev.rating}/5
+                      </span>
+                    </div>
+                  </div>
+
+                  {rev.tags && rev.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {rev.tags.map((tag: string) => (
+                        <span
+                          key={tag}
+                          className="text-[10px] font-bold bg-white text-[#142B4A] border border-[#E8E2D3] px-2.5 py-0.5 rounded-md"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {rev.comment && (
+                    <p className="text-xs text-[#253247] italic bg-white p-3 rounded-xl border border-[#E8E2D3] leading-relaxed">
+                      "{rev.comment}"
+                    </p>
+                  )}
+
+                  <div className="text-[10px] text-[#6B7280]">
+                    Recorded on {rev.createdAt}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 4: SERVICE HISTORY */}
       {activeTab === 'history' && (
         <div className="bg-white rounded-3xl border border-[#E8E2D3] p-6 sm:p-8 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
@@ -546,7 +709,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
             <div className="divide-y divide-[#E8E2D3]">
               {completedJobs.map((job) => (
                 <div key={job.id} className="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div className="space-y-1 text-xs">
+                  <div className="space-y-1.5 text-xs">
                     <div className="flex items-center gap-2">
                       <span className="font-mono font-bold text-[#142B4A]">{job.requestId}</span>
                       <span className="font-semibold text-[#253247]">Train {job.trainNumber}</span>
@@ -555,12 +718,21 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
                       </span>
                     </div>
                     <p className="text-[#6B7280]">
-                      Passenger: {job.passengerName} · {job.stationName}
+                      Passenger: {job.passengerName} · {job.stationName} · Coach: {job.coachNumber || 'N/A'}, Seat: {job.seatNumber || 'N/A'}
                     </p>
                     {job.completionNotes && (
                       <p className="text-[11px] text-[#253247] italic">
                         Resolution: "{job.completionNotes}"
                       </p>
+                    )}
+                    {job.feedback && (
+                      <div className="inline-flex items-center gap-1.5 bg-[#FFF5DC] border border-[#E9B949]/50 px-2.5 py-1 rounded-lg text-[11px] text-[#142B4A]">
+                        <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                        <span className="font-bold">{job.feedback.rating}/5</span>
+                        {job.feedback.comment && (
+                          <span className="italic truncate max-w-xs">"{job.feedback.comment}"</span>
+                        )}
+                      </div>
                     )}
                   </div>
 

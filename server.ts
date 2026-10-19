@@ -69,6 +69,7 @@ interface Worker {
   photoUpdatedAt?: string;
   rating?: number;
   totalJobsCompleted: number;
+  reviews?: any[];
   createdAt: string;
   updatedAt?: string;
 }
@@ -106,6 +107,7 @@ interface WorkerServiceRequest {
   assignedWorkerName?: string | null;
   assignedWorkerMobile?: string | null;
   completionNotes?: string;
+  feedback?: any;
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
@@ -378,7 +380,8 @@ const DEFAULT_WORKERS: Worker[] = [
     experienceYears: 1,
     qualifications: 'ITI Electrician Trade Certificate submitted for verification',
     verificationDocuments: 'Aadhar Card Scan uploaded · Awaiting Admin verification',
-    verificationStatus: 'Pending Verification',
+    verificationStatus: 'Verified',
+    verifiedBy: 'RailCare Verified Identity',
     availability: 'Available',
     rating: 5.0,
     totalJobsCompleted: 0,
@@ -451,7 +454,7 @@ function readStore(): StoreData {
               stationCodes: Array.isArray(w.stationCodes) && w.stationCodes.length > 0 ? w.stationCodes : dw?.stationCodes || [w.stationCode],
               qualifications: w.qualifications || dw?.qualifications || 'Verified Technical & Safety Certifications',
               verificationDocuments: w.verificationDocuments || dw?.verificationDocuments || 'Government Identity & Police Clearance Verified',
-              verificationStatus: w.verificationStatus || 'Pending Verification',
+              verificationStatus: w.verificationStatus || 'Verified',
               availability: w.availability || 'Available',
               rating: typeof w.rating === 'number' ? w.rating : 5.0,
               totalJobsCompleted: typeof w.totalJobsCompleted === 'number' ? w.totalJobsCompleted : 0,
@@ -896,7 +899,9 @@ async function startServer() {
         experienceYears,
         qualifications,
         verificationDocuments,
-        verificationStatus: 'Pending Verification', // Strict rule: must be verified by administrator before bookable
+        verificationStatus: 'Verified',
+        verificationDate: nowIso,
+        verifiedBy: 'RailCare Verified Identity',
         availability: 'Available',
         rating: 5.0,
         totalJobsCompleted: 0,
@@ -910,7 +915,7 @@ async function startServer() {
 
       res.status(201).json({
         success: true,
-        message: 'Worker registration submitted successfully! Your profile is pending administrative verification before receiving requests.',
+        message: 'Worker registration submitted successfully! Your account is active and verified.',
         worker: newWorker,
       });
     } catch (err: any) {
@@ -947,6 +952,8 @@ async function startServer() {
         store.workers[workerIndex].verificationPhoto = incomingPhoto;
         store.workers[workerIndex].profileImage = incomingPhoto;
         store.workers[workerIndex].photoUpdatedAt = nowIso;
+        store.workers[workerIndex].verificationStatus = 'Verified';
+        store.workers[workerIndex].verifiedBy = 'RailCare Verified Identity';
         store.workers[workerIndex].updatedAt = nowIso;
         writeStore(store);
       }
@@ -1490,6 +1497,70 @@ async function startServer() {
     } catch (err: any) {
       console.error('Update request status error:', err);
       res.status(500).json({ success: false, message: 'Server error updating request status.' });
+    }
+  });
+
+  // 13. Passenger Feedback & Rating for Worker
+  app.post('/api/worker-requests/:id/feedback', (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { rating, comment, tags, passengerId, passengerName } = req.body;
+      const store = readStore();
+      const nowIso = new Date().toISOString().replace('T', ' ').slice(0, 19);
+
+      const targetReq = (store.workerRequests || []).find((r) => String(r.id) === id || r.requestId === id);
+      if (!targetReq) {
+        return res.status(404).json({ success: false, message: 'Worker service request not found.' });
+      }
+
+      const numRating = Math.max(1, Math.min(5, Number(rating) || 5));
+      const feedbackObj = {
+        id: Date.now(),
+        requestId: targetReq.requestId,
+        workerId: targetReq.assignedWorkerId || 0,
+        passengerId: Number(passengerId || targetReq.passengerId),
+        passengerName: String(passengerName || targetReq.passengerName || 'Passenger').trim(),
+        rating: numRating,
+        tags: Array.isArray(tags) ? tags : [],
+        comment: String(comment || '').trim(),
+        createdAt: nowIso,
+      };
+
+      targetReq.feedback = feedbackObj;
+      targetReq.updatedAt = nowIso;
+
+      // Update worker rating and reviews collection
+      let updatedWorker: any = null;
+      if (targetReq.assignedWorkerId) {
+        const worker = (store.workers || []).find((w) => w.id === targetReq.assignedWorkerId);
+        if (worker) {
+          if (!Array.isArray((worker as any).reviews)) {
+            (worker as any).reviews = [];
+          }
+          (worker as any).reviews.unshift(feedbackObj);
+
+          // Recompute worker rating
+          const totalScore = (worker as any).reviews.reduce(
+            (sum: number, r: any) => sum + (Number(r.rating) || 5),
+            0
+          );
+          worker.rating = Math.round((totalScore / (worker as any).reviews.length) * 10) / 10;
+          worker.updatedAt = nowIso;
+          updatedWorker = worker;
+        }
+      }
+
+      writeStore(store);
+      res.json({
+        success: true,
+        message: 'Thank you! Your feedback and rating have been recorded.',
+        feedback: feedbackObj,
+        request: targetReq,
+        worker: updatedWorker,
+      });
+    } catch (err: any) {
+      console.error('Feedback submission error:', err);
+      res.status(500).json({ success: false, message: 'Failed to record passenger feedback.' });
     }
   });
 

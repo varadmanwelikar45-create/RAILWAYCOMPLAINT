@@ -84,6 +84,7 @@ export interface Worker {
   photoUpdatedAt?: string;
   rating?: number;
   totalJobsCompleted: number;
+  reviews?: WorkerFeedback[];
   createdAt: string;
   updatedAt?: string;
 }
@@ -99,6 +100,18 @@ export type WorkerRequestStatus =
   | 'Completed'
   | 'Cancelled'
   | 'Declined';
+
+export interface WorkerFeedback {
+  id: number;
+  requestId: string;
+  workerId: number;
+  passengerId: number;
+  passengerName: string;
+  rating: number; // 1 to 5
+  tags?: string[];
+  comment: string;
+  createdAt: string;
+}
 
 export interface WorkerServiceRequest {
   id: number;
@@ -123,6 +136,7 @@ export interface WorkerServiceRequest {
   assignedWorkerName?: string | null;
   assignedWorkerMobile?: string | null;
   completionNotes?: string;
+  feedback?: WorkerFeedback;
   createdAt: string;
   updatedAt: string;
   completedAt?: string;

@@ -463,14 +463,22 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
             </div>
           </div>
 
-          {/* Registration link */}
-          <div className="mt-6 pt-4 border-t border-[#E8E2D3] text-center text-xs text-[#6B7280]">
-            Don't have a railway gig worker account?{' '}
+          {/* Registration & Navigation links */}
+          <div className="mt-6 pt-4 border-t border-[#E8E2D3] flex flex-col sm:flex-row items-center justify-between text-xs text-[#6B7280] gap-2">
+            <span>
+              Don't have a worker account?{' '}
+              <button
+                onClick={() => onNavigate('worker-register')}
+                className="font-bold text-[#142B4A] underline hover:text-[#243F63] cursor-pointer"
+              >
+                Register as New Worker
+              </button>
+            </span>
             <button
-              onClick={() => onNavigate('worker-register')}
-              className="font-bold text-[#142B4A] underline hover:text-[#243F63] cursor-pointer"
+              onClick={() => onNavigate('landing')}
+              className="font-semibold text-[#6B7280] hover:text-[#142B4A] cursor-pointer"
             >
-              Register as New Worker
+              &larr; Back to Role Selection
             </button>
           </div>
         </div>

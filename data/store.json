@@ -77,7 +77,7 @@
       "createdAt": "2026-10-18 08:35:05",
       "updatedAt": "2026-10-18 08:51:38",
       "verificationDate": "2026-10-18 08:48:11",
-      "verifiedBy": "Senior Divisional Officer (Admin)",
+      "verifiedBy": "RailCare Verified Identity",
       "activeJobId": null
     },
     {
@@ -107,7 +107,7 @@
       "verificationDocuments": "Aadhar Verified · Railway Contractor Identity Card #IR-NDLS-E-09",
       "verificationStatus": "Verified",
       "verificationDate": "2026-09-15 08:30:00",
-      "verifiedBy": "Senior Divisional Officer (Admin)",
+      "verifiedBy": "RailCare Verified Identity",
       "availability": "Available",
       "rating": 4.9,
       "totalJobsCompleted": 142,
@@ -139,7 +139,7 @@
       "verificationDocuments": "Govt Identity Card #CSMT-SAN-881 · Police Clearance Verified",
       "verificationStatus": "Verified",
       "verificationDate": "2026-09-20 10:15:00",
-      "verifiedBy": "Senior Divisional Officer (Admin)",
+      "verifiedBy": "RailCare Verified Identity",
       "availability": "Available",
       "rating": 4.8,
       "totalJobsCompleted": 98,
@@ -172,7 +172,7 @@
       "verificationDocuments": "Central Railway Mechanical Division Badge #CR-M-412",
       "verificationStatus": "Verified",
       "verificationDate": "2026-08-10 11:00:00",
-      "verifiedBy": "Senior Divisional Officer (Admin)",
+      "verifiedBy": "RailCare Verified Identity",
       "availability": "Available",
       "rating": 4.95,
       "totalJobsCompleted": 210,
@@ -204,7 +204,7 @@
       "verificationDocuments": "Contractor Workforce ID #ER-HWH-CLN-19 · Verified",
       "verificationStatus": "Verified",
       "verificationDate": "2026-10-01 09:40:00",
-      "verifiedBy": "Senior Divisional Officer (Admin)",
+      "verifiedBy": "RailCare Verified Identity",
       "availability": "Available",
       "rating": 4.75,
       "totalJobsCompleted": 85,
@@ -235,7 +235,7 @@
       "verificationDocuments": "Official Brass Badge #SBC-42 · Police Background Checked",
       "verificationStatus": "Verified",
       "verificationDate": "2026-09-05 14:20:00",
-      "verifiedBy": "Senior Divisional Officer (Admin)",
+      "verifiedBy": "RailCare Verified Identity",
       "availability": "Available",
       "rating": 4.9,
       "totalJobsCompleted": 167,
@@ -268,7 +268,7 @@
       "verificationDocuments": "Medical Council Reg #MC-7712-FA · Verified Govt ID",
       "verificationStatus": "Verified",
       "verificationDate": "2026-08-01 07:00:00",
-      "verifiedBy": "Senior Divisional Officer (Admin)",
+      "verifiedBy": "RailCare Verified Identity",
       "availability": "Available",
       "rating": 5,
       "totalJobsCompleted": 120,
@@ -300,7 +300,7 @@
       "verificationDocuments": "IRCTC Vendor Badge #IRCTC-CNB-04 · Health Certificate Verified",
       "verificationStatus": "Verified",
       "verificationDate": "2026-09-10 11:20:00",
-      "verifiedBy": "Senior Divisional Officer (Admin)",
+      "verifiedBy": "RailCare Verified Identity",
       "availability": "Available",
       "rating": 4.85,
       "totalJobsCompleted": 114,
@@ -329,13 +329,30 @@
       "qualifications": "ITI Electrician Trade Certificate submitted for verification",
       "verificationDocuments": "Aadhar Card Scan uploaded · Awaiting Admin verification",
       "verificationStatus": "Verified",
-      "availability": "Available",
+      "availability": "Busy",
       "rating": 5,
       "totalJobsCompleted": 0,
       "createdAt": "2026-10-15 14:00:00",
       "verificationDate": "2026-10-18 08:58:43",
-      "verifiedBy": "Senior Divisional Officer (Admin)",
-      "updatedAt": "2026-10-18 08:58:43"
+      "verifiedBy": "RailCare Verified Identity",
+      "updatedAt": "2026-10-19 13:32:57",
+      "activeJobId": "BK-5002",
+      "reviews": [
+        {
+          "id": 1792416777913,
+          "requestId": "BK-5002",
+          "workerId": 108,
+          "passengerId": 101,
+          "passengerName": "Rahul Sharma",
+          "rating": 5,
+          "tags": [
+            "⚡ Rapid Arrival",
+            "🤝 Courteous & Humble"
+          ],
+          "comment": "Deepak arrived right at platform 2. Extremely helpful!",
+          "createdAt": "2026-10-19 13:32:57"
+        }
+      ]
     }
   ],
   "workerPasswords": {
@@ -350,6 +367,42 @@
     "adi@gmail.com": "0987654321"
   },
   "workerRequests": [
+    {
+      "id": 1792416752721,
+      "requestId": "BK-5002",
+      "passengerId": 101,
+      "passengerName": "Rahul Sharma",
+      "passengerEmail": "rahul.sharma@gmail.com",
+      "passengerMobile": "9876543210",
+      "trainNumber": "12158",
+      "trainName": "Hutatma Express",
+      "coachNumber": "B3",
+      "seatNumber": "34",
+      "stationCode": "PUNE",
+      "stationName": "Pune Junction",
+      "serviceCategory": "Porter / Sahayak (Luggage & Elderly)",
+      "description": "Need porter assistance with 2 heavy suitcases from coach B3 to station exit.",
+      "status": "Worker Assigned",
+      "assignedWorkerId": 108,
+      "assignedWorkerName": "Deepak Subhash Chougule",
+      "assignedWorkerMobile": "9890123456",
+      "createdAt": "2026-10-19 13:32:32",
+      "updatedAt": "2026-10-19 13:32:57",
+      "feedback": {
+        "id": 1792416777913,
+        "requestId": "BK-5002",
+        "workerId": 108,
+        "passengerId": 101,
+        "passengerName": "Rahul Sharma",
+        "rating": 5,
+        "tags": [
+          "⚡ Rapid Arrival",
+          "🤝 Courteous & Humble"
+        ],
+        "comment": "Deepak arrived right at platform 2. Extremely helpful!",
+        "createdAt": "2026-10-19 13:32:57"
+      }
+    },
     {
       "id": 1792312663928,
       "requestId": "BK-5001",
@@ -376,7 +429,7 @@
     }
   ],
   "workerCounter": 117,
-  "requestCounter": 5001,
+  "requestCounter": 5002,
   "stations": [
     {
       "code": "NDLS",

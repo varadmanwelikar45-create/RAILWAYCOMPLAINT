@@ -42,7 +42,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="hidden sm:inline-block w-1.5 h-1.5 rounded-full bg-[#E9B949]"></span>
               </div>
               <p className="text-[11px] font-medium text-[#6B7280] tracking-wide">
-                Railway Complaint Management System
+                On-Demand Railway Worker & Assistance Network
               </p>
             </div>
           </button>
@@ -84,41 +84,27 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
 
-            {/* 2. Passenger / Officer Session Active */}
+            {/* 2. Passenger Session Active */}
             {currentUser && (
               <div className="flex items-center gap-2 bg-[#FFFDF5] border border-[#E8E2D3] rounded-xl px-3 py-1.5 shadow-2xs">
-                {currentUser.isAdmin ? (
-                  <button
-                    onClick={() => onNavigate('admin-dashboard')}
-                    className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg transition cursor-pointer ${
-                      currentView === 'admin-dashboard'
-                        ? 'bg-[#142B4A] text-white'
-                        : 'text-[#142B4A] hover:bg-[#FFF5DC]'
-                    }`}
-                  >
-                    <Shield className="w-3.5 h-3.5 text-[#E9B949]" />
-                    <span>Control Center</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => onNavigate('user-dashboard')}
-                    className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg transition cursor-pointer ${
-                      currentView === 'user-dashboard'
-                        ? 'bg-[#142B4A] text-white'
-                        : 'text-[#142B4A] hover:bg-[#FFF5DC]'
-                    }`}
-                  >
-                    <LayoutDashboard className="w-3.5 h-3.5 text-[#E9B949]" />
-                    <span>My Complaints</span>
-                  </button>
-                )}
+                <button
+                  onClick={() => onNavigate('user-dashboard')}
+                  className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                    currentView === 'user-dashboard'
+                      ? 'bg-[#142B4A] text-white'
+                      : 'text-[#142B4A] hover:bg-[#FFF5DC]'
+                  }`}
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5 text-[#E9B949]" />
+                  <span>Passenger Hub</span>
+                </button>
 
                 <div className="text-right border-l border-[#E8E2D3] pl-2 hidden sm:block">
                   <div className="text-[11px] font-bold text-[#142B4A] truncate max-w-[140px]">
                     {currentUser.fullName}
                   </div>
                   <div className="text-[9px] text-[#6B7280]">
-                    {currentUser.isAdmin ? 'Railway Officer' : 'Passenger'}
+                    Passenger
                   </div>
                 </div>
 
@@ -132,13 +118,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
 
-            {/* 3. Unauthenticated Public State: Clean & uncluttered */}
-            {!currentUser && !currentWorker && (
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FFF5DC] border border-[#E9B949]/40 text-[#142B4A] text-xs font-bold">
-                <PhoneCall className="w-3.5 h-3.5 text-[#142B4A]" />
-                <span>Railway Assistance: 139</span>
-              </div>
-            )}
+            {/* 3. Unauthenticated Public State: Clean without 139 banner */}
+            {!currentUser && !currentWorker && null}
 
           </div>
 

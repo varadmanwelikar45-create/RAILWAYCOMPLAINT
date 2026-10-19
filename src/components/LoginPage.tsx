@@ -41,11 +41,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialEmail = '', onLogin
     try {
       const res = await Promise.resolve(onLogin(cleanEmail, password));
       if (res && res.success) {
-        if (res.isAdmin) {
-          onNavigate('admin-dashboard');
-        } else {
-          onNavigate('user-dashboard');
-        }
+        onNavigate('user-dashboard');
       } else {
         setError(res?.message || 'Invalid email or password. Please try again.');
       }
@@ -208,7 +204,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialEmail = '', onLogin
             </button>
           </form>
 
-          <div className="mt-8 pt-4 border-t border-[#E8E2D3] flex flex-col sm:flex-row items-center justify-between text-xs text-[#6B7280] gap-2">
+          <div className="mt-8 pt-4 border-t border-[#E8E2D3] flex items-center justify-between text-xs text-[#6B7280]">
             <span>
               New passenger?{' '}
               <button
@@ -219,11 +215,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialEmail = '', onLogin
               </button>
             </span>
             <button
-              onClick={() => onNavigate('admin-login')}
-              className="inline-flex items-center gap-1 font-semibold text-[#6B7280] hover:text-[#142B4A] cursor-pointer"
+              onClick={() => onNavigate('landing')}
+              className="font-semibold text-[#6B7280] hover:text-[#142B4A] cursor-pointer"
             >
-              <Shield className="w-3.5 h-3.5 text-[#E9B949]" />
-              Railway Officer Portal
+              &larr; Back to Role Selection
             </button>
           </div>
 

@@ -827,6 +827,40 @@ export default function App() {
     await handleUpdateWorkerRequestStatus(requestId, 'Cancelled', 'Cancelled by passenger');
   };
 
+  const handleSubmitWorkerFeedback = async (
+    requestId: string,
+    rating: number,
+    comment: string,
+    tags: string[]
+  ) => {
+    try {
+      const res = await fetch(`/api/worker-requests/${requestId}/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rating,
+          comment,
+          tags,
+          passengerId: currentUser?.id,
+          passengerName: currentUser?.fullName || 'Passenger',
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        fetchWorkerRequestsFromServer();
+        fetchWorkersFromServer();
+        setToast({
+          message: 'Thank you! Your feedback for the worker has been submitted.',
+          type: 'success',
+        });
+        return { success: true, message: data.message };
+      }
+      return { success: false, message: data.message || 'Failed to submit feedback.' };
+    } catch (e: any) {
+      return { success: false, message: 'Network error submitting feedback.' };
+    }
+  };
+
   const handleUpdateWorkerVerification = async (
     workerId: string,
     status: 'Pending Verification' | 'Verified' | 'Rejected' | 'Suspended'
@@ -930,20 +964,18 @@ export default function App() {
         {currentView === 'landing' && (
           <LandingPage
             currentUser={currentUser}
-            complaints={complaints}
+            workerRequests={workerRequests}
+            workers={workers}
             onNavigate={setCurrentView}
           />
         )}
 
         {currentView === 'portal-selection' && (
-          <div className="py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <PortalSelector
-              currentView={currentView}
-              currentUser={currentUser}
-              currentWorker={currentWorker}
-              onNavigate={setCurrentView}
-            />
-          </div>
+          <LandingPage
+            currentUser={currentUser}
+            complaints={complaints}
+            onNavigate={setCurrentView}
+          />
         )}
 
         {currentView === 'register' && (
@@ -962,8 +994,9 @@ export default function App() {
         )}
 
         {currentView === 'admin-login' && (
-          <AdminLoginPage
-            onAdminLogin={handleAdminLogin}
+          <LandingPage
+            currentUser={currentUser}
+            complaints={complaints}
             onNavigate={setCurrentView}
           />
         )}
@@ -1002,14 +1035,9 @@ export default function App() {
         )}
 
         {currentView === 'book-worker' && (
-          currentUser && !currentUser.isAdmin ? (
+          currentUser ? (
             <BookWorkerSection
               currentUser={currentUser}
-              userComplaints={complaints.filter(
-                (c) =>
-                  c.userId === currentUser.id ||
-                  (c.passengerEmail && c.passengerEmail.toLowerCase() === currentUser.email.toLowerCase())
-              )}
               allWorkers={workers}
               onSubmitRequest={handleSubmitWorkerRequest}
               onNavigate={setCurrentView}
@@ -1025,28 +1053,15 @@ export default function App() {
         )}
 
         {currentView === 'user-dashboard' && (
-          currentUser && !currentUser.isAdmin ? (
+          currentUser ? (
             <UserDashboard
               currentUser={currentUser}
               complaints={complaints}
               workerRequests={workerRequests}
               onCancelWorkerRequest={handleCancelWorkerRequest}
+              onSubmitWorkerFeedback={handleSubmitWorkerFeedback}
               onNavigate={setCurrentView}
               onSelectComplaint={setSelectedComplaint}
-            />
-          ) : currentUser?.isAdmin ? (
-            <AdminDashboard
-              currentUser={currentUser}
-              complaints={complaints}
-              queue={queue}
-              users={users}
-              workers={workers}
-              workerRequests={workerRequests}
-              onUpdateWorkerVerification={handleUpdateWorkerVerification}
-              onProcessNextFIFO={handleProcessNextFIFO}
-              onUpdateStatus={handleUpdateStatus}
-              onSelectComplaint={setSelectedComplaint}
-              onNavigate={setCurrentView}
             />
           ) : (
             <LoginPage
@@ -1058,12 +1073,13 @@ export default function App() {
         )}
 
         {currentView === 'register-complaint' && (
-          currentUser && !currentUser.isAdmin ? (
-            <RegisterComplaint
+          currentUser ? (
+            <BookWorkerSection
               currentUser={currentUser}
-              onSubmitComplaint={handleSubmitComplaint}
+              allWorkers={workers}
+              onSubmitRequest={handleSubmitWorkerRequest}
               onNavigate={setCurrentView}
-              onSelectComplaint={setSelectedComplaint}
+              onSuccessRedirect={() => setCurrentView('user-dashboard')}
             />
           ) : (
             <LoginPage
@@ -1075,43 +1091,21 @@ export default function App() {
         )}
 
         {currentView === 'complaint-details' && (
-          selectedComplaint ? (
-            <ComplaintDetails
-              complaint={selectedComplaint}
-              currentUser={currentUser}
-              onUpdateStatus={handleUpdateStatus}
-              onNavigate={setCurrentView}
-            />
-          ) : (
-            <LandingPage
-              currentUser={currentUser}
-              complaints={complaints}
-              onNavigate={setCurrentView}
-            />
-          )
+          <LandingPage
+            currentUser={currentUser}
+            workerRequests={workerRequests}
+            workers={workers}
+            onNavigate={setCurrentView}
+          />
         )}
 
         {currentView === 'admin-dashboard' && (
-          currentUser?.isAdmin ? (
-            <AdminDashboard
-              currentUser={currentUser}
-              complaints={complaints}
-              queue={queue}
-              users={users}
-              workers={workers}
-              workerRequests={workerRequests}
-              onUpdateWorkerVerification={handleUpdateWorkerVerification}
-              onProcessNextFIFO={handleProcessNextFIFO}
-              onUpdateStatus={handleUpdateStatus}
-              onSelectComplaint={setSelectedComplaint}
-              onNavigate={setCurrentView}
-            />
-          ) : (
-            <AdminLoginPage
-              onAdminLogin={handleAdminLogin}
-              onNavigate={setCurrentView}
-            />
-          )
+          <LandingPage
+            currentUser={currentUser}
+            workerRequests={workerRequests}
+            workers={workers}
+            onNavigate={setCurrentView}
+          />
         )}
       </main>
 
@@ -1125,24 +1119,21 @@ export default function App() {
               </div>
               <div>
                 <span className="font-extrabold text-xl text-white tracking-tight">RAIL CARE</span>
-                <p className="text-[11px] text-slate-300">Railway Complaint Management System</p>
+                <p className="text-[11px] text-slate-300">On-Demand Railway Worker & Assistance Network</p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-semibold text-slate-300">
-              <button onClick={() => setCurrentView('landing')} className="hover:text-[#E9B949] transition cursor-pointer">Home</button>
-              <button onClick={() => setCurrentView('portal-selection')} className="hover:text-[#E9B949] transition cursor-pointer">Role Portals</button>
-              <button onClick={() => setCurrentView(currentUser ? 'book-worker' : 'portal-selection')} className="hover:text-[#E9B949] transition cursor-pointer">Book Worker</button>
-              <button onClick={() => setCurrentView(currentUser ? 'register-complaint' : 'register')} className="hover:text-[#E9B949] transition cursor-pointer">Register Complaint</button>
-              <button onClick={() => setCurrentView(currentUser ? 'user-dashboard' : 'login')} className="hover:text-[#E9B949] transition cursor-pointer">Track Complaint</button>
-              <button onClick={() => setCurrentView('worker-login')} className="hover:text-[#E9B949] transition cursor-pointer">Worker Portal</button>
-              <button onClick={() => setCurrentView('admin-login')} className="hover:text-[#E9B949] transition cursor-pointer">Officer Portal</button>
+            <div className="flex flex-wrap items-center justify-center gap-5 text-xs font-semibold text-slate-300">
+              <button onClick={() => setCurrentView('landing')} className="hover:text-[#E9B949] transition cursor-pointer">Role Selection</button>
+              <button onClick={() => setCurrentView(currentUser ? 'book-worker' : 'login')} className="hover:text-[#E9B949] transition cursor-pointer">Book a Worker</button>
+              <button onClick={() => setCurrentView(currentUser ? 'user-dashboard' : 'login')} className="hover:text-[#E9B949] transition cursor-pointer">My Bookings & Feedback</button>
+              <button onClick={() => setCurrentView('worker-login')} className="hover:text-[#E9B949] transition cursor-pointer">Worker Hub</button>
             </div>
           </div>
 
           <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left text-xs text-slate-400">
             <p>
-              RAIL CARE · Dedicated to passenger safety, on-demand station gig worker services, and grievance excellence.
+              RAIL CARE · Dedicated to passenger safety, on-demand station gig worker services, and instant on-spot problem resolution.
             </p>
             <p className="text-[11px]">
               &copy; {new Date().getFullYear()} RAIL CARE. All passenger and workforce records protected.
