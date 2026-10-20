@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import trainJourneyImg from '../assets/images/rail_care_train_journey_1792164300619.jpg';
 import { ViewMode, User } from '../types';
-import { UserPlus, ArrowLeft, AlertCircle, TrainTrack, Shield, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, AlertCircle, TrainTrack, UserPlus } from 'lucide-react';
 
 interface RegisterPageProps {
   onRegister: (
@@ -9,9 +9,10 @@ interface RegisterPageProps {
     password: string
   ) => Promise<{ success: boolean; message: string }> | { success: boolean; message: string };
   onNavigate: (view: ViewMode) => void;
+  onBack?: () => void;
 }
 
-export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNavigate }) => {
+export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNavigate, onBack }) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
@@ -24,7 +25,6 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNaviga
     e.preventDefault();
     setError(null);
 
-    // Form validations
     const cleanEmail = email.trim().toLowerCase();
     const cleanMobile = mobile.replace(/\D/g, '');
 
@@ -80,13 +80,24 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNaviga
   };
 
   return (
-    <div className="max-w-5xl mx-auto py-8 sm:py-12 px-4 sm:px-6">
+    <div className="max-w-4xl mx-auto py-8 sm:py-12 px-4 sm:px-6">
       
+      {/* Back Button Navigation */}
+      <div className="mb-4">
+        <button
+          onClick={onBack || (() => onNavigate('landing'))}
+          className="inline-flex items-center gap-2 text-xs font-bold text-[#142B4A] hover:text-[#243F63] bg-white px-3.5 py-2 rounded-xl border border-[#E8E2D3] shadow-2xs hover:bg-[#FFF5DC] transition cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4 text-[#142B4A]" />
+          <span>Back</span>
+        </button>
+      </div>
+
       {/* Split-Screen Container */}
       <div className="bg-white rounded-3xl border border-[#E8E2D3] shadow-md overflow-hidden grid grid-cols-1 lg:grid-cols-12">
         
-        {/* Left Side: Brand & Realistic Railway Editorial Visual */}
-        <div className="lg:col-span-5 bg-[#FFF5DC] p-8 lg:p-10 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-[#E8E2D3] relative overflow-hidden">
+        {/* Left Side: Brand Visual */}
+        <div className="lg:col-span-5 bg-[#FFF5DC] p-8 lg:p-10 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-[#E8E2D3]">
           
           <div>
             <div className="flex items-center gap-2.5 mb-6">
@@ -95,22 +106,21 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNaviga
               </div>
               <div>
                 <span className="font-extrabold text-xl text-[#142B4A] tracking-tight">RAIL CARE</span>
-                <p className="text-[10px] text-[#6B7280] font-medium">Railway Grievance Redressal</p>
+                <p className="text-[10px] text-[#6B7280] font-medium">Passenger Network</p>
               </div>
             </div>
 
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#142B4A] leading-snug tracking-tight mb-3">
-              Your Journey.<br />
-              <span className="text-[#E9B949]">Your Voice.</span><br />
-              Our Responsibility.
+              Fast Booking.<br />
+              <span className="text-[#E9B949]">Coach Assistance.</span><br />
+              Direct to Berth.
             </h2>
 
             <p className="text-xs text-[#6B7280] leading-relaxed mb-6">
-              Create your official passenger account to lodge complaints, monitor divisional action, and access real-time status tracking.
+              Create your passenger profile to book railway gig workers at upcoming stations, share your berth coordinates, and track worker arrivals.
             </p>
           </div>
 
-          {/* Railway Train Visual Thumbnail */}
           <div className="rounded-2xl overflow-hidden border-2 border-white shadow-sm mt-4">
             <img
               src={trainJourneyImg}
@@ -125,13 +135,13 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNaviga
               className="w-full h-44 object-cover object-center"
             />
             <div className="bg-[#142B4A] text-white p-3 text-[11px] font-semibold flex items-center justify-between">
-              <span>Official Passenger Portal</span>
-              <span className="text-[#E9B949]">Verified Redressal</span>
+              <span>Passenger Registration</span>
+              <span className="text-[#E9B949]">Instant Activation</span>
             </div>
           </div>
 
           <div className="mt-6 pt-4 border-t border-[#E8E2D3]/60 text-[11px] text-[#6B7280]">
-            Protected by central database synchronization across all passenger devices.
+            Safe, verified, and interconnected station gig workforce platform.
           </div>
 
         </div>
@@ -147,7 +157,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNaviga
               Passenger Registration
             </h1>
             <p className="text-xs text-[#6B7280] mt-1">
-              Fill in your details below to activate your grievance reporting portal.
+              Fill in your details to begin booking station gig worker services.
             </p>
           </div>
 
@@ -167,7 +177,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNaviga
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="e.g. Rahul Sharma"
+                placeholder="Enter your full name"
                 className="w-full px-3.5 py-2.5 text-sm bg-[#FFFDF5] border border-[#E8E2D3] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#142B4A] focus:border-transparent transition"
                 required
               />
@@ -182,7 +192,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNaviga
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="passenger@example.com"
+                  placeholder="name@example.com"
                   className="w-full px-3.5 py-2.5 text-sm bg-[#FFFDF5] border border-[#E8E2D3] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#142B4A] focus:border-transparent transition"
                   required
                 />
@@ -213,7 +223,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNaviga
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Min 4 characters"
+                  placeholder="At least 4 characters"
                   className="w-full px-3.5 py-2.5 text-sm bg-[#FFFDF5] border border-[#E8E2D3] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#142B4A] focus:border-transparent transition"
                   required
                 />
@@ -242,7 +252,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNaviga
               }`}
             >
               <UserPlus className="w-4 h-4 text-[#E9B949]" />
-              <span>{loading ? 'Creating Account...' : 'Create RAIL CARE Account'}</span>
+              <span>{loading ? 'Creating Account...' : 'Register Account'}</span>
             </button>
           </form>
 
@@ -253,14 +263,14 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNaviga
                 onClick={() => onNavigate('login')}
                 className="text-[#142B4A] font-bold hover:underline cursor-pointer"
               >
-                Sign in with password &rarr;
+                Sign in here &rarr;
               </button>
             </span>
             <button
-              onClick={() => onNavigate('admin-login')}
-              className="text-[#6B7280] hover:text-[#142B4A] font-medium cursor-pointer"
+              onClick={onBack || (() => onNavigate('landing'))}
+              className="font-semibold text-[#6B7280] hover:text-[#142B4A] cursor-pointer"
             >
-              Railway Officer Login
+              &larr; Back to Role Selection
             </button>
           </div>
 

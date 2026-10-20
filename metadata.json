@@ -1,6 +1,6 @@
 {
   "name": "RailCare — Railway Complaint Management System",
-  "description": "A Data Structures mini-project featuring Queue (FIFO), Merge Sort, Linear Search, Category counting, passenger complaint tracking, and administrative dashboard.",
+  "description": "On-demand railway passenger assistance and gig workforce network platform featuring live mutual location tracking, direct coach service dispatch, and responsive passenger coordination.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

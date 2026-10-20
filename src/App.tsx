@@ -28,6 +28,7 @@ import { WorkerLoginPage } from './components/WorkerLoginPage';
 import { WorkerRegisterPage } from './components/WorkerRegisterPage';
 import { WorkerDashboard } from './components/WorkerDashboard';
 import { BookWorkerSection } from './components/BookWorkerSection';
+import { EmergencyModal } from './components/EmergencyModal';
 import { AlertCircle, CheckCircle, Info } from 'lucide-react';
 
 // Storage helpers with full sanitization and persistence
@@ -153,8 +154,8 @@ export default function App() {
   const [complaints, setComplaints] = useState<Complaint[]>(loadStoredComplaints);
   const [currentView, setCurrentView] = useState<ViewMode>(() => {
     const savedUser = loadStoredCurrentUser();
-    if (savedUser) {
-      return savedUser.isAdmin ? 'admin-dashboard' : 'user-dashboard';
+    if (savedUser && !savedUser.isAdmin) {
+      return 'user-dashboard';
     }
     const savedWorker = loadStoredCurrentWorker();
     if (savedWorker) {
@@ -162,7 +163,76 @@ export default function App() {
     }
     return 'landing';
   });
+  const [viewHistory, setViewHistory] = useState<ViewMode[]>([
+    loadStoredCurrentUser() && !loadStoredCurrentUser()?.isAdmin
+      ? 'user-dashboard'
+      : loadStoredCurrentWorker()
+      ? 'worker-dashboard'
+      : 'landing',
+  ]);
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
+  const [isEmergencyOpen, setIsEmergencyOpen] = useState<boolean>(false);
+
+  const navigateTo = (view: ViewMode, pushToHistory = true) => {
+    // Senior Divisional Railway Officer portal removed without disturbing database
+    let targetView = view;
+    if (targetView === 'admin-dashboard' || targetView === 'admin-login') {
+      targetView = 'landing';
+    }
+    if (pushToHistory && targetView !== currentView) {
+      try {
+        window.history.pushState({ view: targetView }, '', `#${targetView}`);
+      } catch (e) {}
+      setViewHistory((prev) => [...prev, targetView]);
+    }
+    setCurrentView(targetView);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleBack = () => {
+    if (window.history.length > 1 && viewHistory.length > 1) {
+      try {
+        window.history.back();
+        return;
+      } catch (e) {}
+    }
+    const nextStack = [...viewHistory];
+    nextStack.pop();
+    const prevView = nextStack[nextStack.length - 1] || 'landing';
+    setViewHistory(nextStack.length > 0 ? nextStack : ['landing']);
+    setCurrentView(prevView);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Browser physical/header back button synchronization
+  useEffect(() => {
+    try {
+      if (!window.history.state) {
+        window.history.replaceState({ view: currentView }, '', `#${currentView}`);
+      }
+    } catch (e) {}
+
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state && event.state.view) {
+        let targetView: ViewMode = event.state.view;
+        if (targetView === 'admin-dashboard' || targetView === 'admin-login') {
+          targetView = 'landing';
+        }
+        setCurrentView(targetView);
+        setViewHistory((prev) => {
+          if (prev.length > 1) {
+            return prev.slice(0, prev.length - 1);
+          }
+          return [targetView];
+        });
+      } else {
+        setCurrentView('landing');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'danger' | 'info' } | null>(() => {
     const savedUser = loadStoredCurrentUser();
     if (savedUser) {
@@ -917,14 +987,17 @@ export default function App() {
 
       {/* Main Foreground Interface Layer */}
       <div className="relative z-10 flex flex-col min-h-screen pointer-events-auto">
-        {/* Clean Navigation Bar */}
+        {/* Clean Navigation Bar with Back Button */}
         <Navbar
           currentUser={currentUser}
           currentWorker={currentWorker}
           currentView={currentView}
-          onNavigate={setCurrentView}
+          onNavigate={navigateTo}
           onLogout={handleLogout}
           onWorkerLogout={handleWorkerLogout}
+          onOpenEmergency={() => setIsEmergencyOpen(true)}
+          onBack={handleBack}
+          canGoBack={currentView !== 'landing'}
         />
 
       {/* Floating Notification Toast */}
@@ -966,22 +1039,27 @@ export default function App() {
             currentUser={currentUser}
             workerRequests={workerRequests}
             workers={workers}
-            onNavigate={setCurrentView}
+            onNavigate={navigateTo}
           />
         )}
 
         {currentView === 'portal-selection' && (
-          <LandingPage
-            currentUser={currentUser}
-            complaints={complaints}
-            onNavigate={setCurrentView}
-          />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <PortalSelector
+              currentView={currentView}
+              currentUser={currentUser}
+              currentWorker={currentWorker}
+              onNavigate={navigateTo}
+              onBack={handleBack}
+            />
+          </div>
         )}
 
         {currentView === 'register' && (
           <RegisterPage
             onRegister={handleRegister}
-            onNavigate={setCurrentView}
+            onNavigate={navigateTo}
+            onBack={handleBack}
           />
         )}
 
@@ -989,29 +1067,24 @@ export default function App() {
           <LoginPage
             initialEmail={registeredEmail}
             onLogin={handleLogin}
-            onNavigate={setCurrentView}
-          />
-        )}
-
-        {currentView === 'admin-login' && (
-          <LandingPage
-            currentUser={currentUser}
-            complaints={complaints}
-            onNavigate={setCurrentView}
+            onNavigate={navigateTo}
+            onBack={handleBack}
           />
         )}
 
         {currentView === 'worker-login' && (
           <WorkerLoginPage
             onWorkerLogin={handleWorkerLogin}
-            onNavigate={setCurrentView}
+            onNavigate={navigateTo}
+            onBack={handleBack}
           />
         )}
 
         {currentView === 'worker-register' && (
           <WorkerRegisterPage
             onWorkerRegister={handleWorkerRegister}
-            onNavigate={setCurrentView}
+            onNavigate={navigateTo}
+            onBack={handleBack}
           />
         )}
 
@@ -1024,12 +1097,15 @@ export default function App() {
               onAcceptRequest={handleAcceptWorkerRequest}
               onUpdateRequestStatus={handleUpdateWorkerRequestStatus}
               onWorkerLogout={handleWorkerLogout}
-              onNavigate={setCurrentView}
+              onNavigate={navigateTo}
+              onBack={handleBack}
+              onRefreshData={fetchWorkerRequestsFromServer}
             />
           ) : (
             <WorkerLoginPage
               onWorkerLogin={handleWorkerLogin}
-              onNavigate={setCurrentView}
+              onNavigate={navigateTo}
+              onBack={handleBack}
             />
           )
         )}
@@ -1040,14 +1116,15 @@ export default function App() {
               currentUser={currentUser}
               allWorkers={workers}
               onSubmitRequest={handleSubmitWorkerRequest}
-              onNavigate={setCurrentView}
-              onSuccessRedirect={() => setCurrentView('user-dashboard')}
+              onNavigate={navigateTo}
+              onSuccessRedirect={() => navigateTo('user-dashboard')}
             />
           ) : (
             <LoginPage
               initialEmail={registeredEmail}
               onLogin={handleLogin}
-              onNavigate={setCurrentView}
+              onNavigate={navigateTo}
+              onBack={handleBack}
             />
           )
         )}
@@ -1056,60 +1133,42 @@ export default function App() {
           currentUser ? (
             <UserDashboard
               currentUser={currentUser}
-              complaints={complaints}
               workerRequests={workerRequests}
               onCancelWorkerRequest={handleCancelWorkerRequest}
               onSubmitWorkerFeedback={handleSubmitWorkerFeedback}
-              onNavigate={setCurrentView}
-              onSelectComplaint={setSelectedComplaint}
+              onNavigate={navigateTo}
+              onBack={handleBack}
+              onRefreshData={fetchWorkerRequestsFromServer}
             />
           ) : (
             <LoginPage
               initialEmail={registeredEmail}
               onLogin={handleLogin}
-              onNavigate={setCurrentView}
+              onNavigate={navigateTo}
+              onBack={handleBack}
             />
           )
         )}
 
-        {currentView === 'register-complaint' && (
-          currentUser ? (
-            <BookWorkerSection
-              currentUser={currentUser}
-              allWorkers={workers}
-              onSubmitRequest={handleSubmitWorkerRequest}
-              onNavigate={setCurrentView}
-              onSuccessRedirect={() => setCurrentView('user-dashboard')}
-            />
-          ) : (
-            <LoginPage
-              initialEmail={registeredEmail}
-              onLogin={handleLogin}
-              onNavigate={setCurrentView}
-            />
-          )
-        )}
-
-        {currentView === 'complaint-details' && (
+        {/* Fallback for removed admin routes redirecting safely to landing */}
+        {(currentView === 'admin-dashboard' || currentView === 'admin-login') && (
           <LandingPage
             currentUser={currentUser}
             workerRequests={workerRequests}
             workers={workers}
-            onNavigate={setCurrentView}
-          />
-        )}
-
-        {currentView === 'admin-dashboard' && (
-          <LandingPage
-            currentUser={currentUser}
-            workerRequests={workerRequests}
-            workers={workers}
-            onNavigate={setCurrentView}
+            onNavigate={navigateTo}
           />
         )}
       </main>
 
-      {/* Footer consistent with RAIL CARE Brand */}
+      {/* Emergency 139 Hotline Modal */}
+      <EmergencyModal
+        isOpen={isEmergencyOpen}
+        onClose={() => setIsEmergencyOpen(false)}
+        currentUser={currentUser}
+      />
+
+      {/* Production Grade Rail Care Footer */}
       <footer className="bg-[#142B4A] text-slate-300 py-10 border-t border-[#E8E2D3]/20 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-white/10 text-center md:text-left">
@@ -1119,24 +1178,29 @@ export default function App() {
               </div>
               <div>
                 <span className="font-extrabold text-xl text-white tracking-tight">RAIL CARE</span>
-                <p className="text-[11px] text-slate-300">On-Demand Railway Worker & Assistance Network</p>
+                <p className="text-[11px] text-slate-300">Indian Railways On-Demand Station Gig Workforce &amp; Passenger Assistance Network</p>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-5 text-xs font-semibold text-slate-300">
-              <button onClick={() => setCurrentView('landing')} className="hover:text-[#E9B949] transition cursor-pointer">Role Selection</button>
-              <button onClick={() => setCurrentView(currentUser ? 'book-worker' : 'login')} className="hover:text-[#E9B949] transition cursor-pointer">Book a Worker</button>
-              <button onClick={() => setCurrentView(currentUser ? 'user-dashboard' : 'login')} className="hover:text-[#E9B949] transition cursor-pointer">My Bookings & Feedback</button>
-              <button onClick={() => setCurrentView('worker-login')} className="hover:text-[#E9B949] transition cursor-pointer">Worker Hub</button>
+              <button onClick={() => navigateTo('landing')} className="hover:text-[#E9B949] transition cursor-pointer">Role Selection</button>
+              <button onClick={() => navigateTo(currentUser ? 'book-worker' : 'login')} className="hover:text-[#E9B949] transition cursor-pointer">Book Station Worker</button>
+              {currentUser && (
+                <button onClick={() => navigateTo('user-dashboard')} className="hover:text-[#E9B949] transition cursor-pointer">My Bookings &amp; Radar</button>
+              )}
+              {currentWorker && (
+                <button onClick={() => navigateTo('worker-dashboard')} className="hover:text-[#E9B949] transition cursor-pointer">Worker Station Duty</button>
+              )}
+              <button onClick={() => setIsEmergencyOpen(true)} className="hover:text-red-400 text-red-300 transition cursor-pointer">Emergency 139 Helpline</button>
             </div>
           </div>
 
           <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left text-xs text-slate-400">
             <p>
-              RAIL CARE · Dedicated to passenger safety, on-demand station gig worker services, and instant on-spot problem resolution.
+              RAIL CARE · Connected Railway Station Services &amp; Rapid Coach Berth Redressal.
             </p>
             <p className="text-[11px]">
-              &copy; {new Date().getFullYear()} RAIL CARE. All passenger and workforce records protected.
+              &copy; {new Date().getFullYear()} RAIL CARE. All Rights Reserved. Central Database Connected.
             </p>
           </div>
         </div>

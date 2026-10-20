@@ -65,14 +65,29 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onAdminLogin, on
           </div>
         )}
 
-        {/* Credentials reminder box */}
-        <div className="mb-6 p-4 bg-[#FFF5DC]/70 border border-[#E8E2D3] rounded-2xl text-xs text-[#253247] space-y-1.5">
-          <div className="font-bold text-[#142B4A] flex items-center gap-1.5">
-            <Key className="w-4 h-4 text-[#E9B949]" /> Default Officer Credentials:
+        {/* Credentials reminder box with 1-click autofill */}
+        <div className="mb-6 p-4 bg-[#FFF5DC]/70 border border-[#E8E2D3] rounded-2xl text-xs text-[#253247] space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="font-extrabold text-[#142B4A] flex items-center gap-1.5">
+              <Key className="w-4 h-4 text-[#E9B949]" /> Default Officer Credentials:
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('admin@railcare.gov.in');
+                setPassword('Admin@1234');
+              }}
+              className="text-[10px] font-bold px-2 py-0.5 bg-[#142B4A] text-white rounded-md hover:bg-[#243F63] transition cursor-pointer"
+            >
+              1-Click Auto-Fill
+            </button>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-[11px] text-[#6B7280]">
             <span>Email: <code className="font-mono text-[#142B4A] font-bold bg-white px-2 py-0.5 rounded border border-[#E8E2D3]">admin@railcare.gov.in</code></span>
             <span>Password: <code className="font-mono text-[#142B4A] font-bold bg-white px-2 py-0.5 rounded border border-[#E8E2D3]">Admin@1234</code></span>
+          </div>
+          <div className="pt-1 border-t border-[#E8E2D3]/60 text-[10px] text-[#6B7280]">
+            ⚡ <em>Active Algorithms: FIFO Queue auto-dispatch · Merge Sort (O(N log N)) · Linear Search (O(N))</em>
           </div>
         </div>
 

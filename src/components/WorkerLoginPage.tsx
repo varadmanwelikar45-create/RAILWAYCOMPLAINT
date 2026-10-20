@@ -26,6 +26,7 @@ interface WorkerLoginPageProps {
     photo?: string
   ) => Promise<{ success: boolean; message: string; worker?: Worker }> | { success: boolean; message: string; worker?: Worker };
   onNavigate: (view: ViewMode) => void;
+  onBack?: () => void;
 }
 
 // Preset verified worker badges/photos for instant convenience
@@ -53,6 +54,7 @@ const PRESET_WORKER_PHOTOS = [
 export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
   onWorkerLogin,
   onNavigate,
+  onBack,
 }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -187,7 +189,7 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
       {/* Top Breadcrumb & Switcher */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <button
-          onClick={() => onNavigate('landing')}
+          onClick={onBack || (() => onNavigate('landing'))}
           className="inline-flex items-center gap-2 text-xs font-bold text-[#142B4A] hover:text-[#243F63] transition cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -442,11 +444,11 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
             </button>
           </form>
 
-          {/* Quick Demo Worker Fast-Select Box */}
+          {/* Authorized Duty Worker Fast-Select Box */}
           <div className="mt-8 pt-6 border-t border-[#E8E2D3]">
             <div className="flex items-center gap-1.5 text-xs font-bold text-[#142B4A] mb-3">
               <KeyRound className="w-3.5 h-3.5 text-[#E9B949]" />
-              <span>Quick Demo: Test Login as Worker (Password: Worker@1234)</span>
+              <span>Authorized Station Personnel (Fast Access · Password: Worker@1234)</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {INITIAL_WORKERS.slice(0, 4).map((w) => (

@@ -75,7 +75,7 @@ export const RegisterComplaint: React.FC<RegisterComplaintProps> = ({
     setLocation(template.location);
     setSubject(template.subject);
     setDescription(template.description);
-    setPresetNotice(`Loaded "${template.label}" sample! You can now edit or submit.`);
+    setPresetNotice(`Loaded "${template.label}" incident template! You can now edit details.`);
     setTimeout(() => setPresetNotice(null), 3000);
   };
 
@@ -169,10 +169,10 @@ export const RegisterComplaint: React.FC<RegisterComplaintProps> = ({
         </div>
 
         {/* Quick Presets Bar */}
-        <div className="bg-[#FFF5DC]/60 p-4 rounded-2xl border border-[#E8E2D3] space-y-2">
+        <div className="bg-[#FFFDF5] p-4 rounded-2xl border border-[#E8E2D3] space-y-2">
           <div className="text-xs font-bold text-[#142B4A] flex items-center justify-between">
             <span className="flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#E9B949]" /> Quick Sample Presets (Optional)
+              <Sparkles className="w-3.5 h-3.5 text-[#E9B949]" /> Common Grievance Incident Templates
             </span>
             {presetNotice && (
               <span className="text-[11px] text-[#21865B] font-semibold flex items-center gap-1">

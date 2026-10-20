@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import trainJourneyImg from '../assets/images/rail_care_train_journey_1792164300619.jpg';
 import { ViewMode } from '../types';
-import { LogIn, AlertCircle, Eye, EyeOff, CheckCircle2, TrainTrack, UserPlus, Shield } from 'lucide-react';
+import { LogIn, AlertCircle, Eye, EyeOff, CheckCircle2, TrainTrack, ArrowLeft } from 'lucide-react';
 
 interface LoginPageProps {
   initialEmail?: string;
@@ -12,9 +12,15 @@ interface LoginPageProps {
     | Promise<{ success: boolean; message: string; isAdmin?: boolean }>
     | { success: boolean; message: string; isAdmin?: boolean };
   onNavigate: (view: ViewMode) => void;
+  onBack?: () => void;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ initialEmail = '', onLogin, onNavigate }) => {
+export const LoginPage: React.FC<LoginPageProps> = ({ 
+  initialEmail = '', 
+  onLogin, 
+  onNavigate,
+  onBack 
+}) => {
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -33,7 +39,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialEmail = '', onLogin
 
     const cleanEmail = (email || '').trim().toLowerCase();
     if (!cleanEmail || !password) {
-      setError('Please enter both your email address and password.');
+      setError('Please enter both your registered email address and password.');
       return;
     }
 
@@ -46,20 +52,31 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialEmail = '', onLogin
         setError(res?.message || 'Invalid email or password. Please try again.');
       }
     } catch (err: any) {
-      setError(err?.message || 'Login failed. Please check your credentials and try again.');
+      setError(err?.message || 'Sign in failed. Please verify your credentials and try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-5xl mx-auto py-8 sm:py-12 px-4 sm:px-6">
+    <div className="max-w-4xl mx-auto py-8 sm:py-12 px-4 sm:px-6">
       
+      {/* Back Button Navigation */}
+      <div className="mb-4">
+        <button
+          onClick={onBack || (() => onNavigate('landing'))}
+          className="inline-flex items-center gap-2 text-xs font-bold text-[#142B4A] hover:text-[#243F63] bg-white px-3.5 py-2 rounded-xl border border-[#E8E2D3] shadow-2xs hover:bg-[#FFF5DC] transition cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4 text-[#142B4A]" />
+          <span>Back to Home</span>
+        </button>
+      </div>
+
       {/* Split-Screen Container */}
       <div className="bg-white rounded-3xl border border-[#E8E2D3] shadow-md overflow-hidden grid grid-cols-1 lg:grid-cols-12">
         
         {/* Left Side: Brand & Railway Visual */}
-        <div className="lg:col-span-5 bg-[#FFF5DC] p-8 lg:p-10 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-[#E8E2D3] relative overflow-hidden">
+        <div className="lg:col-span-5 bg-[#FFF5DC] p-8 lg:p-10 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-[#E8E2D3]">
           
           <div>
             <div className="flex items-center gap-2.5 mb-6">
@@ -68,18 +85,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialEmail = '', onLogin
               </div>
               <div>
                 <span className="font-extrabold text-xl text-[#142B4A] tracking-tight">RAIL CARE</span>
-                <p className="text-[10px] text-[#6B7280] font-medium">Railway Grievance Redressal</p>
+                <p className="text-[10px] text-[#6B7280] font-medium">Passenger Assistance Network</p>
               </div>
             </div>
 
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#142B4A] leading-snug tracking-tight mb-3">
-              Your Journey.<br />
-              <span className="text-[#E9B949]">Your Voice.</span><br />
-              Our Responsibility.
+              On-Demand Help.<br />
+              <span className="text-[#E9B949]">At Your Coach.</span><br />
+              During Platform Halt.
             </h2>
 
             <p className="text-xs text-[#6B7280] leading-relaxed mb-6">
-              Sign in to lodge new travel grievances, check status updates, and track departmental resolution across all your devices.
+              Sign in to book verified technicians, plumbers, electricians, or housekeeping sahayaks directly to your train coach and berth.
             </p>
           </div>
 
@@ -99,12 +116,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialEmail = '', onLogin
             />
             <div className="bg-[#142B4A] text-white p-3 text-[11px] font-semibold flex items-center justify-between">
               <span>Secure Authentication</span>
-              <span className="text-[#E9B949]">Central Server Synced</span>
+              <span className="text-[#E9B949]">Mutual Live Location</span>
             </div>
           </div>
 
           <div className="mt-6 pt-4 border-t border-[#E8E2D3]/60 text-[11px] text-[#6B7280]">
-            Need help? Divisional officials process all tickets in first-in-first-out queue order.
+            Verified railway service workers provide rapid on-spot resolution during scheduled platform halts.
           </div>
 
         </div>
@@ -114,13 +131,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialEmail = '', onLogin
           
           <div className="mb-6">
             <div className="text-xs font-bold text-[#E9B949] uppercase tracking-wider mb-1">
-              WELCOME BACK
+              PASSENGER ACCESS
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#142B4A]">
-              Passenger Login
+              Passenger Sign In
             </h1>
             <p className="text-xs text-[#6B7280] mt-1">
-              Enter your registered passenger email and password to access your dashboard.
+              Enter your email and password to access your bookings and live location radar.
             </p>
           </div>
 
@@ -144,7 +161,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialEmail = '', onLogin
                     onClick={() => onNavigate('register')}
                     className="text-xs font-bold text-[#142B4A] underline hover:text-[#243F63] cursor-pointer"
                   >
-                    Click here to create your passenger account &rarr;
+                    Click here to create a new passenger account &rarr;
                   </button>
                 </div>
               )}
@@ -154,13 +171,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialEmail = '', onLogin
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-[#253247] mb-1.5">
-                Registered Email Address <span className="text-red-500">*</span>
+                Email Address <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="passenger@example.com"
+                placeholder="name@example.com"
                 className="w-full px-3.5 py-2.5 text-sm bg-[#FFFDF5] border border-[#E8E2D3] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#142B4A] focus:border-transparent transition"
                 required
                 autoFocus={!initialEmail}
@@ -200,11 +217,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialEmail = '', onLogin
               }`}
             >
               <LogIn className="w-4 h-4 text-[#E9B949]" />
-              <span>{loading ? 'Signing In...' : 'Sign In to RAIL CARE'}</span>
+              <span>{loading ? 'Signing In...' : 'Sign In as Passenger'}</span>
             </button>
           </form>
 
-          <div className="mt-8 pt-4 border-t border-[#E8E2D3] flex items-center justify-between text-xs text-[#6B7280]">
+          <div className="mt-8 pt-4 border-t border-[#E8E2D3] flex flex-col sm:flex-row items-center justify-between text-xs text-[#6B7280] gap-2">
             <span>
               New passenger?{' '}
               <button
@@ -215,7 +232,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialEmail = '', onLogin
               </button>
             </span>
             <button
-              onClick={() => onNavigate('landing')}
+              onClick={onBack || (() => onNavigate('landing'))}
               className="font-semibold text-[#6B7280] hover:text-[#142B4A] cursor-pointer"
             >
               &larr; Back to Role Selection

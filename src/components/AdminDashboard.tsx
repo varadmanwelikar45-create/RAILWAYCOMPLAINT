@@ -46,6 +46,7 @@ interface AdminDashboardProps {
   onUpdateStatus: (complaintId: string, newStatus: ComplaintStatus) => void;
   onSelectComplaint: (complaint: Complaint) => void;
   onNavigate: (view: ViewMode) => void;
+  onOpenOverview?: () => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -60,6 +61,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onUpdateStatus,
   onSelectComplaint,
   onNavigate,
+  onOpenOverview,
 }) => {
   const [adminTab, setAdminTab] = useState<'complaints' | 'gig-workers' | 'passengers'>('complaints');
   const [workerSearch, setWorkerSearch] = useState('');
@@ -207,24 +209,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         </div>
 
-        {/* 1-Click FIFO Dispatch Button */}
-        <button
-          onClick={handleProcessFIFO}
-          disabled={queue.size() === 0}
-          className={`px-5 py-3 text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-2 border ${
-            queue.size() > 0
-              ? 'bg-[#142B4A] hover:bg-[#243F63] border-[#142B4A] hover:border-[#E9B949] cursor-pointer'
-              : 'bg-slate-200 border-slate-300 cursor-not-allowed text-slate-500'
-          }`}
-          title="Dispatch the earliest pending complaint"
-        >
-          <PlayCircle className="w-4 h-4 text-[#E9B949]" />
-          <span>
-            {nextInQueue
-              ? `Process Next: ${nextInQueue.complaintId} (${(nextInQueue.passengerName || 'Passenger').split(' ')[0]})`
-              : 'Queue Empty (All Processed)'}
-          </span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+
+          {/* 1-Click FIFO Dispatch Button */}
+          <button
+            onClick={handleProcessFIFO}
+            disabled={queue.size() === 0}
+            className={`px-5 py-3 text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-2 border ${
+              queue.size() > 0
+                ? 'bg-[#142B4A] hover:bg-[#243F63] border-[#142B4A] hover:border-[#E9B949] cursor-pointer'
+                : 'bg-slate-200 border-slate-300 cursor-not-allowed text-slate-500'
+            }`}
+            title="Dispatch the earliest pending complaint"
+          >
+            <PlayCircle className="w-4 h-4 text-[#E9B949]" />
+            <span>
+              {nextInQueue
+                ? `Process Next: ${nextInQueue.complaintId} (${(nextInQueue.passengerName || 'Passenger').split(' ')[0]})`
+                : 'Queue Empty (All Processed)'}
+            </span>
+          </button>
+        </div>
       </div>
 
       {actionNotice && (

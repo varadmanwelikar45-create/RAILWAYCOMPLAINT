@@ -17,11 +17,13 @@ interface WorkerRegisterPageProps {
     experienceYears: number;
   }) => Promise<{ success: boolean; message: string; worker?: Worker }> | { success: boolean; message: string; worker?: Worker };
   onNavigate: (view: ViewMode) => void;
+  onBack?: () => void;
 }
 
 export const WorkerRegisterPage: React.FC<WorkerRegisterPageProps> = ({
   onWorkerRegister,
   onNavigate,
+  onBack,
 }) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -95,7 +97,7 @@ export const WorkerRegisterPage: React.FC<WorkerRegisterPageProps> = ({
       {/* Top Breadcrumb & Switcher */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <button
-          onClick={() => onNavigate('landing')}
+          onClick={onBack || (() => onNavigate('landing'))}
           className="inline-flex items-center gap-2 text-xs font-bold text-[#142B4A] hover:text-[#243F63] transition cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />

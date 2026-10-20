@@ -51,26 +51,35 @@ export const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({
           Back to {isAdmin ? 'Admin Dashboard' : 'My Grievances'}
         </button>
 
-        <div className="flex items-center gap-2">
-          {complaint.status === 'Pending' && (
-            <span className="inline-flex items-center gap-2 text-xs font-bold text-[#9A6700] bg-[#FFF8E7] px-3.5 py-1.5 rounded-xl border border-[#E9B949]/40">
-              <span className="w-2 h-2 rounded-full bg-[#D99520] animate-pulse"></span>
-              Status: Pending Review
-            </span>
-          )}
-          {complaint.status === 'In Progress' && (
-            <span className="inline-flex items-center gap-2 text-xs font-bold text-[#1B4470] bg-[#EEF4FA] px-3.5 py-1.5 rounded-xl border border-[#315F91]/30">
-              <span className="w-2 h-2 rounded-full bg-[#315F91] animate-pulse"></span>
-              Status: In Progress (Dispatched)
-            </span>
-          )}
-          {complaint.status === 'Resolved' && (
-            <span className="inline-flex items-center gap-2 text-xs font-bold text-[#156140] bg-[#EDF7F2] px-3.5 py-1.5 rounded-xl border border-[#21865B]/30">
-              <span className="w-2 h-2 rounded-full bg-[#21865B]"></span>
-              Status: Resolved
-            </span>
-          )}
-        </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FFF5DC] hover:bg-[#E9B949]/30 text-[#142B4A] border border-[#E9B949]/60 rounded-xl text-xs font-bold transition cursor-pointer print:hidden shadow-2xs"
+              title="Print Grievance Acknowledgment Slip"
+            >
+              <FileText className="w-3.5 h-3.5 text-[#142B4A]" />
+              <span>Print Official Slip</span>
+            </button>
+
+            {complaint.status === 'Pending' && (
+              <span className="inline-flex items-center gap-2 text-xs font-bold text-[#9A6700] bg-[#FFF8E7] px-3.5 py-1.5 rounded-xl border border-[#E9B949]/40">
+                <span className="w-2 h-2 rounded-full bg-[#D99520] animate-pulse"></span>
+                Status: Pending Review
+              </span>
+            )}
+            {complaint.status === 'In Progress' && (
+              <span className="inline-flex items-center gap-2 text-xs font-bold text-[#1B4470] bg-[#EEF4FA] px-3.5 py-1.5 rounded-xl border border-[#315F91]/30">
+                <span className="w-2 h-2 rounded-full bg-[#315F91] animate-pulse"></span>
+                Status: In Progress (Dispatched)
+              </span>
+            )}
+            {complaint.status === 'Resolved' && (
+              <span className="inline-flex items-center gap-2 text-xs font-bold text-[#156140] bg-[#EDF7F2] px-3.5 py-1.5 rounded-xl border border-[#21865B]/30">
+                <span className="w-2 h-2 rounded-full bg-[#21865B]"></span>
+                Status: Resolved
+              </span>
+            )}
+          </div>
       </div>
 
       {/* Main Grievance Card */}

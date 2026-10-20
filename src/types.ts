@@ -137,6 +137,21 @@ export interface WorkerServiceRequest {
   assignedWorkerMobile?: string | null;
   completionNotes?: string;
   feedback?: WorkerFeedback;
+  passengerLocation?: {
+    latitude: number;
+    longitude: number;
+    platform?: string;
+    coach?: string;
+    seat?: string;
+    lastUpdated: string;
+  };
+  workerLocation?: {
+    latitude: number;
+    longitude: number;
+    platform?: string;
+    currentStatusText?: string;
+    lastUpdated: string;
+  };
   createdAt: string;
   updatedAt: string;
   completedAt?: string;

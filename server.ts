@@ -108,6 +108,21 @@ interface WorkerServiceRequest {
   assignedWorkerMobile?: string | null;
   completionNotes?: string;
   feedback?: any;
+  passengerLocation?: {
+    latitude: number;
+    longitude: number;
+    platform?: string;
+    coach?: string;
+    seat?: string;
+    lastUpdated: string;
+  };
+  workerLocation?: {
+    latitude: number;
+    longitude: number;
+    platform?: string;
+    currentStatusText?: string;
+    lastUpdated: string;
+  };
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
@@ -1497,6 +1512,55 @@ async function startServer() {
     } catch (err: any) {
       console.error('Update request status error:', err);
       res.status(500).json({ success: false, message: 'Server error updating request status.' });
+    }
+  });
+
+  // 12b. Update Mutual Location (Passenger of Worker & Worker for Passenger)
+  app.put('/api/worker-requests/:id/location', (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { role, latitude, longitude, platform, coach, seat, currentStatusText } = req.body;
+      const store = readStore();
+      const nowIso = new Date().toISOString().replace('T', ' ').slice(0, 19);
+
+      const targetReq = (store.workerRequests || []).find((r) => String(r.id) === id || r.requestId === id);
+      if (!targetReq) {
+        return res.status(404).json({ success: false, message: 'Worker service request not found.' });
+      }
+
+      const numLat = typeof latitude === 'number' && !isNaN(latitude) ? latitude : 28.6431;
+      const numLng = typeof longitude === 'number' && !isNaN(longitude) ? longitude : 77.2197;
+
+      if (role === 'passenger') {
+        targetReq.passengerLocation = {
+          latitude: numLat,
+          longitude: numLng,
+          platform: platform || 'Platform 2',
+          coach: coach || targetReq.coachNumber || 'Coach B3',
+          seat: seat || targetReq.seatNumber || 'Seat 24',
+          lastUpdated: nowIso,
+        };
+      } else {
+        targetReq.workerLocation = {
+          latitude: numLat,
+          longitude: numLng,
+          platform: platform || 'Platform 2',
+          currentStatusText: currentStatusText || 'Approaching coach platform',
+          lastUpdated: nowIso,
+        };
+      }
+
+      targetReq.updatedAt = nowIso;
+      writeStore(store);
+
+      res.json({
+        success: true,
+        message: 'Live location updated successfully.',
+        request: targetReq,
+      });
+    } catch (err: any) {
+      console.error('Update mutual location error:', err);
+      res.status(500).json({ success: false, message: 'Server error updating location coordinates.' });
     }
   });
 
