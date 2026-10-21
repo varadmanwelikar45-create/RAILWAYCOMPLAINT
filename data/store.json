@@ -50,6 +50,36 @@
   "counter": 1001,
   "workers": [
     {
+      "id": 1792591452680,
+      "workerId": "WRK-118",
+      "fullName": "Varad Manwelikar",
+      "email": "varadmanwelikar45@gmail.com",
+      "mobile": "1234567890",
+      "headline": "Coach Electrician & AC Technician Specialist",
+      "bio": "",
+      "skillCategory": "Coach Electrician & AC Technician",
+      "skills": [
+        "Coach Electrician & AC Technician"
+      ],
+      "stationCode": "NDLS",
+      "stationCodes": [
+        "NDLS"
+      ],
+      "stationName": "New Delhi Junction",
+      "city": "New Delhi",
+      "experienceYears": 3,
+      "qualifications": "Certified Railway Contractor / Technician",
+      "verificationDocuments": "Government Identity & Police Clearance Submitted",
+      "verificationStatus": "Verified",
+      "verificationDate": "2026-10-21 14:04:12",
+      "verifiedBy": "RailCare Verified Identity",
+      "availability": "Available",
+      "rating": 5,
+      "totalJobsCompleted": 0,
+      "createdAt": "2026-10-21 14:04:12",
+      "updatedAt": "2026-10-21 14:04:12"
+    },
+    {
       "id": 1792312505760,
       "workerId": "WRK-117",
       "fullName": "ADITYA NAWADE",
@@ -364,7 +394,8 @@
     "vivek.saxena@worker.railcare.gov.in": "Worker@1234",
     "irfan.khan@worker.railcare.gov.in": "Worker@1234",
     "deepak.chougule@worker.railcare.gov.in": "Worker@1234",
-    "adi@gmail.com": "0987654321"
+    "adi@gmail.com": "0987654321",
+    "varadmanwelikar45@gmail.com": "password123"
   },
   "workerRequests": [
     {
@@ -428,7 +459,7 @@
       "completedAt": "2026-10-18 08:51:38"
     }
   ],
-  "workerCounter": 117,
+  "workerCounter": 118,
   "requestCounter": 5002,
   "stations": [
     {

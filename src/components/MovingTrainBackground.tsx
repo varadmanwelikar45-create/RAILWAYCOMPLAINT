@@ -6,9 +6,9 @@ import trainMovingImg from '../assets/images/indian_train_moving_asset_179216494
 /**
  * MovingTrainBackground
  * A realistic, continuously moving Indian passenger train background
- * gliding smoothly from right to left across the screen,
- * overlaid with a subtle translucent mint green & teal tint (#F4FBF8, #E5F5EF) to guarantee
- * 100% dashboard readability and preserve the modern mint/teal theme.
+ * gliding smoothly from right to left across the screen in golden sunrise light,
+ * overlaid with a subtle translucent warm white & yellow tint (#FFFDF5, #FFFBEB) to guarantee
+ * 100% dashboard readability and preserve the original yellow and white theme.
  */
 export const MovingTrainBackground: React.FC = () => {
   return (
@@ -16,11 +16,11 @@ export const MovingTrainBackground: React.FC = () => {
       aria-hidden="true"
       className="fixed inset-0 pointer-events-none overflow-hidden z-0 select-none"
     >
-      {/* 1. Base Atmosphere: Fresh Mint Green Sky & Light Glow */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#F4FBF8] via-[#E5F5EF] to-[#F4FBF8]" />
+      {/* 1. Base Atmosphere: Warm White & Golden Sunrise Sky Glow */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#FFFDF5] via-[#FFFBEB] to-[#FFFFFF]" />
 
       {/* Distant Scenic Indian Landscape & Mist */}
-      <div className="absolute inset-x-0 bottom-0 h-[65vh] opacity-35 bg-gradient-to-t from-[#0F766E]/10 via-[#A7E8D0]/10 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-[65vh] opacity-30 bg-gradient-to-t from-[#EAB308]/15 via-[#FEF08A]/10 to-transparent" />
 
       {/* Panoramic Railway Landscape Layer */}
       <div className="absolute inset-x-0 bottom-0 h-[480px] sm:h-[540px] opacity-25">
@@ -41,20 +41,20 @@ export const MovingTrainBackground: React.FC = () => {
       {/* Continuous Railway Track & Ballast Horizon */}
       <div className="absolute inset-x-0 bottom-12 sm:bottom-16 h-12 flex flex-col justify-end opacity-40">
         {/* Overhead Electric Catenary Wire */}
-        <div className="w-full h-px bg-[#115E59]/30 mb-8" />
+        <div className="w-full h-px bg-slate-400/40 mb-8" />
         {/* Steel Rail 1 */}
-        <div className="w-full h-[3px] bg-gradient-to-r from-slate-400 via-[#A7E8D0] to-slate-400 shadow-xs" />
+        <div className="w-full h-[3px] bg-gradient-to-r from-slate-400 via-[#EAB308] to-slate-400 shadow-xs" />
         {/* Railway Sleepers / Ties Texture */}
         <div
-          className="w-full h-3 bg-repeat-x opacity-50"
+          className="w-full h-3 bg-repeat-x opacity-40"
           style={{
-            backgroundImage: `repeating-linear-gradient(90deg, #115E59 0, #115E59 6px, transparent 6px, transparent 18px)`,
+            backgroundImage: `repeating-linear-gradient(90deg, #334155 0, #334155 6px, transparent 6px, transparent 18px)`,
           }}
         />
         {/* Steel Rail 2 */}
-        <div className="w-full h-[3px] bg-gradient-to-r from-slate-500 via-[#CCFBF1] to-slate-500" />
+        <div className="w-full h-[3px] bg-gradient-to-r from-slate-500 via-[#FDE047] to-slate-500" />
         {/* Ballast Gravel Bed */}
-        <div className="w-full h-4 bg-gradient-to-b from-stone-400/20 to-transparent" />
+        <div className="w-full h-4 bg-gradient-to-b from-stone-300/30 to-transparent" />
       </div>
 
       {/* 2. Moving Realistic Indian Passenger Trains (Right to Left Continuous Motion) */}
@@ -82,11 +82,11 @@ export const MovingTrainBackground: React.FC = () => {
               }}
               alt="Moving Indian passenger train"
               referrerPolicy="no-referrer"
-              className="w-full h-auto object-cover rounded-xl shadow-md opacity-90 drop-shadow-[0_8px_16px_rgba(15,118,110,0.18)]"
+              className="w-full h-auto object-cover rounded-xl shadow-md opacity-90 drop-shadow-[0_8px_16px_rgba(202,138,4,0.18)]"
             />
 
-            {/* Subtle Mint Morning Sunlight Glint on Roof */}
-            <div className="absolute inset-0 bg-gradient-to-t from-transparent via-[#A7E8D0]/15 to-[#CCFBF1]/20 pointer-events-none rounded-xl" />
+            {/* Subtle Golden Morning Sunlight Glint on Roof */}
+            <div className="absolute inset-0 bg-gradient-to-t from-transparent via-[#EAB308]/20 to-[#FEF08A]/25 pointer-events-none rounded-xl" />
           </div>
         </div>
 
@@ -110,20 +110,20 @@ export const MovingTrainBackground: React.FC = () => {
               }}
               alt="Indian Railways Express Train"
               referrerPolicy="no-referrer"
-              className="w-full h-auto object-cover rounded-xl shadow-md opacity-85 drop-shadow-[0_8px_16px_rgba(15,118,110,0.18)]"
+              className="w-full h-auto object-cover rounded-xl shadow-md opacity-85 drop-shadow-[0_8px_16px_rgba(202,138,4,0.18)]"
             />
 
-            <div className="absolute inset-0 bg-gradient-to-t from-transparent via-[#A7E8D0]/15 to-[#CCFBF1]/20 pointer-events-none rounded-xl" />
+            <div className="absolute inset-0 bg-gradient-to-t from-transparent via-[#EAB308]/20 to-[#FEF08A]/25 pointer-events-none rounded-xl" />
           </div>
         </div>
 
       </div>
 
-      {/* 3. Translucent Mint Overlay (Guarantees Perfect Contrast & Readability) */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#F4FBF8]/92 via-[#F4FBF8]/82 to-[#F4FBF8]/94 backdrop-blur-[0.5px]" />
+      {/* 3. Translucent Warm White & Yellow Overlay (Guarantees Perfect Contrast & Readability) */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#FFFDF5]/92 via-[#FFFDF5]/82 to-[#FFFFFF]/94 backdrop-blur-[0.5px]" />
 
-      {/* Subtle Teal Vignette Frame */}
-      <div className="absolute inset-0 bg-radial from-transparent via-transparent to-[#0F766E]/5 pointer-events-none" />
+      {/* Subtle Warm Vignette Frame */}
+      <div className="absolute inset-0 bg-radial from-transparent via-transparent to-[#CA8A04]/5 pointer-events-none" />
 
       {/* Moving Train CSS Animations */}
       <style>{`

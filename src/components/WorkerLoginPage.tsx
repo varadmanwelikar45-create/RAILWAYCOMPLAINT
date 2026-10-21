@@ -13,7 +13,8 @@ import {
   Upload, 
   KeyRound, 
   Check, 
-  Sparkles 
+  Sparkles,
+  UserPlus
 } from 'lucide-react';
 import trainJourneyImg from '../assets/images/rail_care_train_journey_1792164300619.jpg';
 
@@ -155,11 +156,6 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
       return;
     }
 
-    if (!verificationPhoto) {
-      setError('Please update your verification image before signing in. This is required for station verification.');
-      return;
-    }
-
     setLoading(true);
     try {
       const res = await onWorkerLogin(email.toLowerCase().trim(), password, verificationPhoto);
@@ -173,12 +169,23 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
     }
   };
 
-  const handleQuickDemoWorker = (demoWorker: Worker) => {
+  // Instant login with authorized personnel
+  const handleDirectDemoLogin = async (demoWorker: Worker) => {
     setEmail(demoWorker.email);
     setPassword('Worker@1234');
     setError(null);
-    if (demoWorker.verificationPhoto || demoWorker.profileImage) {
-      setVerificationPhoto(demoWorker.verificationPhoto || demoWorker.profileImage || PRESET_WORKER_PHOTOS[0].url);
+    setLoading(true);
+    const photoToUse = demoWorker.verificationPhoto || demoWorker.profileImage || PRESET_WORKER_PHOTOS[0].url;
+    setVerificationPhoto(photoToUse);
+    try {
+      const res = await onWorkerLogin(demoWorker.email, 'Worker@1234', photoToUse);
+      if (!res.success) {
+        setError(res.message);
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Direct login failed.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -188,17 +195,17 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <button
           onClick={onBack || (() => onNavigate('landing'))}
-          className="inline-flex items-center gap-2 text-xs font-bold text-[#183B3A] hover:text-[#0F766E] transition cursor-pointer"
+          className="inline-flex items-center gap-2 text-xs font-bold text-slate-800 hover:text-amber-600 transition cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4 text-[#0F766E]" />
+          <ArrowLeft className="w-4 h-4 text-amber-600" />
           <span>Back to Home</span>
         </button>
 
         <div className="flex items-center gap-2 text-xs font-semibold">
-          <span className="text-[#647773]">Looking for a different portal?</span>
+          <span className="text-slate-500">Looking for a different portal?</span>
           <button
             onClick={() => onNavigate('landing')}
-            className="text-[#0F766E] underline hover:text-[#115E59] font-bold cursor-pointer"
+            className="text-amber-600 underline hover:text-amber-700 font-bold cursor-pointer"
           >
             Role Portals
           </button>
@@ -208,32 +215,48 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* Left Column: Worker Login Form */}
-        <div className="lg:col-span-7 bg-white rounded-3xl border border-[#D8EAE4] p-6 sm:p-8 shadow-xs">
+        <div className="lg:col-span-7 bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
-            <span className="px-2.5 py-0.5 bg-[#CCFBF1] text-[#0F766E] text-[10px] font-extrabold rounded-md tracking-wider uppercase border border-[#A7E8D0]">
+            <span className="px-2.5 py-0.5 bg-amber-100 text-amber-900 text-[10px] font-extrabold rounded-md tracking-wider uppercase border border-amber-300">
               WORKER PORTAL
             </span>
-            <span className="text-xs text-[#647773] font-medium">RAIL CARE WORKFORCE</span>
+            <span className="text-xs text-slate-500 font-medium">RAIL CARE WORKFORCE</span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#115E59] tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             Gig Worker Sign In
           </h1>
-          <p className="text-xs text-[#647773] mt-1 mb-6">
+          <p className="text-xs text-slate-500 mt-1 mb-6">
             Sign in to check station assignments, manage your availability, and accept passenger assistance requests.
           </p>
 
+          {/* Error Notice with Smart Direct Action */}
           {error && (
-            <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-[#C74646] text-xs flex items-center gap-2.5">
-              <AlertCircle className="w-4 h-4 shrink-0 text-[#C74646]" />
-              <span>{error}</span>
+            <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-300 text-slate-900 text-xs space-y-2">
+              <div className="flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 shrink-0 text-amber-700 mt-0.5" />
+                <span className="font-semibold text-slate-900">{error}</span>
+              </div>
+              {error.toLowerCase().includes('register') && (
+                <div className="pt-2 border-t border-amber-200 flex items-center justify-between gap-3">
+                  <span className="text-[11px] text-slate-600">Need to create your worker profile?</span>
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('worker-register')}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg text-xs transition cursor-pointer shadow-xs"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Register as Worker</span>
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* 1. Worker Registered Email */}
             <div>
-              <label className="block text-xs font-bold text-[#183B3A] uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5">
                 Worker Registered Email
               </label>
               <input
@@ -242,13 +265,13 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="e.g. ramesh.verma@worker.railcare.gov.in"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-[#D8EAE4] bg-white text-xs text-[#183B3A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/30 focus:border-[#0F766E]"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 shadow-2xs"
               />
             </div>
 
             {/* 2. Password */}
             <div>
-              <label className="block text-xs font-bold text-[#183B3A] uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5">
                 Password
               </label>
               <div className="relative">
@@ -258,81 +281,77 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter worker password"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#D8EAE4] bg-white text-xs text-[#183B3A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/30 focus:border-[#0F766E] pr-10"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 pr-10 shadow-2xs"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-[#647773] hover:text-[#0F766E] cursor-pointer"
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
-            {/* 3. Update Worker Image for Verification Process */}
-            <div className="p-4 sm:p-5 rounded-2xl border border-[#A7E8D0] bg-[#F4FBF8] space-y-3">
+            {/* 3. Station Verification Identity Photo */}
+            <div className="space-y-2.5 pt-2">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-[#0F766E] text-[#CCFBF1] flex items-center justify-center">
-                    <Camera className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-extrabold text-[#115E59] uppercase tracking-wider">
-                      Update Image for Verification Process
-                    </label>
-                    <p className="text-[10px] text-[#647773]">
-                      Required: Admin will verify this live photo to approve your account.
-                    </p>
-                  </div>
-                </div>
-                <span className="px-2 py-0.5 rounded-full bg-[#16845B] text-white text-[10px] font-bold">
-                  Live Audit
+                <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  Station Verification Photo
+                </label>
+                <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                  Railway ID Requirement
                 </span>
               </div>
 
-              {/* Live Camera Stream Container */}
+              {/* Live Camera Interface */}
               {isCameraActive && (
-                <div className="relative rounded-xl overflow-hidden border border-[#0F766E] bg-black">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-48 sm:h-56 object-cover"
-                  />
-                  <div className="absolute bottom-3 inset-x-0 flex items-center justify-center gap-3">
-                    <button
-                      type="button"
-                      onClick={captureCameraPhoto}
-                      className="px-4 py-2 bg-[#16845B] hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-2 cursor-pointer border border-white"
-                    >
-                      <Camera className="w-4 h-4" />
-                      <span>Take Photo</span>
-                    </button>
+                <div className="rounded-2xl border-2 border-amber-400 bg-slate-900 p-3 space-y-3">
+                  <div className="relative rounded-xl overflow-hidden aspect-video bg-black flex items-center justify-center">
+                    <video
+                      ref={videoRef}
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-red-600 text-white text-[10px] font-bold flex items-center gap-1.5 animate-pulse">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
+                      LIVE CAMERA
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
                     <button
                       type="button"
                       onClick={stopCameraStream}
-                      className="px-3 py-2 bg-slate-800/80 hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow cursor-pointer"
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 cursor-pointer"
                     >
                       Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={captureCameraPhoto}
+                      className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-md"
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span>Take Photo</span>
                     </button>
                   </div>
                 </div>
               )}
 
               {cameraError && (
-                <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-[#C58B20] text-[11px] flex items-center gap-2">
-                  <AlertCircle className="w-3.5 h-3.5 text-[#C58B20] shrink-0" />
+                <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] flex items-center gap-2">
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                   <span>{cameraError}</span>
                 </div>
               )}
 
               {/* Photo Preview & Selection Controls */}
               {!isCameraActive && (
-                <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-3.5 rounded-xl border border-[#D8EAE4]">
+                <div className="flex flex-col sm:flex-row items-center gap-4 bg-[#FFFDF5] p-3.5 rounded-xl border border-amber-100">
                   {/* Thumbnail */}
-                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 border-[#0F766E] shadow-2xs shrink-0 bg-slate-100 flex items-center justify-center">
+                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 border-amber-400 shadow-2xs shrink-0 bg-slate-100 flex items-center justify-center">
                     {verificationPhoto ? (
                       <img
                         src={verificationPhoto}
@@ -340,10 +359,10 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <Camera className="w-8 h-8 text-[#647773]" />
+                      <Camera className="w-8 h-8 text-slate-400" />
                     )}
-                    <div className="absolute top-1 right-1 bg-[#16845B] text-white p-0.5 rounded-full">
-                      <Check className="w-3 h-3" />
+                    <div className="absolute top-1 right-1 bg-amber-500 text-slate-950 p-0.5 rounded-full shadow-xs">
+                      <Check className="w-3 h-3 stroke-[3]" />
                     </div>
                   </div>
 
@@ -353,18 +372,18 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
                       <button
                         type="button"
                         onClick={startCamera}
-                        className="px-3 py-1.5 bg-[#0F766E] hover:bg-[#115E59] text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                        className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
                       >
-                        <Camera className="w-3.5 h-3.5 text-[#A7E8D0]" />
+                        <Camera className="w-3.5 h-3.5" />
                         <span>Use Camera</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-3 py-1.5 bg-[#E5F5EF] hover:bg-[#CCFBF1] text-[#0F766E] rounded-lg text-xs font-bold transition border border-[#A7E8D0] flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                        className="px-3 py-1.5 bg-white hover:bg-amber-50 text-slate-800 rounded-lg text-xs font-bold transition border border-slate-200 flex items-center gap-1.5 cursor-pointer shadow-2xs"
                       >
-                        <Upload className="w-3.5 h-3.5" />
+                        <Upload className="w-3.5 h-3.5 text-amber-600" />
                         <span>Upload File</span>
                       </button>
 
@@ -378,7 +397,7 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
                       />
                     </div>
 
-                    <p className="text-[10px] text-[#647773]">
+                    <p className="text-[10px] text-slate-500">
                       {photoSource === 'camera'
                         ? 'Captured via live camera snapshot.'
                         : photoSource === 'upload'
@@ -390,9 +409,9 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
               )}
 
               {/* Fast Presets Options */}
-              <div className="pt-2 border-t border-[#D8EAE4]">
-                <div className="flex items-center gap-1 text-[11px] font-bold text-[#183B3A] mb-2">
-                  <Sparkles className="w-3 h-3 text-[#0F766E]" />
+              <div className="pt-2 border-t border-slate-100">
+                <div className="flex items-center gap-1 text-[11px] font-bold text-slate-800 mb-2">
+                  <Sparkles className="w-3 h-3 text-amber-500" />
                   <span>Or select quick verification portrait:</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
@@ -409,8 +428,8 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
                         }}
                         className={`p-1.5 rounded-xl border text-left transition flex items-center gap-2 cursor-pointer ${
                           isSelected
-                            ? 'bg-white border-[#0F766E] ring-2 ring-[#0F766E]/20 shadow-2xs'
-                            : 'bg-white/70 border-[#D8EAE4] hover:border-[#0F766E]'
+                            ? 'bg-amber-50 border-amber-400 ring-2 ring-amber-400/20 shadow-2xs'
+                            : 'bg-white border-slate-200 hover:border-amber-300'
                         }`}
                       >
                         <img
@@ -419,8 +438,8 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
                           className="w-8 h-8 rounded-lg object-cover shrink-0"
                         />
                         <div className="min-w-0">
-                          <p className="text-[10px] font-bold text-[#183B3A] truncate">{preset.label}</p>
-                          <p className="text-[8px] text-[#647773] truncate">{preset.description}</p>
+                          <p className="text-[10px] font-bold text-slate-900 truncate">{preset.label}</p>
+                          <p className="text-[8px] text-slate-500 truncate">{preset.description}</p>
                         </div>
                       </button>
                     );
@@ -433,50 +452,56 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3.5 px-4 bg-[#0F766E] hover:bg-[#115E59] text-white text-xs font-bold rounded-xl shadow-xs transition-all mt-4 flex items-center justify-center gap-2 cursor-pointer border border-[#0F766E] ${
+              className={`w-full py-3.5 px-4 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-extrabold rounded-xl shadow-sm transition-all mt-4 flex items-center justify-center gap-2 cursor-pointer border border-amber-400 ${
                 loading ? 'opacity-70 cursor-not-allowed' : ''
               }`}
             >
-              <Briefcase className="w-4 h-4 text-[#A7E8D0]" />
-              <span>{loading ? 'Authenticating & Syncing Image...' : 'Sign In & Update Verification Image'}</span>
+              <Briefcase className="w-4 h-4 text-slate-950" />
+              <span>{loading ? 'Authenticating...' : 'Sign In as Railway Gig Worker'}</span>
             </button>
           </form>
 
           {/* Authorized Duty Worker Fast-Select Box */}
-          <div className="mt-8 pt-6 border-t border-[#D8EAE4]">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-[#183B3A] mb-3">
-              <KeyRound className="w-3.5 h-3.5 text-[#0F766E]" />
-              <span>Authorized Station Personnel (Fast Access · Password: Worker@1234)</span>
+          <div className="mt-8 pt-6 border-t border-slate-200">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 mb-3">
+              <KeyRound className="w-3.5 h-3.5 text-amber-600" />
+              <span>Authorized Station Personnel (1-Click Instant Login · Password: Worker@1234)</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {INITIAL_WORKERS.slice(0, 4).map((w) => (
                 <button
                   key={w.id}
                   type="button"
-                  onClick={() => handleQuickDemoWorker(w)}
-                  className="text-left p-2.5 rounded-xl border border-[#D8EAE4] hover:border-[#0F766E] hover:bg-[#E5F5EF] transition text-xs flex flex-col gap-0.5 cursor-pointer bg-[#F4FBF8]"
+                  disabled={loading}
+                  onClick={() => handleDirectDemoLogin(w)}
+                  className="text-left p-2.5 rounded-xl border border-slate-200 hover:border-amber-400 hover:bg-amber-50 transition text-xs flex items-center justify-between gap-2 cursor-pointer bg-white group shadow-2xs"
                 >
-                  <span className="font-bold text-[#183B3A] truncate">{w.fullName}</span>
-                  <span className="text-[10px] text-[#647773] truncate">{w.skillCategory.split('&')[0]} · {w.stationCode}</span>
+                  <div className="min-w-0">
+                    <span className="font-bold text-slate-900 block truncate group-hover:text-amber-700">{w.fullName}</span>
+                    <span className="text-[10px] text-slate-500 block truncate">{w.skillCategory.split('&')[0]} · {w.stationCode}</span>
+                  </div>
+                  <span className="px-2 py-1 bg-amber-100 text-amber-900 text-[10px] font-bold rounded-lg shrink-0 border border-amber-200 group-hover:bg-amber-500 group-hover:text-slate-950 transition">
+                    Sign In &rarr;
+                  </span>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Registration & Navigation links */}
-          <div className="mt-6 pt-4 border-t border-[#D8EAE4] flex flex-col sm:flex-row items-center justify-between text-xs text-[#647773] gap-2">
+          <div className="mt-6 pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
             <span>
               Don't have a worker account?{' '}
               <button
                 onClick={() => onNavigate('worker-register')}
-                className="font-bold text-[#0F766E] underline hover:text-[#115E59] cursor-pointer"
+                className="font-bold text-amber-600 underline hover:text-amber-700 cursor-pointer"
               >
                 Register as New Worker
               </button>
             </span>
             <button
               onClick={() => onNavigate('landing')}
-              className="font-semibold text-[#647773] hover:text-[#0F766E] cursor-pointer"
+              className="font-semibold text-slate-600 hover:text-amber-600 cursor-pointer"
             >
               &larr; Back to Role Selection
             </button>
@@ -485,35 +510,35 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
 
         {/* Right Column: Portal info & Policy */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="bg-white rounded-3xl border border-[#D8EAE4] p-6 shadow-xs">
-            <h3 className="text-base font-bold text-[#115E59] mb-2 flex items-center gap-2">
-              <Shield className="w-5 h-5 text-[#0F766E]" />
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <h3 className="text-base font-bold text-slate-900 mb-2 flex items-center gap-2">
+              <Shield className="w-5 h-5 text-amber-600" />
               <span>Worker Verification Policy</span>
             </h3>
-            <p className="text-xs text-[#647773] leading-relaxed mb-4">
+            <p className="text-xs text-slate-500 leading-relaxed mb-4">
               All railway workers undergo administrative background check and station assignment before receiving live service requests.
             </p>
             <div className="space-y-2.5 text-xs">
-              <div className="flex items-center gap-2 text-[#183B3A]">
-                <CheckCircle2 className="w-4 h-4 text-[#16845B] shrink-0" />
+              <div className="flex items-center gap-2 text-slate-800">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>Station platform access permit</span>
               </div>
-              <div className="flex items-center gap-2 text-[#183B3A]">
-                <CheckCircle2 className="w-4 h-4 text-[#16845B] shrink-0" />
+              <div className="flex items-center gap-2 text-slate-800">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>Live verification photo submitted to Administrator</span>
               </div>
-              <div className="flex items-center gap-2 text-[#183B3A]">
-                <CheckCircle2 className="w-4 h-4 text-[#16845B] shrink-0" />
+              <div className="flex items-center gap-2 text-slate-800">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>Real-time train arrival coordination</span>
               </div>
-              <div className="flex items-center gap-2 text-[#183B3A]">
-                <CheckCircle2 className="w-4 h-4 text-[#16845B] shrink-0" />
+              <div className="flex items-center gap-2 text-slate-800">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>Passenger grievance resolution</span>
               </div>
             </div>
           </div>
 
-          <div className="rounded-2xl overflow-hidden border border-[#D8EAE4] shadow-xs">
+          <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-white">
             <img
               src={trainJourneyImg}
               onError={(e) => {
@@ -525,12 +550,12 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
               alt="Railway Worker Platform"
               className="w-full h-44 object-cover"
             />
-            <div className="bg-[#115E59] text-white p-3.5 text-xs font-semibold flex items-center justify-between">
+            <div className="bg-slate-900 text-white p-3.5 text-xs font-semibold flex items-center justify-between">
               <div>
                 <p className="font-bold text-white">Station Gig Workforce</p>
-                <p className="text-[10px] text-[#A7E8D0]">Interconnected with Passengers & Admin</p>
+                <p className="text-[10px] text-amber-300">Interconnected with Passengers &amp; Admin</p>
               </div>
-              <span className="text-[#CCFBF1] font-mono">RAIL CARE</span>
+              <span className="text-amber-400 font-mono font-bold">RAIL CARE</span>
             </div>
           </div>
         </div>
