@@ -86,42 +86,42 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNaviga
       <div className="mb-4">
         <button
           onClick={onBack || (() => onNavigate('landing'))}
-          className="inline-flex items-center gap-2 text-xs font-bold text-[#142B4A] hover:text-[#243F63] bg-white px-3.5 py-2 rounded-xl border border-[#E8E2D3] shadow-2xs hover:bg-[#FFF5DC] transition cursor-pointer"
+          className="inline-flex items-center gap-2 text-xs font-bold text-[#183B3A] hover:text-[#0F766E] bg-white px-3.5 py-2 rounded-xl border border-[#D8EAE4] shadow-2xs hover:bg-[#E5F5EF] transition cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4 text-[#142B4A]" />
+          <ArrowLeft className="w-4 h-4 text-[#0F766E]" />
           <span>Back</span>
         </button>
       </div>
 
       {/* Split-Screen Container */}
-      <div className="bg-white rounded-3xl border border-[#E8E2D3] shadow-md overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+      <div className="bg-white rounded-3xl border border-[#D8EAE4] shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12">
         
         {/* Left Side: Brand Visual */}
-        <div className="lg:col-span-5 bg-[#FFF5DC] p-8 lg:p-10 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-[#E8E2D3]">
+        <div className="lg:col-span-5 bg-[#F4FBF8] p-8 lg:p-10 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-[#D8EAE4]">
           
           <div>
             <div className="flex items-center gap-2.5 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-[#142B4A] flex items-center justify-center text-[#E9B949] shadow-xs">
+              <div className="w-10 h-10 rounded-xl bg-[#0F766E] flex items-center justify-center text-[#A7E8D0] shadow-xs">
                 <TrainTrack className="w-5 h-5" />
               </div>
               <div>
-                <span className="font-extrabold text-xl text-[#142B4A] tracking-tight">RAIL CARE</span>
-                <p className="text-[10px] text-[#6B7280] font-medium">Passenger Network</p>
+                <span className="font-extrabold text-xl text-[#183B3A] tracking-tight">RAIL CARE</span>
+                <p className="text-[10px] text-[#647773] font-medium">Passenger Network</p>
               </div>
             </div>
 
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#142B4A] leading-snug tracking-tight mb-3">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#115E59] leading-snug tracking-tight mb-3">
               Fast Booking.<br />
-              <span className="text-[#E9B949]">Coach Assistance.</span><br />
+              <span className="text-[#0F766E]">Coach Assistance.</span><br />
               Direct to Berth.
             </h2>
 
-            <p className="text-xs text-[#6B7280] leading-relaxed mb-6">
+            <p className="text-xs text-[#647773] leading-relaxed mb-6">
               Create your passenger profile to book railway gig workers at upcoming stations, share your berth coordinates, and track worker arrivals.
             </p>
           </div>
 
-          <div className="rounded-2xl overflow-hidden border-2 border-white shadow-sm mt-4">
+          <div className="rounded-2xl overflow-hidden border-2 border-white shadow-xs mt-4">
             <img
               src={trainJourneyImg}
               onError={(e) => {
@@ -134,13 +134,13 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNaviga
               referrerPolicy="no-referrer"
               className="w-full h-44 object-cover object-center"
             />
-            <div className="bg-[#142B4A] text-white p-3 text-[11px] font-semibold flex items-center justify-between">
+            <div className="bg-[#115E59] text-white p-3 text-[11px] font-semibold flex items-center justify-between">
               <span>Passenger Registration</span>
-              <span className="text-[#E9B949]">Instant Activation</span>
+              <span className="text-[#A7E8D0]">Instant Activation</span>
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-[#E8E2D3]/60 text-[11px] text-[#6B7280]">
+          <div className="mt-6 pt-4 border-t border-[#D8EAE4] text-[11px] text-[#647773]">
             Safe, verified, and interconnected station gig workforce platform.
           </div>
 
@@ -150,27 +150,27 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNaviga
         <div className="lg:col-span-7 p-8 sm:p-10 bg-white">
           
           <div className="mb-6">
-            <div className="text-xs font-bold text-[#E9B949] uppercase tracking-wider mb-1">
+            <div className="text-xs font-bold text-[#0F766E] uppercase tracking-wider mb-1">
               CREATE PASSENGER ACCOUNT
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#142B4A]">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#115E59]">
               Passenger Registration
             </h1>
-            <p className="text-xs text-[#6B7280] mt-1">
+            <p className="text-xs text-[#647773] mt-1">
               Fill in your details to begin booking station gig worker services.
             </p>
           </div>
 
           {error && (
-            <div className="mb-5 p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-red-600" />
+            <div className="mb-5 p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-[#C74646] flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-[#C74646]" />
               <div className="font-medium">{error}</div>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-[#253247] mb-1.5">
+              <label className="block text-xs font-bold text-[#183B3A] mb-1.5">
                 Full Name <span className="text-red-500">*</span>
               </label>
               <input
@@ -178,14 +178,14 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNaviga
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Enter your full name"
-                className="w-full px-3.5 py-2.5 text-sm bg-[#FFFDF5] border border-[#E8E2D3] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#142B4A] focus:border-transparent transition"
+                className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#D8EAE4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E] focus:border-transparent transition text-[#183B3A]"
                 required
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-[#253247] mb-1.5">
+                <label className="block text-xs font-bold text-[#183B3A] mb-1.5">
                   Email Address <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -193,13 +193,13 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNaviga
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full px-3.5 py-2.5 text-sm bg-[#FFFDF5] border border-[#E8E2D3] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#142B4A] focus:border-transparent transition"
+                  className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#D8EAE4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E] focus:border-transparent transition text-[#183B3A]"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#253247] mb-1.5">
+                <label className="block text-xs font-bold text-[#183B3A] mb-1.5">
                   Mobile Number <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -208,7 +208,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNaviga
                   onChange={(e) => setMobile(e.target.value)}
                   placeholder="10-digit mobile number"
                   maxLength={10}
-                  className="w-full px-3.5 py-2.5 text-sm bg-[#FFFDF5] border border-[#E8E2D3] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#142B4A] focus:border-transparent transition"
+                  className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#D8EAE4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E] focus:border-transparent transition text-[#183B3A]"
                   required
                 />
               </div>
@@ -216,7 +216,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNaviga
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-[#253247] mb-1.5">
+                <label className="block text-xs font-bold text-[#183B3A] mb-1.5">
                   Password <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -224,13 +224,13 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNaviga
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="At least 4 characters"
-                  className="w-full px-3.5 py-2.5 text-sm bg-[#FFFDF5] border border-[#E8E2D3] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#142B4A] focus:border-transparent transition"
+                  className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#D8EAE4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E] focus:border-transparent transition text-[#183B3A]"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#253247] mb-1.5">
+                <label className="block text-xs font-bold text-[#183B3A] mb-1.5">
                   Confirm Password <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -238,7 +238,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNaviga
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-enter password"
-                  className="w-full px-3.5 py-2.5 text-sm bg-[#FFFDF5] border border-[#E8E2D3] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#142B4A] focus:border-transparent transition"
+                  className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#D8EAE4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E] focus:border-transparent transition text-[#183B3A]"
                   required
                 />
               </div>
@@ -247,28 +247,28 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNaviga
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3.5 px-4 bg-[#142B4A] hover:bg-[#243F63] text-white text-sm font-bold rounded-xl shadow-md transition-all border border-[#142B4A] hover:border-[#E9B949] cursor-pointer flex items-center justify-center gap-2 mt-4 ${
+              className={`w-full py-3.5 px-4 bg-[#0F766E] hover:bg-[#115E59] text-white text-sm font-bold rounded-xl shadow-xs transition-all border border-[#0F766E] cursor-pointer flex items-center justify-center gap-2 mt-4 ${
                 loading ? 'opacity-70 cursor-not-allowed' : ''
               }`}
             >
-              <UserPlus className="w-4 h-4 text-[#E9B949]" />
+              <UserPlus className="w-4 h-4 text-[#A7E8D0]" />
               <span>{loading ? 'Creating Account...' : 'Register Account'}</span>
             </button>
           </form>
 
-          <div className="mt-8 pt-4 border-t border-[#E8E2D3] flex flex-col sm:flex-row items-center justify-between text-xs text-[#6B7280] gap-2">
+          <div className="mt-8 pt-4 border-t border-[#D8EAE4] flex flex-col sm:flex-row items-center justify-between text-xs text-[#647773] gap-2">
             <span>
               Already registered?{' '}
               <button
                 onClick={() => onNavigate('login')}
-                className="text-[#142B4A] font-bold hover:underline cursor-pointer"
+                className="text-[#0F766E] font-bold hover:underline cursor-pointer"
               >
                 Sign in here &rarr;
               </button>
             </span>
             <button
               onClick={onBack || (() => onNavigate('landing'))}
-              className="font-semibold text-[#6B7280] hover:text-[#142B4A] cursor-pointer"
+              className="font-semibold text-[#647773] hover:text-[#0F766E] cursor-pointer"
             >
               &larr; Back to Role Selection
             </button>

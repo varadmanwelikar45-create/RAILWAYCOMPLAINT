@@ -1,0 +1,995 @@
+Act as a senior full-stack software architect, database engineer, backend developer, and UI/UX designer specializing in scalable service marketplaces and railway management systems.
+
+I have an existing application named:
+
+RAIL CARE — Railway Complaint Management System.
+
+My application already has passenger and administrator functionality. I am adding a Railway Gig Worker Marketplace to the existing application.
+
+I want you to implement the following features directly in my existing project.
+
+IMPORTANT:
+This is an extension of my existing application, not a new application.
+
+Preserve all existing functionality, UI components, background animation, color palette, authentication, complaint management, navigation, API integrations, and database records.
+
+Do not rebuild the application from scratch.
+
+Do not remove or replace existing passenger, worker, or administrator functionality.
+
+Inspect the current architecture before modifying any code or database structures.
+
+Reuse the existing backend, database, authentication system, and project framework wherever possible.
+
+Make the smallest necessary backward-compatible changes.
+
+==================================================
+1. MAIN OBJECTIVE
+==================================================
+
+Build a scalable, skill-based gig worker marketplace inside RAIL CARE.
+
+The platform must allow:
+
+1. Workers to register and create detailed professional profiles.
+2. Administrators to view, verify, approve, and manage worker profiles.
+3. Passengers to discover eligible workers.
+4. Passengers to see workers whose skills match their specific complaint.
+5. Passengers to select and book a suitable worker.
+6. Workers to receive and accept booking requests.
+7. The system to match workers with railway stations relevant to the passenger's journey.
+8. Passengers to track their bookings.
+9. Administrators to manage workers, skills, stations, complaints, and bookings.
+10. All information to be stored persistently in the existing database.
+
+The system must support multiple passengers, multiple workers, and multiple simultaneous booking requests.
+
+Do not implement this as a collection of disconnected frontend screens.
+
+All important operations must use the actual backend and database.
+
+==================================================
+2. THREE USER ROLES
+==================================================
+
+Maintain three separate user roles:
+
+A. PASSENGER
+B. GIG WORKER
+C. ADMINISTRATOR
+
+Each role must have appropriate registration, login, dashboard, permissions, and data access.
+
+PASSENGER:
+- Register and log in.
+- Submit railway complaints.
+- View their own complaints.
+- Search for eligible workers.
+- View worker profiles.
+- Select and book workers.
+- View their own bookings.
+- Track booking status.
+- View booking history.
+
+GIG WORKER:
+- Register and log in.
+- Create and update a professional profile.
+- Select skills and service categories.
+- Select registered railway stations served.
+- Submit qualifications and relevant verification documents.
+- Set availability.
+- Receive suitable booking requests.
+- Accept or decline eligible requests.
+- Update job status.
+- View assigned bookings.
+- View completed booking history.
+
+ADMINISTRATOR:
+- Access the existing protected admin portal.
+- View all registered worker profiles.
+- Verify or reject worker registrations.
+- Manage worker skills and service categories.
+- Manage worker station assignments.
+- View passengers and bookings according to existing authorization rules.
+- Monitor active and completed bookings.
+- Suspend or reactivate workers when authorized.
+- Review worker profiles and verification status.
+
+Do not weaken the existing authentication or administrator authorization system.
+
+A user must not gain administrator privileges by modifying a frontend form or request.
+
+==================================================
+3. WORKER REGISTRATION AND PROFILE CREATION
+==================================================
+
+Create a complete worker registration and profile management process.
+
+When a worker registers, save their account and professional profile in the database.
+
+Reuse the existing authentication mechanism.
+
+Do not store passwords as plain text or duplicate authentication credentials in worker profile records.
+
+Collect the following information where appropriate:
+
+PERSONAL INFORMATION:
+- Worker ID.
+- Full name.
+- Email address.
+- Mobile number.
+- Profile photograph, if supported.
+- City or service region.
+
+PROFESSIONAL INFORMATION:
+- Professional headline.
+- Short description.
+- Skills.
+- Service categories.
+- Experience.
+- Qualifications or certifications, where applicable.
+- Registered service stations.
+- Availability.
+- Verification status.
+
+SERVICE INFORMATION:
+- Services offered.
+- Relevant service category.
+- Stations where the worker can provide services.
+- Availability schedule, if supported.
+
+VERIFICATION INFORMATION:
+- Verification status.
+- Documents submitted for verification, where applicable.
+- Verification date.
+- Reviewing administrator ID, where applicable.
+- Rejection reason, if rejected.
+
+Use appropriate privacy protections for personal information and verification documents.
+
+A worker should be able to update their permitted profile fields after registration.
+
+Important:
+Updating a profile must not allow a worker to change their verification status to Verified.
+
+Only an authorized administrator or an explicitly authorized verification process may approve a worker.
+
+==================================================
+4. WORKER PROFILES VISIBLE TO ADMIN AND PASSENGERS
+==================================================
+
+Every successfully registered worker should have a persistent profile.
+
+ADMIN VISIBILITY:
+
+The administrator must be able to view registered worker profiles, including workers awaiting verification.
+
+Provide appropriate filters for:
+- All workers.
+- Pending verification.
+- Verified workers.
+- Rejected workers.
+- Suspended workers.
+- Skill category.
+- Railway station.
+- Availability.
+
+Display worker information in a professional table or card layout.
+
+Administrators should be able to open a profile and inspect its details.
+
+PASSENGER VISIBILITY:
+
+Passengers should be able to see relevant worker profiles when searching for services.
+
+However, implement the following visibility rules:
+
+- Public or passenger-facing search should show only verified and eligible workers.
+- Workers pending verification must not appear as bookable workers.
+- Rejected or suspended workers must not appear as bookable workers.
+- Unavailable workers should not be presented as immediately bookable.
+- Sensitive verification documents and private account information must never be shown to passengers.
+
+A passenger-facing worker card should display:
+
+- Worker name.
+- Profile photograph, if available.
+- Professional headline.
+- Skills.
+- Service categories.
+- Relevant experience.
+- Relevant qualifications, where verified.
+- Service stations.
+- Availability status.
+- Rating and review summary, only if real reviews are implemented.
+- Booking button.
+
+Do not display fake ratings, fabricated reviews, or invented experience.
+
+A passenger should be able to open a worker profile and inspect the worker's relevant professional information before booking.
+
+==================================================
+5. SKILL-BASED WORKER CATEGORIES
+==================================================
+
+Create a structured skill and service-category system.
+
+The system must match workers based on the type of complaint or service required.
+
+Example categories:
+
+1. Electrical Assistance
+2. Food Services
+3. Cleaning Services
+4. Plumbing Services
+5. Mechanical Assistance
+6. Technical Assistance
+7. General Assistance
+
+Additional categories should be manageable by authorized administrators.
+
+WORKER SKILLS:
+
+A worker may have multiple skills.
+
+For example:
+
+Worker A:
+- Electrical repair.
+- Electrical inspection.
+- Basic equipment troubleshooting.
+
+Worker B:
+- Food preparation.
+- Cloud kitchen services.
+- Approved food delivery services.
+
+Worker C:
+- Cleaning.
+- Waste removal.
+- Sanitation services.
+
+Worker D:
+- Plumbing.
+- Water leakage repair.
+- Pipe maintenance.
+
+Worker E:
+- Mechanical repair.
+- Equipment maintenance.
+
+Do not store a worker's multiple skills as an unstructured comma-separated text field if the database supports proper relational tables or structured relationships.
+
+Use a normalized skill system.
+
+Recommended logical entities:
+
+- Skills.
+- Service Categories.
+- Worker Skills.
+- Worker Service Categories.
+
+A worker should be able to possess multiple skills and belong to multiple service categories.
+
+A skill may belong to a service category, and multiple workers may possess the same skill.
+
+Use foreign keys or equivalent database references.
+
+Prevent duplicate skill assignments for the same worker.
+
+==================================================
+6. AUTOMATIC SKILL-BASED MATCHING
+==================================================
+
+This is one of the most important features.
+
+When a passenger selects or submits a complaint, identify its relevant service category and display workers who can handle that specific type of problem.
+
+Examples:
+
+CASE 1: ELECTRICAL COMPLAINT
+
+The passenger selects:
+"Electrical Issue"
+
+The system should display eligible workers whose registered and verified skills match electrical assistance.
+
+Do not display unrelated food service workers or cleaning workers as primary matches.
+
+CASE 2: FOOD-RELATED REQUEST
+
+The passenger selects:
+"Food Service"
+
+Display workers registered under relevant food service categories.
+
+For example:
+- Food preparation.
+- Cloud kitchen services.
+- Approved food service providers.
+
+Only show services that are actually supported and permitted by the platform.
+
+Do not assume that every cloud kitchen worker is authorized to enter a train or railway platform.
+
+CASE 3: CLEANLINESS COMPLAINT
+
+Display workers whose skills include:
+- Cleaning.
+- Sanitation.
+- Waste management, if supported.
+
+CASE 4: PLUMBING COMPLAINT
+
+Display workers whose verified skills match plumbing services.
+
+CASE 5: MECHANICAL COMPLAINT
+
+Display workers with suitable mechanical or technical skills.
+
+MATCHING RULES:
+
+The matching system must consider:
+
+1. Complaint category or requested service.
+2. Worker skills.
+3. Worker verification status.
+4. Worker availability.
+5. Selected railway station.
+6. Worker station assignments.
+7. Existing active bookings.
+8. Requested service time, where supported.
+
+The matching algorithm should prioritize relevant, eligible workers.
+
+Do not display all workers without filtering.
+
+Do not show unrelated workers simply because they are registered.
+
+If no suitable worker is available, show:
+
+"No verified and available worker was found for this service at the selected station."
+
+Allow the passenger to choose another supported station or check availability later.
+
+Do not invent worker availability.
+
+==================================================
+7. COMPLAINT-TO-SERVICE CATEGORY MAPPING
+==================================================
+
+Integrate the new marketplace with the existing complaint management system.
+
+Inspect the existing complaint categories and reuse them wherever possible.
+
+Create an explicit mapping between existing complaint categories and the new service categories.
+
+For example:
+
+Existing complaint category:
+Electrical Problem
+
+Corresponding service category:
+Electrical Assistance
+
+Existing complaint category:
+Cleanliness
+
+Corresponding service category:
+Cleaning Services
+
+Existing complaint category:
+Water or Plumbing Problem
+
+Corresponding service category:
+Plumbing Services
+
+Existing complaint category:
+Mechanical Problem
+
+Corresponding service category:
+Mechanical Assistance
+
+Food-related complaints may map to an appropriate approved food service category only when the requested task can actually be performed by a worker.
+
+Do not automatically send every railway complaint to a gig worker.
+
+Complaints involving medical emergencies, fire, violence, security threats, women’s safety, or other emergencies must not be treated as ordinary gig worker bookings.
+
+Preserve the existing complaint submission and resolution workflows.
+
+A passenger may initiate a worker booking from an eligible complaint, but the booking must remain a separate record linked to that complaint.
+
+Do not overwrite the original complaint category, status, or history.
+
+==================================================
+8. STATION-BASED WORKER DISCOVERY
+==================================================
+
+The system must allow passengers to discover workers associated with relevant railway stations.
+
+When creating a booking, the passenger should be able to specify:
+
+- Train number.
+- Train name, if available.
+- Railway station where assistance is requested.
+- Expected arrival time, if available.
+- Requested service.
+- Relevant complaint ID, if applicable.
+- Description of the problem.
+
+Use existing station records if they are already available.
+
+If the application does not have a station dataset, create a separate, maintainable station entity using valid station records supplied to or available through the existing application.
+
+Do not invent station codes, distances, train positions, or arrival times.
+
+A worker may serve multiple stations.
+
+A station may have multiple registered workers.
+
+Use a many-to-many relationship between workers and service stations.
+
+When a passenger selects a station, display workers who:
+
+- Are verified.
+- Match the required service category.
+- Are assigned to the selected station.
+- Are available for the requested time.
+- Have no conflicting booking.
+
+If actual GPS or route data is available, it may be used through the existing supported integration.
+
+Otherwise, use station assignments.
+
+Do not claim to provide real-time GPS proximity or live train tracking if those capabilities do not exist.
+
+==================================================
+9. PASSENGER WORKER SEARCH AND BOOKING INTERFACE
+==================================================
+
+Add a section to the existing passenger dashboard:
+
+"Find a Railway Service Worker"
+
+The interface should guide the passenger through the following steps:
+
+STEP 1:
+Select an existing complaint or choose an available service category.
+
+STEP 2:
+Select the relevant railway station.
+
+STEP 3:
+Enter train details and expected arrival time where required.
+
+STEP 4:
+View eligible workers matching the selected service and station.
+
+STEP 5:
+Open worker profiles to inspect their skills and qualifications.
+
+STEP 6:
+Select a suitable worker.
+
+STEP 7:
+Review booking details.
+
+STEP 8:
+Confirm the booking.
+
+WORKER CARDS:
+
+Each worker card should display:
+- Name.
+- Relevant skills.
+- Service category.
+- Assigned station.
+- Verification badge.
+- Availability.
+- Experience or qualifications, if available.
+- View Profile button.
+- Book Worker button.
+
+Sort results by relevance first.
+
+If the system has reliable station distance or travel-time information, it may use that information as a secondary ranking factor.
+
+Otherwise, do not invent distance-based rankings.
+
+The passenger must explicitly confirm the booking.
+
+Do not automatically assign a worker without showing the passenger the applicable booking details if the passenger is selecting a specific worker.
+
+==================================================
+10. BOOKING DATA AND LIFECYCLE
+==================================================
+
+Every booking must be stored as a separate persistent database record.
+
+A booking should reference:
+
+- Unique booking ID.
+- Passenger ID.
+- Worker ID.
+- Service category ID.
+- Railway station ID.
+- Existing complaint ID, if applicable.
+- Train number, if available.
+- Expected arrival time, if provided.
+- Booking creation time.
+- Requested service description.
+- Booking status.
+- Relevant timestamps.
+
+Use the following lifecycle where supported:
+
+1. Requested.
+2. Awaiting Worker Confirmation.
+3. Accepted.
+4. On the Way.
+5. Arrived at Station.
+6. Service In Progress.
+7. Completed.
+8. Cancelled.
+9. Declined.
+
+Do not automatically mark a booking as completed when it is accepted.
+
+Only authorized participants should be able to perform permitted status transitions.
+
+The passenger should see the current booking status.
+
+The worker should see incoming requests and assigned bookings.
+
+The administrator should be able to monitor booking records.
+
+Keep a booking history for auditing and troubleshooting.
+
+Do not delete historical booking records when a booking is cancelled.
+
+==================================================
+11. PREVENT DOUBLE BOOKING AND CONCURRENT REQUEST CONFLICTS
+==================================================
+
+The database and backend must safely support multiple passengers and workers using the system simultaneously.
+
+Two passengers must not be able to book the same worker for conflicting service times.
+
+A worker must not be assigned to multiple incompatible jobs at the same time.
+
+Use backend validation and database-level protections where appropriate.
+
+Implement safe booking creation using the database's supported transactions, locking, exclusion constraints, or equivalent concurrency controls.
+
+Do not rely only on disabling a frontend button.
+
+Before confirming a booking, validate:
+
+- The worker exists.
+- The worker is verified.
+- The worker is active and eligible.
+- The worker has the requested skill.
+- The worker serves the requested station.
+- The worker is available for the requested time.
+- The worker has no conflicting active booking.
+- The passenger is authorized to create the booking.
+- The complaint, if supplied, belongs to the passenger.
+- The service category is valid.
+
+If two requests attempt to reserve the same worker simultaneously, the backend must safely accept only compatible bookings.
+
+Return a clear error when the selected worker is no longer available.
+
+The passenger should be able to select another eligible worker.
+
+Avoid duplicate booking creation when a user double-clicks the booking button or retries a request after a network delay.
+
+Use idempotency keys or an equivalent safe mechanism if supported by the existing architecture.
+
+==================================================
+12. STRONG AND SCALABLE DATABASE DESIGN
+==================================================
+
+First inspect the current database engine, schema, indexes, authentication tables, and existing data relationships.
+
+Continue using the existing database.
+
+Do not replace it.
+
+Design the new marketplace data structures to support many users, workers, stations, skills, complaints, and bookings.
+
+Use normalized data structures and proper relationships.
+
+Recommended logical entities:
+
+A. USERS
+
+Reuse the existing user and authentication tables.
+
+Do not create a duplicate user system if one already exists.
+
+Support appropriate roles and secure identity references.
+
+B. WORKER PROFILES
+
+Store worker-specific professional details separately from authentication credentials.
+
+Include verification status and profile information.
+
+C. SKILLS
+
+Store unique skills.
+
+D. SERVICE CATEGORIES
+
+Store service categories.
+
+E. WORKER SKILLS
+
+Represent the many-to-many relationship between workers and skills.
+
+F. WORKER SERVICE CATEGORIES
+
+Represent the relationship between workers and services, if separate from skills.
+
+G. RAILWAY STATIONS
+
+Store station identifiers and names.
+
+H. WORKER STATIONS
+
+Represent the many-to-many relationship between workers and stations.
+
+I. BOOKINGS
+
+Store each booking as a separate record referencing the passenger, selected worker, service, station, and optional complaint.
+
+J. BOOKING STATUS HISTORY
+
+Store status transitions where required for auditing.
+
+K. REVIEWS
+
+Create this only if the application implements a real post-service review process.
+
+Never generate fake ratings or reviews.
+
+Do not duplicate complaint records inside the booking system.
+
+Use foreign keys or equivalent integrity constraints.
+
+Use unique constraints to prevent duplicate assignments and duplicate relationship records.
+
+Add appropriate indexes for frequently queried fields.
+
+Potential indexing targets include:
+
+- User ID.
+- Worker ID.
+- Verification status.
+- Availability.
+- Skill ID.
+- Service category ID.
+- Station ID.
+- Booking status.
+- Booking creation time.
+- Passenger ID.
+- Worker ID plus requested service time.
+- Complaint ID, where linked.
+
+Adapt the actual index definitions to the database engine and query patterns.
+
+Do not blindly create duplicate indexes.
+
+Use database migrations or the existing schema-management mechanism.
+
+Migrations must be additive and backward-compatible.
+
+Do not drop, rename, or recreate existing tables to implement this feature.
+
+Do not delete existing records.
+
+==================================================
+13. DATA INTEGRITY AND TRANSACTION SAFETY
+==================================================
+
+Implement strong data validation.
+
+Every booking must reference a valid passenger, worker, station, and service category.
+
+If a complaint ID is provided, validate that the complaint exists and belongs to the requesting passenger.
+
+Prevent duplicate worker-skill assignments.
+
+Prevent duplicate worker-station assignments.
+
+Prevent invalid booking status transitions.
+
+Prevent unauthorized changes to booking ownership.
+
+Use appropriate transactions for operations involving multiple database changes.
+
+When a booking is created, ensure that its related records remain consistent.
+
+If any operation fails, roll back the relevant transaction when supported.
+
+Use proper error handling.
+
+Do not return a success response before the database operation succeeds.
+
+Do not silently swallow database errors.
+
+Do not expose internal database errors, credentials, or stack traces to end users.
+
+==================================================
+14. PERFORMANCE AND MULTI-USER SUPPORT
+==================================================
+
+Design the new feature to handle concurrent passengers, workers, and bookings.
+
+Use:
+
+- Pagination for worker search results and booking history.
+- Server-side filtering.
+- Indexed database queries.
+- Efficient skill and station matching.
+- Connection pooling, if supported by the existing database driver.
+- Transactions for critical booking operations.
+- Appropriate request validation.
+- Reasonable query limits.
+- Safe handling of concurrent updates.
+
+Do not retrieve every worker profile and filter all records exclusively in the browser.
+
+Perform worker matching and authorization on the backend.
+
+Return only the fields needed by the frontend.
+
+Do not load verification documents or sensitive personal data in ordinary worker search results.
+
+Use the existing architecture and avoid introducing unnecessary dependencies.
+
+==================================================
+15. ADMIN WORKER MANAGEMENT
+==================================================
+
+Extend the existing administrator dashboard without replacing it.
+
+Add a section:
+
+"Gig Worker Management"
+
+The administrator should be able to:
+
+- View all registered worker profiles.
+- Search by worker name or identifier.
+- Filter by skill.
+- Filter by service category.
+- Filter by railway station.
+- Filter by verification status.
+- View profile details.
+- Review submitted qualifications and documents, where supported.
+- Approve eligible workers.
+- Reject registrations with an appropriate reason.
+- Suspend or reactivate workers when authorized.
+- Update authorized station assignments.
+- Review worker bookings.
+- Monitor active and completed services.
+
+All administrative operations must be authorized by the backend.
+
+A worker must not be able to approve themselves.
+
+Passengers must not be able to access administrator controls.
+
+==================================================
+16. PASSENGER BOOKING HISTORY
+==================================================
+
+Add a section to the passenger dashboard:
+
+"My Worker Bookings"
+
+Display only bookings belonging to the logged-in passenger.
+
+Show:
+- Booking ID.
+- Selected worker.
+- Service category.
+- Station.
+- Train details, if provided.
+- Booking time.
+- Current status.
+- View Details action.
+
+Allow the passenger to view the selected worker's relevant profile information.
+
+Allow cancellation only where the booking lifecycle permits it.
+
+Do not allow passengers to alter the assigned worker or booking ownership by modifying frontend requests.
+
+Preserve all existing complaint records and complaint tracking.
+
+If the booking is related to an existing complaint, display a link to that complaint without replacing its original status or data.
+
+==================================================
+17. WORKER DASHBOARD
+==================================================
+
+Add or extend the existing worker dashboard.
+
+Include:
+
+- Worker profile.
+- Skills.
+- Service categories.
+- Assigned stations.
+- Verification status.
+- Availability controls.
+- Incoming booking requests.
+- Accepted bookings.
+- Active jobs.
+- Completed jobs.
+- Booking history.
+
+Show incoming requests that match the worker's verified skills and station assignments.
+
+Workers should only be able to accept eligible requests.
+
+The backend must validate every acceptance operation.
+
+Do not trust a worker ID supplied by the browser.
+
+Obtain the authenticated worker identity from the existing authentication system.
+
+==================================================
+18. NOTIFICATIONS
+==================================================
+
+Use the existing notification mechanism if one exists.
+
+Where supported, notify the relevant user when:
+
+- A passenger creates a booking.
+- A worker receives a booking request.
+- A worker accepts or declines a request.
+- A booking is cancelled.
+- A worker updates the service status.
+- A booking is completed.
+
+If real-time notifications are not available, implement a simple persistent notification or booking-status refresh using existing capabilities.
+
+Do not claim that SMS, WhatsApp, email, or push notifications work unless the required integrations are configured and tested.
+
+==================================================
+19. UI DESIGN AND PRESERVATION
+==================================================
+
+Maintain the existing RAIL CARE design system.
+
+Existing colors:
+
+Ivory: #FFFDF5
+Cream: #FFF5DC
+Navy: #142B4A
+Secondary Navy: #243F63
+Gold: #E9B949
+White: #FFFFFF
+
+Preserve the existing animated railway background.
+
+Preserve the existing navbar, logo, typography, dashboard layout, complaint pages, and administrator controls.
+
+Add only the new UI elements necessary for worker registration, profile management, worker discovery, booking, and administration.
+
+The new worker cards should look premium and professional.
+
+Use:
+- Clear skill labels.
+- Verification badges.
+- Readable availability indicators.
+- Consistent spacing.
+- Accessible buttons.
+- Responsive cards.
+- Helpful empty states.
+- Loading indicators.
+- Clear success and error messages.
+
+Do not redesign unrelated pages.
+
+==================================================
+20. IMPLEMENTATION AND TESTING
+==================================================
+
+Follow this implementation sequence:
+
+STEP 1:
+Inspect the existing project and report the current database engine, authentication architecture, and relevant files.
+
+STEP 2:
+Identify existing passenger, worker, and administrator implementations.
+
+STEP 3:
+Plan the smallest backward-compatible database changes.
+
+STEP 4:
+Implement worker profile persistence and administrator visibility.
+
+STEP 5:
+Implement skill and service-category management.
+
+STEP 6:
+Implement worker station assignments.
+
+STEP 7:
+Implement backend worker discovery using service category, skill, verification, availability, and station.
+
+STEP 8:
+Implement passenger worker search and profile viewing.
+
+STEP 9:
+Implement booking creation and concurrency-safe assignment.
+
+STEP 10:
+Implement worker booking management.
+
+STEP 11:
+Implement passenger booking history and status tracking.
+
+STEP 12:
+Implement administrator worker management.
+
+STEP 13:
+Add pagination, indexes, validation, authorization, and error handling.
+
+STEP 14:
+Run available tests and build checks.
+
+STEP 15:
+Test multiple users and concurrent booking attempts.
+
+Verify that:
+- A new worker registration persists in the database.
+- The administrator can see the registered worker.
+- Pending workers are not bookable.
+- Verified workers appear in relevant passenger searches.
+- Electrical complaints show eligible electrical workers.
+- Food requests show eligible food service workers.
+- Cleaning complaints show eligible cleaning workers.
+- Station filters work correctly.
+- Passengers can select and book specific eligible workers.
+- Booking records persist in the database.
+- Duplicate and conflicting bookings are prevented.
+- Passengers can only access their own bookings.
+- Workers can only manage authorized bookings.
+- Administrators retain their existing protected access.
+- Existing complaint management remains functional.
+- Existing database records remain intact.
+- The application builds and runs successfully.
+
+If any feature depends on an unavailable service or data source, clearly identify the limitation and implement the safest working alternative.
+
+Do not fake successful database operations.
+
+Do not use hardcoded worker lists as a replacement for real database queries.
+
+Do not fabricate station proximity, worker availability, ratings, or train arrival times.
+
+==================================================
+FINAL INSTRUCTION
+==================================================
+
+Implement the complete skill-based Railway Gig Worker Marketplace directly in my existing RAIL CARE project.
+
+The main priority is:
+
+A worker registers → the worker profile is stored in the database → the administrator can review the profile → the worker becomes discoverable to passengers after verification → the passenger selects a complaint category and station → the system displays eligible workers with matching skills → the passenger books a specific worker → the booking is stored safely in the database → the worker manages the booking → the passenger tracks the service.
+
+Make the database reliable, normalized, secure, and suitable for concurrent multi-user operations.
+
+Preserve all previous work.
+
+Do not rebuild the application.
+
+Inspect first, implement the feature using the existing architecture, and verify that both the new marketplace and the original RAIL CARE complaint management system work correctly.

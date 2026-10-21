@@ -40,33 +40,48 @@ export class ErrorBoundary extends Component<Props, State> {
     window.location.reload();
   };
 
+  private handleGoHome = () => {
+    try {
+      window.location.hash = '#landing';
+    } catch (e) {}
+    this.setState({ hasError: false, error: null });
+    window.location.reload();
+  };
+
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-[#F4F7FB] flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl border border-red-200 shadow-md p-6 sm:p-8 max-w-md w-full text-center">
-            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="w-6 h-6" />
+        <div className="min-h-screen bg-[#F4FBF8] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-[#D8EAE4] shadow-lg p-6 sm:p-8 max-w-md w-full text-center">
+            <div className="w-14 h-14 bg-[#E5F5EF] text-[#0F766E] border-2 border-[#A7E8D0] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xs">
+              <AlertTriangle className="w-7 h-7 text-[#0F766E]" />
             </div>
-            <h2 className="text-xl font-bold text-[#12304A] mb-2">
-              Temporary Display Issue Resolved
+            <h2 className="text-xl font-extrabold text-[#115E59] mb-2 tracking-tight">
+              Application State Recovered
             </h2>
-            <p className="text-xs text-slate-600 mb-6 leading-relaxed">
-              RailCare encountered an issue loading previous data. You can refresh the application or reset stored cache to continue smoothly.
+            <p className="text-xs text-[#647773] mb-6 leading-relaxed">
+              RailCare encountered an unexpected state error. Click below to continue smoothly or return to the role selection portal.
             </p>
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <button
                 onClick={this.handleReset}
-                className="w-full py-2.5 px-4 bg-[#2563EB] hover:bg-[#1d4ed8] text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3 px-4 bg-[#0F766E] hover:bg-[#115E59] text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer border border-[#0F766E]"
               >
-                <RefreshCw className="w-3.5 h-3.5" />
-                Reload Application
+                <RefreshCw className="w-3.5 h-3.5 text-[#A7E8D0]" />
+                <span>Reload Application</span>
+              </button>
+              <button
+                onClick={this.handleGoHome}
+                className="w-full py-2.5 px-4 bg-[#E5F5EF] hover:bg-[#CCFBF1] text-[#0F766E] text-xs font-bold rounded-xl transition cursor-pointer border border-[#A7E8D0] flex items-center justify-center gap-2"
+              >
+                <Home className="w-3.5 h-3.5" />
+                <span>Return to Role Selection</span>
               </button>
               <button
                 onClick={this.handleClearAll}
-                className="w-full py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition cursor-pointer"
+                className="w-full py-2 px-4 bg-[#F4FBF8] hover:bg-slate-100 text-[#647773] text-[11px] font-semibold rounded-xl transition cursor-pointer border border-[#D8EAE4]"
               >
-                Reset Stored Cache & Reload
+                Clear Local Cache &amp; Reset
               </button>
             </div>
           </div>

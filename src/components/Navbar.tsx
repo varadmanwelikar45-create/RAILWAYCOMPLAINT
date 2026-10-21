@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, Worker, ViewMode } from '../types';
-import { LogOut, TrainTrack, Briefcase, PhoneCall, Menu, X, ArrowLeft, User as UserIcon } from 'lucide-react';
+import { LogOut, TrainTrack, Briefcase, Menu, X, ArrowLeft, User as UserIcon } from 'lucide-react';
 
 interface NavbarProps {
   currentUser: User | null;
@@ -21,26 +21,25 @@ export const Navbar: React.FC<NavbarProps> = ({
   onNavigate,
   onLogout,
   onWorkerLogout,
-  onOpenEmergency,
   onBack,
   canGoBack = false,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="bg-white/95 backdrop-blur-md border-b border-[#E8E2D3] sticky top-0 z-40 shadow-[0_2px_10px_rgba(20,43,74,0.04)]">
+    <header className="bg-white/95 backdrop-blur-md border-b border-[#D8EAE4] sticky top-0 z-40 shadow-[0_2px_12px_rgba(15,118,110,0.06)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 gap-6">
           
-          {/* Zone 1: Back Button & Brand Wordmark */}
+          {/* Zone 1: Back Button & RAIL CARE Brand Wordmark */}
           <div className="flex items-center gap-3">
             {canGoBack && onBack && (
               <button
                 onClick={onBack}
-                className="p-2 -ml-2 rounded-xl text-[#142B4A] hover:bg-[#FFF5DC] transition cursor-pointer flex items-center gap-1.5 text-xs font-bold shrink-0 border border-[#E8E2D3] shadow-2xs"
+                className="p-2 -ml-2 rounded-xl text-[#183B3A] hover:bg-[#E5F5EF] transition cursor-pointer flex items-center gap-1.5 text-xs font-bold shrink-0 border border-[#D8EAE4] shadow-xs"
                 title="Go Back to Previous Page"
               >
-                <ArrowLeft className="w-4 h-4 text-[#142B4A]" />
+                <ArrowLeft className="w-4 h-4 text-[#0F766E]" />
                 <span className="hidden sm:inline">Back</span>
               </button>
             )}
@@ -52,48 +51,43 @@ export const Navbar: React.FC<NavbarProps> = ({
               }}
               className="flex items-center gap-3 text-left group cursor-pointer focus:outline-none shrink-0"
             >
-              <div className="w-10 h-10 rounded-xl bg-[#142B4A] flex items-center justify-center text-white shadow-xs border border-[#E9B949]/30 group-hover:border-[#E9B949] transition-all">
-                <TrainTrack className="w-5 h-5 text-[#E9B949]" />
+              <div className="w-10 h-10 rounded-xl bg-[#0F766E] flex items-center justify-center text-white shadow-xs border border-[#A7E8D0]/40 group-hover:border-[#A7E8D0] group-hover:bg-[#115E59] transition-all">
+                <TrainTrack className="w-5 h-5 text-[#A7E8D0]" />
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <span className="font-extrabold text-xl sm:text-2xl tracking-tight text-[#142B4A] whitespace-nowrap">
+                  <span className="font-extrabold text-xl sm:text-2xl tracking-tight text-[#183B3A] whitespace-nowrap">
                     RAIL CARE
                   </span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#E9B949] shrink-0"></span>
+                  <span className="w-2 h-2 rounded-full bg-[#0F766E] shrink-0"></span>
                 </div>
-                <p className="text-[10px] font-medium text-[#6B7280] tracking-wide whitespace-nowrap hidden sm:block">
+                <p className="text-[10px] font-medium text-[#647773] tracking-wide whitespace-nowrap hidden sm:block">
                   On-Demand Railway Passenger &amp; Gig Workforce Network
                 </p>
               </div>
             </button>
           </div>
 
-          {/* Zone 2: Clean Navigation Links */}
-          <nav className="hidden md:flex items-center gap-6 text-xs font-bold text-[#142B4A]">
+          {/* Zone 2: Navigation Links (Retains Home, plus authenticated views when active) */}
+          <nav className="hidden md:flex items-center gap-8 text-xs font-bold text-[#183B3A]">
             <button
               onClick={() => onNavigate('landing')}
-              className={`hover:text-[#243F63] transition-colors whitespace-nowrap cursor-pointer ${
-                currentView === 'landing' ? 'text-[#315F91] border-b-2 border-[#E9B949] pb-0.5' : ''
+              className={`transition-colors whitespace-nowrap cursor-pointer pb-1 ${
+                currentView === 'landing'
+                  ? 'text-[#0F766E] border-b-2 border-[#0F766E]'
+                  : 'text-[#183B3A] hover:text-[#0F766E]'
               }`}
             >
               Home
             </button>
 
-            <button
-              onClick={() => onNavigate(currentUser ? 'book-worker' : 'login')}
-              className={`hover:text-[#243F63] transition-colors whitespace-nowrap cursor-pointer ${
-                currentView === 'book-worker' ? 'text-[#315F91] border-b-2 border-[#E9B949] pb-0.5' : ''
-              }`}
-            >
-              Book Station Worker
-            </button>
-
             {currentUser && (
               <button
                 onClick={() => onNavigate('user-dashboard')}
-                className={`hover:text-[#243F63] transition-colors whitespace-nowrap cursor-pointer ${
-                  currentView === 'user-dashboard' ? 'text-[#315F91] border-b-2 border-[#E9B949] pb-0.5' : ''
+                className={`transition-colors whitespace-nowrap cursor-pointer pb-1 ${
+                  currentView === 'user-dashboard'
+                    ? 'text-[#0F766E] border-b-2 border-[#0F766E]'
+                    : 'text-[#183B3A] hover:text-[#0F766E]'
                 }`}
               >
                 My Bookings &amp; Live Radar
@@ -103,8 +97,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             {currentWorker && (
               <button
                 onClick={() => onNavigate('worker-dashboard')}
-                className={`hover:text-[#243F63] transition-colors whitespace-nowrap cursor-pointer ${
-                  currentView === 'worker-dashboard' ? 'text-[#315F91] border-b-2 border-[#E9B949] pb-0.5' : ''
+                className={`transition-colors whitespace-nowrap cursor-pointer pb-1 ${
+                  currentView === 'worker-dashboard'
+                    ? 'text-[#0F766E] border-b-2 border-[#0F766E]'
+                    : 'text-[#183B3A] hover:text-[#0F766E]'
                 }`}
               >
                 Worker Station Duty
@@ -112,44 +108,31 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </nav>
 
-          {/* Zone 3: Actions & Active Sessions */}
-          <div className="flex items-center gap-2.5 shrink-0">
-            
-            {/* Emergency 139 Button */}
-            {onOpenEmergency && (
-              <button
-                onClick={onOpenEmergency}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-bold transition cursor-pointer shadow-2xs"
-                title="Call 139 Railway 24x7 Helpline"
-              >
-                <PhoneCall className="w-3.5 h-3.5 text-red-600 animate-pulse" />
-                <span>Helpline 139</span>
-              </button>
-            )}
-
+          {/* Zone 3: Active User/Worker Sessions (No Helpline 139, No Book Station Worker, No Sign In) */}
+          <div className="flex items-center gap-3 shrink-0">
             {/* 1. Worker Session Active */}
             {currentWorker && (
-              <div className="flex items-center gap-2 bg-[#FFFDF5] border border-[#E9B949]/60 rounded-xl px-2.5 py-1.5 shadow-2xs">
+              <div className="flex items-center gap-2 bg-[#F4FBF8] border border-[#D8EAE4] rounded-xl px-3 py-1.5 shadow-xs">
                 <button
                   onClick={() => onNavigate('worker-dashboard')}
                   className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg transition cursor-pointer whitespace-nowrap ${
                     currentView === 'worker-dashboard'
-                      ? 'bg-[#142B4A] text-white'
-                      : 'text-[#142B4A] hover:bg-[#FFF5DC]'
+                      ? 'bg-[#0F766E] text-white shadow-xs'
+                      : 'text-[#183B3A] hover:bg-[#E5F5EF]'
                   }`}
                 >
-                  <Briefcase className="w-3.5 h-3.5 text-[#E9B949]" />
+                  <Briefcase className={`w-3.5 h-3.5 ${currentView === 'worker-dashboard' ? 'text-[#A7E8D0]' : 'text-[#0F766E]'}`} />
                   <span>{currentWorker.fullName.split(' ')[0]}</span>
                 </button>
-                <div className="text-right border-l border-[#E8E2D3] pl-2 hidden md:block">
-                  <div className="text-[10px] text-[#6B7280]">
+                <div className="text-right border-l border-[#D8EAE4] pl-2 hidden md:block">
+                  <div className="text-[10px] text-[#647773] font-medium">
                     {currentWorker.stationCode} · On Duty
                   </div>
                 </div>
                 {onWorkerLogout && (
                   <button
                     onClick={onWorkerLogout}
-                    className="p-1 text-[#6B7280] hover:text-[#D64545] hover:bg-red-50 rounded-lg transition cursor-pointer"
+                    className="p-1 text-[#647773] hover:text-[#C74646] hover:bg-[#CCFBF1]/40 rounded-lg transition cursor-pointer"
                     title="Worker Sign Out"
                   >
                     <LogOut className="w-3.5 h-3.5" />
@@ -160,22 +143,22 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* 2. Regular Passenger Session Active */}
             {currentUser && (
-              <div className="flex items-center gap-2 bg-[#FFFDF5] border border-[#E8E2D3] rounded-xl px-2.5 py-1.5 shadow-2xs">
+              <div className="flex items-center gap-2 bg-[#F4FBF8] border border-[#D8EAE4] rounded-xl px-3 py-1.5 shadow-xs">
                 <button
                   onClick={() => onNavigate('user-dashboard')}
                   className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg transition cursor-pointer whitespace-nowrap ${
                     currentView === 'user-dashboard'
-                      ? 'bg-[#142B4A] text-white'
-                      : 'text-[#142B4A] hover:bg-[#FFF5DC]'
+                      ? 'bg-[#0F766E] text-white shadow-xs'
+                      : 'text-[#183B3A] hover:bg-[#E5F5EF]'
                   }`}
                 >
-                  <UserIcon className="w-3.5 h-3.5 text-[#E9B949]" />
-                  <span className="font-extrabold text-[#142B4A] max-w-[120px] truncate">{currentUser.fullName}</span>
+                  <UserIcon className={`w-3.5 h-3.5 ${currentView === 'user-dashboard' ? 'text-[#A7E8D0]' : 'text-[#0F766E]'}`} />
+                  <span className="font-bold max-w-[120px] truncate">{currentUser.fullName}</span>
                 </button>
 
                 <button
                   onClick={onLogout}
-                  className="p-1 text-[#6B7280] hover:text-[#D64545] hover:bg-red-50 rounded-lg transition cursor-pointer"
+                  className="p-1 text-[#647773] hover:text-[#C74646] hover:bg-[#CCFBF1]/40 rounded-lg transition cursor-pointer"
                   title="Sign Out"
                 >
                   <LogOut className="w-3.5 h-3.5" />
@@ -183,43 +166,30 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
 
-            {/* 3. Unauthenticated State */}
-            {!currentUser && !currentWorker && (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => onNavigate('login')}
-                  className="px-4 py-2 text-xs font-bold text-white bg-[#142B4A] rounded-xl hover:bg-[#243F63] transition-colors whitespace-nowrap shrink-0 shadow-xs border border-[#142B4A] hover:border-[#E9B949] cursor-pointer"
-                >
-                  Sign In
-                </button>
-              </div>
-            )}
-
-            {/* Mobile Menu Button */}
+            {/* Mobile Menu Button (only shown on mobile if links or back available) */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-[#142B4A] hover:bg-[#FFF5DC] rounded-xl transition cursor-pointer"
+              className="md:hidden p-2 text-[#183B3A] hover:bg-[#E5F5EF] border border-[#D8EAE4] rounded-xl transition cursor-pointer shadow-xs"
               title="Toggle Menu"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileMenuOpen ? <X className="w-5 h-5 text-[#0F766E]" /> : <Menu className="w-5 h-5 text-[#0F766E]" />}
             </button>
-
           </div>
 
         </div>
 
         {/* Mobile Dropdown Drawer */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-[#E8E2D3] bg-white space-y-2 text-xs font-bold text-[#142B4A]">
+          <div className="md:hidden py-4 border-t border-[#D8EAE4] bg-white space-y-2 text-xs font-bold text-[#183B3A]">
             {canGoBack && onBack && (
               <button
                 onClick={() => {
                   onBack();
                   setMobileMenuOpen(false);
                 }}
-                className="w-full text-left py-2 px-3 rounded-lg hover:bg-[#FFF5DC] flex items-center gap-2 text-gray-700"
+                className="w-full text-left py-2 px-3 rounded-lg hover:bg-[#E5F5EF] flex items-center gap-2 text-[#183B3A]"
               >
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft className="w-4 h-4 text-[#0F766E]" />
                 <span>Go Back</span>
               </button>
             )}
@@ -228,18 +198,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onNavigate('landing');
                 setMobileMenuOpen(false);
               }}
-              className="w-full text-left py-2 px-3 rounded-lg hover:bg-[#FFF5DC]"
+              className="w-full text-left py-2.5 px-3 rounded-lg hover:bg-[#E5F5EF] text-[#0F766E] font-extrabold"
             >
               Home
-            </button>
-            <button
-              onClick={() => {
-                onNavigate(currentUser ? 'book-worker' : 'login');
-                setMobileMenuOpen(false);
-              }}
-              className="w-full text-left py-2 px-3 rounded-lg hover:bg-[#FFF5DC]"
-            >
-              Book Station Worker
             </button>
             {currentUser && (
               <button
@@ -247,21 +208,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onNavigate('user-dashboard');
                   setMobileMenuOpen(false);
                 }}
-                className="w-full text-left py-2 px-3 rounded-lg hover:bg-[#FFF5DC]"
+                className="w-full text-left py-2.5 px-3 rounded-lg hover:bg-[#E5F5EF] text-[#183B3A]"
               >
                 My Bookings &amp; Live Radar
               </button>
             )}
-            {onOpenEmergency && (
+            {currentWorker && (
               <button
                 onClick={() => {
-                  onOpenEmergency();
+                  onNavigate('worker-dashboard');
                   setMobileMenuOpen(false);
                 }}
-                className="w-full text-left py-2 px-3 rounded-lg bg-red-50 text-red-700 flex items-center gap-2"
+                className="w-full text-left py-2.5 px-3 rounded-lg hover:bg-[#E5F5EF] text-[#183B3A]"
               >
-                <PhoneCall className="w-3.5 h-3.5 text-red-600" />
-                <span>Emergency 139 Helpline</span>
+                Worker Station Duty
               </button>
             )}
           </div>

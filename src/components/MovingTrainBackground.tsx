@@ -6,9 +6,9 @@ import trainMovingImg from '../assets/images/indian_train_moving_asset_179216494
 /**
  * MovingTrainBackground
  * A realistic, continuously moving Indian passenger train background
- * gliding smoothly from right to left across the screen in warm golden morning light,
- * overlaid with a subtle translucent ivory/cream tint (#FFFDF5, #FFF5DC) to guarantee
- * 100% dashboard readability and preserve the existing color theme.
+ * gliding smoothly from right to left across the screen,
+ * overlaid with a subtle translucent mint green & teal tint (#F4FBF8, #E5F5EF) to guarantee
+ * 100% dashboard readability and preserve the modern mint/teal theme.
  */
 export const MovingTrainBackground: React.FC = () => {
   return (
@@ -16,11 +16,11 @@ export const MovingTrainBackground: React.FC = () => {
       aria-hidden="true"
       className="fixed inset-0 pointer-events-none overflow-hidden z-0 select-none"
     >
-      {/* 1. Base Atmosphere: Warm Morning Sky & Golden Sunrise Glow */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#FFFDF5] via-[#FFF8E7] to-[#FFF5DC]" />
+      {/* 1. Base Atmosphere: Fresh Mint Green Sky & Light Glow */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#F4FBF8] via-[#E5F5EF] to-[#F4FBF8]" />
 
       {/* Distant Scenic Indian Landscape & Mist */}
-      <div className="absolute inset-x-0 bottom-0 h-[65vh] opacity-35 bg-gradient-to-t from-[#142B4A]/10 via-[#E9B949]/10 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-[65vh] opacity-35 bg-gradient-to-t from-[#0F766E]/10 via-[#A7E8D0]/10 to-transparent" />
 
       {/* Panoramic Railway Landscape Layer */}
       <div className="absolute inset-x-0 bottom-0 h-[480px] sm:h-[540px] opacity-25">
@@ -41,18 +41,18 @@ export const MovingTrainBackground: React.FC = () => {
       {/* Continuous Railway Track & Ballast Horizon */}
       <div className="absolute inset-x-0 bottom-12 sm:bottom-16 h-12 flex flex-col justify-end opacity-40">
         {/* Overhead Electric Catenary Wire */}
-        <div className="w-full h-px bg-[#142B4A]/30 mb-8" />
+        <div className="w-full h-px bg-[#115E59]/30 mb-8" />
         {/* Steel Rail 1 */}
-        <div className="w-full h-[3px] bg-gradient-to-r from-slate-400 via-amber-200 to-slate-400 shadow-xs" />
+        <div className="w-full h-[3px] bg-gradient-to-r from-slate-400 via-[#A7E8D0] to-slate-400 shadow-xs" />
         {/* Railway Sleepers / Ties Texture */}
         <div
           className="w-full h-3 bg-repeat-x opacity-50"
           style={{
-            backgroundImage: `repeating-linear-gradient(90deg, #142B4A 0, #142B4A 6px, transparent 6px, transparent 18px)`,
+            backgroundImage: `repeating-linear-gradient(90deg, #115E59 0, #115E59 6px, transparent 6px, transparent 18px)`,
           }}
         />
         {/* Steel Rail 2 */}
-        <div className="w-full h-[3px] bg-gradient-to-r from-slate-500 via-amber-100 to-slate-500" />
+        <div className="w-full h-[3px] bg-gradient-to-r from-slate-500 via-[#CCFBF1] to-slate-500" />
         {/* Ballast Gravel Bed */}
         <div className="w-full h-4 bg-gradient-to-b from-stone-400/20 to-transparent" />
       </div>
@@ -82,11 +82,11 @@ export const MovingTrainBackground: React.FC = () => {
               }}
               alt="Moving Indian passenger train"
               referrerPolicy="no-referrer"
-              className="w-full h-auto object-cover rounded-xl shadow-md opacity-90 drop-shadow-[0_8px_16px_rgba(20,43,74,0.18)]"
+              className="w-full h-auto object-cover rounded-xl shadow-md opacity-90 drop-shadow-[0_8px_16px_rgba(15,118,110,0.18)]"
             />
 
-            {/* Subtle Golden Morning Sunlight Glint on Roof */}
-            <div className="absolute inset-0 bg-gradient-to-t from-transparent via-[#E9B949]/15 to-[#FFFDF5]/20 pointer-events-none rounded-xl" />
+            {/* Subtle Mint Morning Sunlight Glint on Roof */}
+            <div className="absolute inset-0 bg-gradient-to-t from-transparent via-[#A7E8D0]/15 to-[#CCFBF1]/20 pointer-events-none rounded-xl" />
           </div>
         </div>
 
@@ -110,20 +110,20 @@ export const MovingTrainBackground: React.FC = () => {
               }}
               alt="Indian Railways Express Train"
               referrerPolicy="no-referrer"
-              className="w-full h-auto object-cover rounded-xl shadow-md opacity-85 drop-shadow-[0_8px_16px_rgba(20,43,74,0.18)]"
+              className="w-full h-auto object-cover rounded-xl shadow-md opacity-85 drop-shadow-[0_8px_16px_rgba(15,118,110,0.18)]"
             />
 
-            <div className="absolute inset-0 bg-gradient-to-t from-transparent via-[#E9B949]/15 to-[#FFFDF5]/20 pointer-events-none rounded-xl" />
+            <div className="absolute inset-0 bg-gradient-to-t from-transparent via-[#A7E8D0]/15 to-[#CCFBF1]/20 pointer-events-none rounded-xl" />
           </div>
         </div>
 
       </div>
 
-      {/* 3. Translucent Ivory & Cream Overlay (Guarantees Perfect Contrast & Readability) */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#FFFDF5]/92 via-[#FFFDF5]/82 to-[#FFFDF5]/94 backdrop-blur-[0.5px]" />
+      {/* 3. Translucent Mint Overlay (Guarantees Perfect Contrast & Readability) */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#F4FBF8]/92 via-[#F4FBF8]/82 to-[#F4FBF8]/94 backdrop-blur-[0.5px]" />
 
-      {/* Subtle Warm Vignette Frame */}
-      <div className="absolute inset-0 bg-radial from-transparent via-transparent to-[#142B4A]/5 pointer-events-none" />
+      {/* Subtle Teal Vignette Frame */}
+      <div className="absolute inset-0 bg-radial from-transparent via-transparent to-[#0F766E]/5 pointer-events-none" />
 
       {/* Moving Train CSS Animations */}
       <style>{`
@@ -142,22 +142,7 @@ export const MovingTrainBackground: React.FC = () => {
 
         .animate-train-secondary {
           animation: trainMoveAcrossScreen 28s linear infinite;
-          animation-delay: 14s;
-          /* Start offscreen before its delay triggers */
-          transform: translate3d(105vw, 0, 0);
-        }
-
-        /* Accessibility: Respect prefers-reduced-motion */
-        @media (prefers-reduced-motion: reduce) {
-          .animate-train-primary,
-          .animate-train-secondary {
-            animation: none !important;
-            transform: translate3d(15vw, 0, 0) !important;
-            opacity: 0.7 !important;
-          }
-          .animate-train-secondary {
-            display: none !important;
-          }
+          animation-delay: -14s;
         }
       `}</style>
     </div>

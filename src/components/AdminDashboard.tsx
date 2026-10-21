@@ -186,24 +186,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     <div className="space-y-8 py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 sm:p-8 rounded-3xl border border-[#E8E2D3] shadow-xs">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 sm:p-8 rounded-3xl border border-[#D8EAE4] shadow-xs">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="px-2.5 py-0.5 bg-[#142B4A] text-[#E9B949] text-[10px] font-extrabold rounded-md tracking-wider uppercase border border-[#E9B949]/30">
+            <span className="px-2.5 py-0.5 bg-[#115E59] text-[#0F766E] text-[10px] font-extrabold rounded-md tracking-wider uppercase border border-[#0F766E]/30">
               OFFICIAL CONTROL CENTER
             </span>
-            <span className="text-xs text-[#6B7280] font-medium">RAIL CARE Grievance & Workforce Administration</span>
+            <span className="text-xs text-[#647773] font-medium">RAIL CARE Grievance & Workforce Administration</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#142B4A] tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#115E59] tracking-tight">
             Administrator Dashboard
           </h1>
-          <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-[#6B7280]">
+          <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-[#647773]">
             <span>
-              Officer: <strong className="text-[#142B4A]">{currentUser.fullName}</strong>
+              Officer: <strong className="text-[#115E59]">{currentUser.fullName}</strong>
             </span>
             <span>·</span>
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#21865B] bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#21865B] animate-pulse"></span>
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#16845B] bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#16845B] animate-pulse"></span>
               Live Multi-Device Sync Active
             </span>
           </div>
@@ -217,12 +217,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             disabled={queue.size() === 0}
             className={`px-5 py-3 text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-2 border ${
               queue.size() > 0
-                ? 'bg-[#142B4A] hover:bg-[#243F63] border-[#142B4A] hover:border-[#E9B949] cursor-pointer'
+                ? 'bg-[#115E59] hover:bg-[#0F766E] border-[#115E59] hover:border-[#0F766E] cursor-pointer'
                 : 'bg-slate-200 border-slate-300 cursor-not-allowed text-slate-500'
             }`}
             title="Dispatch the earliest pending complaint"
           >
-            <PlayCircle className="w-4 h-4 text-[#E9B949]" />
+            <PlayCircle className="w-4 h-4 text-[#0F766E]" />
             <span>
               {nextInQueue
                 ? `Process Next: ${nextInQueue.complaintId} (${(nextInQueue.passengerName || 'Passenger').split(' ')[0]})`
@@ -242,16 +242,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       )}
 
       {/* Module Switcher Tabs */}
-      <div className="flex border-b border-[#E8E2D3] gap-2">
+      <div className="flex border-b border-[#D8EAE4] gap-2">
         <button
           onClick={() => setAdminTab('complaints')}
           className={`pb-3 px-4 text-xs font-bold transition border-b-2 cursor-pointer flex items-center gap-2 ${
             adminTab === 'complaints'
-              ? 'border-[#142B4A] text-[#142B4A]'
-              : 'border-transparent text-[#6B7280] hover:text-[#142B4A]'
+              ? 'border-[#115E59] text-[#115E59]'
+              : 'border-transparent text-[#647773] hover:text-[#115E59]'
           }`}
         >
-          <Shield className="w-4 h-4 text-[#E9B949]" />
+          <Shield className="w-4 h-4 text-[#0F766E]" />
           <span>Grievance Redressal & Queue ({complaints.length})</span>
         </button>
 
@@ -259,11 +259,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           onClick={() => setAdminTab('gig-workers')}
           className={`pb-3 px-4 text-xs font-bold transition border-b-2 cursor-pointer flex items-center gap-2 ${
             adminTab === 'gig-workers'
-              ? 'border-[#142B4A] text-[#142B4A]'
-              : 'border-transparent text-[#6B7280] hover:text-[#142B4A]'
+              ? 'border-[#115E59] text-[#115E59]'
+              : 'border-transparent text-[#647773] hover:text-[#115E59]'
           }`}
         >
-          <Briefcase className="w-4 h-4 text-[#E9B949]" />
+          <Briefcase className="w-4 h-4 text-[#0F766E]" />
           <span>Gig Worker Management ({workers.length})</span>
           {pendingWorkersCount > 0 && (
             <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-extrabold animate-pulse">
@@ -276,11 +276,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           onClick={() => setAdminTab('passengers')}
           className={`pb-3 px-4 text-xs font-bold transition border-b-2 cursor-pointer flex items-center gap-2 ${
             adminTab === 'passengers'
-              ? 'border-[#142B4A] text-[#142B4A]'
-              : 'border-transparent text-[#6B7280] hover:text-[#142B4A]'
+              ? 'border-[#115E59] text-[#115E59]'
+              : 'border-transparent text-[#647773] hover:text-[#115E59]'
           }`}
         >
-          <Users className="w-4 h-4 text-[#E9B949]" />
+          <Users className="w-4 h-4 text-[#0F766E]" />
           <span>Registered Passengers ({users.filter((u) => !u.isAdmin).length})</span>
         </button>
       </div>
@@ -294,71 +294,71 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           onClick={() => setStatusTab('All')}
           className={`text-left p-5 rounded-2xl border transition-all cursor-pointer ${
             statusTab === 'All'
-              ? 'bg-[#FFF5DC] border-[#E9B949] shadow-xs'
-              : 'bg-white border-[#E8E2D3] hover:border-[#E9B949] shadow-xs'
+              ? 'bg-[#E5F5EF] border-[#0F766E] shadow-xs'
+              : 'bg-white border-[#D8EAE4] hover:border-[#0F766E] shadow-xs'
           }`}
         >
-          <div className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">
+          <div className="text-xs font-bold text-[#647773] uppercase tracking-wider">
             Total Complaints
           </div>
-          <div className="text-3xl font-extrabold text-[#142B4A] mt-2 font-mono tabular-nums">
+          <div className="text-3xl font-extrabold text-[#115E59] mt-2 font-mono tabular-nums">
             {summary.total}
           </div>
-          <div className="text-[11px] text-[#6B7280] mt-1">Click to view all</div>
+          <div className="text-[11px] text-[#647773] mt-1">Click to view all</div>
         </button>
 
         <button
           onClick={() => setStatusTab('Pending')}
           className={`text-left p-5 rounded-2xl border transition-all cursor-pointer ${
             statusTab === 'Pending'
-              ? 'bg-[#FFF8E7] border-[#D99520] shadow-xs'
-              : 'bg-white border-[#E8E2D3] hover:border-[#D99520] shadow-xs'
+              ? 'bg-[#E5F5EF] border-[#C58B20] shadow-xs'
+              : 'bg-white border-[#D8EAE4] hover:border-[#C58B20] shadow-xs'
           }`}
         >
-          <div className="text-xs font-bold text-[#9A6700] uppercase tracking-wider flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[#D99520]"></span>
+          <div className="text-xs font-bold text-[#C58B20] uppercase tracking-wider flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[#C58B20]"></span>
             Pending Queue
           </div>
-          <div className="text-3xl font-extrabold text-[#D99520] mt-2 font-mono tabular-nums">
+          <div className="text-3xl font-extrabold text-[#C58B20] mt-2 font-mono tabular-nums">
             {summary.pending}
           </div>
-          <div className="text-[11px] text-[#9A6700] mt-1">Click to filter pending</div>
+          <div className="text-[11px] text-[#C58B20] mt-1">Click to filter pending</div>
         </button>
 
         <button
           onClick={() => setStatusTab('In Progress')}
           className={`text-left p-5 rounded-2xl border transition-all cursor-pointer ${
             statusTab === 'In Progress'
-              ? 'bg-[#EEF4FA] border-[#315F91] shadow-xs'
-              : 'bg-white border-[#E8E2D3] hover:border-[#315F91] shadow-xs'
+              ? 'bg-[#CCFBF1] border-[#0F766E] shadow-xs'
+              : 'bg-white border-[#D8EAE4] hover:border-[#0F766E] shadow-xs'
           }`}
         >
-          <div className="text-xs font-bold text-[#1B4470] uppercase tracking-wider flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[#315F91]"></span>
+          <div className="text-xs font-bold text-[#115E59] uppercase tracking-wider flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[#0F766E]"></span>
             In Progress
           </div>
-          <div className="text-3xl font-extrabold text-[#315F91] mt-2 font-mono tabular-nums">
+          <div className="text-3xl font-extrabold text-[#0F766E] mt-2 font-mono tabular-nums">
             {summary.inProgress}
           </div>
-          <div className="text-[11px] text-[#1B4470] mt-1">Click to filter in-progress</div>
+          <div className="text-[11px] text-[#115E59] mt-1">Click to filter in-progress</div>
         </button>
 
         <button
           onClick={() => setStatusTab('Resolved')}
           className={`text-left p-5 rounded-2xl border transition-all cursor-pointer ${
             statusTab === 'Resolved'
-              ? 'bg-[#EDF7F2] border-[#21865B] shadow-xs'
-              : 'bg-white border-[#E8E2D3] hover:border-[#21865B] shadow-xs'
+              ? 'bg-[#E5F5EF] border-[#16845B] shadow-xs'
+              : 'bg-white border-[#D8EAE4] hover:border-[#16845B] shadow-xs'
           }`}
         >
-          <div className="text-xs font-bold text-[#156140] uppercase tracking-wider flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[#21865B]"></span>
+          <div className="text-xs font-bold text-[#16845B] uppercase tracking-wider flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[#16845B]"></span>
             Resolved
           </div>
-          <div className="text-3xl font-extrabold text-[#21865B] mt-2 font-mono tabular-nums">
+          <div className="text-3xl font-extrabold text-[#16845B] mt-2 font-mono tabular-nums">
             {summary.resolved}
           </div>
-          <div className="text-[11px] text-[#156140] mt-1">Click to filter resolved</div>
+          <div className="text-[11px] text-[#16845B] mt-1">Click to filter resolved</div>
         </button>
 
       </div>
@@ -370,12 +370,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="lg:col-span-3 space-y-4">
           
           {/* Filter Bar with Status Tabs & Search */}
-          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#E8E2D3] shadow-xs space-y-3">
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#D8EAE4] shadow-xs space-y-3">
             
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               
               {/* Quick Status Tabs */}
-              <div className="flex items-center gap-1 p-1 bg-[#FFF5DC] rounded-xl border border-[#E8E2D3] text-xs font-semibold">
+              <div className="flex items-center gap-1 p-1 bg-[#E5F5EF] rounded-xl border border-[#D8EAE4] text-xs font-semibold">
                 {(['All', 'Pending', 'In Progress', 'Resolved'] as const).map((tab) => {
                   const count =
                     tab === 'All'
@@ -392,8 +392,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       onClick={() => setStatusTab(tab)}
                       className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
                         statusTab === tab
-                          ? 'bg-[#142B4A] text-white shadow-2xs'
-                          : 'text-[#253247] hover:text-[#142B4A]'
+                          ? 'bg-[#115E59] text-white shadow-2xs'
+                          : 'text-[#183B3A] hover:text-[#115E59]'
                       }`}
                     >
                       {tab} <span className="opacity-75 ml-0.5">({count})</span>
@@ -405,9 +405,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               {/* Sort Order Toggle */}
               <button
                 onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-                className="px-3 py-1.5 bg-[#FFFDF5] hover:bg-[#FFF5DC] text-[#142B4A] border border-[#E8E2D3] text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+                className="px-3 py-1.5 bg-[#F4FBF8] hover:bg-[#E5F5EF] text-[#115E59] border border-[#D8EAE4] text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer"
               >
-                <ArrowUpDown className="w-3.5 h-3.5 text-[#E9B949]" />
+                <ArrowUpDown className="w-3.5 h-3.5 text-[#0F766E]" />
                 <span>Date: {sortOrder === 'desc' ? 'Newest First' : 'Oldest First'}</span>
               </button>
 
@@ -421,16 +421,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Quick search: ID, passenger, train, PNR..."
-                  className="w-full pl-9 pr-3.5 py-2 text-xs bg-[#FFFDF5] border border-[#E8E2D3] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#142B4A]"
+                  className="w-full pl-9 pr-3.5 py-2 text-xs bg-[#F4FBF8] border border-[#D8EAE4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#115E59]"
                 />
-                <Search className="w-3.5 h-3.5 text-[#6B7280] absolute left-3 top-3" />
+                <Search className="w-3.5 h-3.5 text-[#647773] absolute left-3 top-3" />
               </div>
 
               <div className="flex gap-2">
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-[#FFFDF5] border border-[#E8E2D3] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#142B4A]"
+                  className="w-full px-3 py-2 text-xs bg-[#F4FBF8] border border-[#D8EAE4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#115E59]"
                 >
                   <option value="">All Categories</option>
                   {ALLOWED_CATEGORIES.map((cat) => (
@@ -447,7 +447,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       setSelectedCategory('');
                       setStatusTab('All');
                     }}
-                    className="px-3 py-2 text-xs font-semibold text-[#6B7280] hover:text-red-700 bg-[#FFFDF5] hover:bg-red-50 border border-[#E8E2D3] rounded-xl shrink-0 flex items-center gap-1 cursor-pointer"
+                    className="px-3 py-2 text-xs font-semibold text-[#647773] hover:text-red-700 bg-[#F4FBF8] hover:bg-red-50 border border-[#D8EAE4] rounded-xl shrink-0 flex items-center gap-1 cursor-pointer"
                     title="Reset filters"
                   >
                     <RotateCcw className="w-3 h-3" />
@@ -460,12 +460,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           {/* Table with Inline Status Changer */}
-          <div className="bg-white rounded-2xl border border-[#E8E2D3] shadow-xs overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-[#E8E2D3] flex justify-between items-center bg-[#FFFDF5]">
-              <h2 className="text-xs font-extrabold text-[#142B4A] uppercase tracking-wider">
+          <div className="bg-white rounded-2xl border border-[#D8EAE4] shadow-xs overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-[#D8EAE4] flex justify-between items-center bg-[#F4FBF8]">
+              <h2 className="text-xs font-extrabold text-[#115E59] uppercase tracking-wider">
                 Grievance Records ({sortResult.sortedList.length})
               </h2>
-              <span className="text-[11px] text-[#6B7280]">
+              <span className="text-[11px] text-[#647773]">
                 Status changes update the central server immediately
               </span>
             </div>
@@ -474,7 +474,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-[#FFFDF5] text-[#6B7280] font-bold border-b border-[#E8E2D3]">
+                    <tr className="bg-[#F4FBF8] text-[#647773] font-bold border-b border-[#D8EAE4]">
                       <th className="py-3 px-4">ID</th>
                       <th className="py-3 px-4">Passenger</th>
                       <th className="py-3 px-4">Category</th>
@@ -484,25 +484,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <th className="py-3 px-4 text-right">Details</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E8E2D3]">
+                  <tbody className="divide-y divide-[#D8EAE4]">
                     {sortResult.sortedList.map((c) => (
-                      <tr key={c.complaintId} className="hover:bg-[#FFFDF5] transition">
-                        <td className="py-3 px-4 font-mono font-bold text-[#142B4A]">
+                      <tr key={c.complaintId} className="hover:bg-[#F4FBF8] transition">
+                        <td className="py-3 px-4 font-mono font-bold text-[#115E59]">
                           {c.complaintId}
                         </td>
                         <td className="py-3 px-4">
-                          <div className="font-bold text-[#253247]">{c.passengerName}</div>
-                          <div className="text-[10px] text-[#6B7280]">{c.trainNumber}</div>
+                          <div className="font-bold text-[#183B3A]">{c.passengerName}</div>
+                          <div className="text-[10px] text-[#647773]">{c.trainNumber}</div>
                         </td>
-                        <td className="py-3 px-4 font-medium text-[#253247] whitespace-nowrap">
+                        <td className="py-3 px-4 font-medium text-[#183B3A] whitespace-nowrap">
                           {c.category}
                         </td>
                         <td className="py-3 px-4 max-w-[220px]">
-                          <div className="truncate font-medium text-[#253247]" title={c.subject}>
+                          <div className="truncate font-medium text-[#183B3A]" title={c.subject}>
                             {c.subject}
                           </div>
                         </td>
-                        <td className="py-3 px-4 text-[#6B7280] whitespace-nowrap">
+                        <td className="py-3 px-4 text-[#647773] whitespace-nowrap">
                           {(c.createdAt || '').slice(0, 10) || 'Recent'}
                         </td>
                         
@@ -518,10 +518,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             }
                             className={`px-2.5 py-1 text-xs font-bold rounded-lg border cursor-pointer transition ${
                               c.status === 'Pending'
-                                ? 'bg-[#FFF8E7] text-[#9A6700] border-[#E9B949]/40'
+                                ? 'bg-[#E5F5EF] text-[#C58B20] border-[#0F766E]/40'
                                 : c.status === 'In Progress'
-                                ? 'bg-[#EEF4FA] text-[#1B4470] border-[#315F91]/30'
-                                : 'bg-[#EDF7F2] text-[#156140] border-[#21865B]/30'
+                                ? 'bg-[#CCFBF1] text-[#115E59] border-[#0F766E]/30'
+                                : 'bg-[#E5F5EF] text-[#16845B] border-[#16845B]/30'
                             }`}
                           >
                             <option value="Pending">Pending</option>
@@ -536,10 +536,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               onSelectComplaint(c);
                               onNavigate('complaint-details');
                             }}
-                            className="p-1.5 bg-[#FFFDF5] hover:bg-[#FFF5DC] text-[#142B4A] border border-[#E8E2D3] rounded-lg transition inline-flex items-center gap-1 cursor-pointer"
+                            className="p-1.5 bg-[#F4FBF8] hover:bg-[#E5F5EF] text-[#115E59] border border-[#D8EAE4] rounded-lg transition inline-flex items-center gap-1 cursor-pointer"
                             title="View Full Details"
                           >
-                            <Eye className="w-3.5 h-3.5 text-[#E9B949]" />
+                            <Eye className="w-3.5 h-3.5 text-[#0F766E]" />
                           </button>
                         </td>
                       </tr>
@@ -548,7 +548,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </table>
               </div>
             ) : (
-              <div className="p-10 text-center text-xs text-[#6B7280]">
+              <div className="p-10 text-center text-xs text-[#647773]">
                 No complaint records found matching your current filter.
               </div>
             )}
@@ -557,12 +557,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
 
         {/* Complaints by Category (1 col) */}
-        <div className="bg-white rounded-2xl border border-[#E8E2D3] shadow-xs p-5 space-y-3">
-          <div className="flex items-center justify-between pb-3 border-b border-[#E8E2D3]">
-            <h3 className="text-xs font-extrabold text-[#142B4A] uppercase tracking-wider">
+        <div className="bg-white rounded-2xl border border-[#D8EAE4] shadow-xs p-5 space-y-3">
+          <div className="flex items-center justify-between pb-3 border-b border-[#D8EAE4]">
+            <h3 className="text-xs font-extrabold text-[#115E59] uppercase tracking-wider">
               By Category
             </h3>
-            <BarChart3 className="w-4 h-4 text-[#E9B949]" />
+            <BarChart3 className="w-4 h-4 text-[#0F766E]" />
           </div>
 
           <div className="space-y-3 text-xs">
@@ -575,17 +575,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(selectedCategory === cat ? '' : cat)}
-                  className={`w-full text-left space-y-1 p-1.5 rounded-xl hover:bg-[#FFF5DC] transition cursor-pointer ${
-                    selectedCategory === cat ? 'bg-[#FFF5DC] font-bold border border-[#E9B949]/40' : ''
+                  className={`w-full text-left space-y-1 p-1.5 rounded-xl hover:bg-[#E5F5EF] transition cursor-pointer ${
+                    selectedCategory === cat ? 'bg-[#E5F5EF] font-bold border border-[#0F766E]/40' : ''
                   }`}
                 >
                   <div className="flex justify-between items-center text-[11px]">
-                    <span className="text-[#253247] truncate max-w-[140px] font-medium">{cat}</span>
-                    <span className="font-bold text-[#142B4A] font-mono tabular-nums">{count}</span>
+                    <span className="text-[#183B3A] truncate max-w-[140px] font-medium">{cat}</span>
+                    <span className="font-bold text-[#115E59] font-mono tabular-nums">{count}</span>
                   </div>
-                  <div className="w-full bg-[#FFF5DC] h-1.5 rounded-full overflow-hidden border border-[#E8E2D3]/60">
+                  <div className="w-full bg-[#E5F5EF] h-1.5 rounded-full overflow-hidden border border-[#D8EAE4]/60">
                     <div
-                      className="bg-[#142B4A] h-full rounded-full transition-all duration-300"
+                      className="bg-[#115E59] h-full rounded-full transition-all duration-300"
                       style={{ width: `${percentage}%` }}
                     ></div>
                   </div>
@@ -602,20 +602,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           
           {/* Worker KPI Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="bg-white rounded-2xl border border-[#E8E2D3] p-5 shadow-xs">
-              <div className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">
+            <div className="bg-white rounded-2xl border border-[#D8EAE4] p-5 shadow-xs">
+              <div className="text-xs font-bold text-[#647773] uppercase tracking-wider">
                 Total Workers
               </div>
-              <div className="text-2xl font-extrabold text-[#142B4A] mt-1 font-mono">
+              <div className="text-2xl font-extrabold text-[#115E59] mt-1 font-mono">
                 {workers.length}
               </div>
-              <p className="text-[11px] text-[#6B7280] mt-1">Across all junctions</p>
+              <p className="text-[11px] text-[#647773] mt-1">Across all junctions</p>
             </div>
 
             <div className={`rounded-2xl border p-5 shadow-xs ${
               pendingWorkersCount > 0
                 ? 'bg-amber-50 border-amber-300'
-                : 'bg-white border-[#E8E2D3]'
+                : 'bg-white border-[#D8EAE4]'
             }`}>
               <div className="text-xs font-bold text-amber-800 uppercase tracking-wider flex items-center justify-between">
                 <span>Pending Review</span>
@@ -629,46 +629,46 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <p className="text-[11px] text-amber-700 mt-1 font-semibold">Requires verification</p>
             </div>
 
-            <div className="bg-white rounded-2xl border border-[#E8E2D3] p-5 shadow-xs">
-              <div className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">
+            <div className="bg-white rounded-2xl border border-[#D8EAE4] p-5 shadow-xs">
+              <div className="text-xs font-bold text-[#647773] uppercase tracking-wider">
                 Verified Active
               </div>
-              <div className="text-2xl font-extrabold text-[#21865B] mt-1 font-mono">
+              <div className="text-2xl font-extrabold text-[#16845B] mt-1 font-mono">
                 {verifiedWorkersCount}
               </div>
-              <p className="text-[11px] text-[#21865B] mt-1 font-semibold">Ready for dispatch</p>
+              <p className="text-[11px] text-[#16845B] mt-1 font-semibold">Ready for dispatch</p>
             </div>
 
-            <div className="bg-white rounded-2xl border border-[#E8E2D3] p-5 shadow-xs">
-              <div className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">
+            <div className="bg-white rounded-2xl border border-[#D8EAE4] p-5 shadow-xs">
+              <div className="text-xs font-bold text-[#647773] uppercase tracking-wider">
                 Active Jobs
               </div>
-              <div className="text-2xl font-extrabold text-[#142B4A] mt-1 font-mono">
+              <div className="text-2xl font-extrabold text-[#115E59] mt-1 font-mono">
                 {activeJobsCount}
               </div>
-              <p className="text-[11px] text-[#6B7280] mt-1">Currently on trains</p>
+              <p className="text-[11px] text-[#647773] mt-1">Currently on trains</p>
             </div>
 
-            <div className="bg-white rounded-2xl border border-[#E8E2D3] p-5 shadow-xs col-span-2 lg:col-span-1">
-              <div className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">
+            <div className="bg-white rounded-2xl border border-[#D8EAE4] p-5 shadow-xs col-span-2 lg:col-span-1">
+              <div className="text-xs font-bold text-[#647773] uppercase tracking-wider">
                 Total Requests
               </div>
-              <div className="text-2xl font-extrabold text-[#142B4A] mt-1 font-mono">
+              <div className="text-2xl font-extrabold text-[#115E59] mt-1 font-mono">
                 {workerRequests.length}
               </div>
-              <p className="text-[11px] text-[#6B7280] mt-1">Passenger calls</p>
+              <p className="text-[11px] text-[#647773] mt-1">Passenger calls</p>
             </div>
           </div>
 
           {/* Workers Directory & Administrative Verification Table */}
-          <div className="bg-white rounded-3xl border border-[#E8E2D3] shadow-xs p-6 sm:p-8 space-y-6">
+          <div className="bg-white rounded-3xl border border-[#D8EAE4] shadow-xs p-6 sm:p-8 space-y-6">
             
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#E8E2D3]">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#D8EAE4]">
               <div>
-                <h2 className="text-xl font-extrabold text-[#142B4A]">
+                <h2 className="text-xl font-extrabold text-[#115E59]">
                   Registered Railway Workers Directory
                 </h2>
-                <p className="text-xs text-[#6B7280] mt-0.5">
+                <p className="text-xs text-[#647773] mt-0.5">
                   Verify, approve, or suspend station gig worker profiles. Only verified workers receive passenger service requests.
                 </p>
               </div>
@@ -676,26 +676,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 {/* Search */}
                 <div className="relative">
-                  <Search className="w-4 h-4 text-[#6B7280] absolute left-3 top-2.5" />
+                  <Search className="w-4 h-4 text-[#647773] absolute left-3 top-2.5" />
                   <input
                     type="text"
                     value={workerSearch}
                     onChange={(e) => setWorkerSearch(e.target.value)}
                     placeholder="Search name, ID, station, skill..."
-                    className="pl-9 pr-3 py-2 text-xs bg-[#FFFDF5] border border-[#E8E2D3] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#142B4A] w-full sm:w-60"
+                    className="pl-9 pr-3 py-2 text-xs bg-[#F4FBF8] border border-[#D8EAE4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#115E59] w-full sm:w-60"
                   />
                 </div>
 
                 {/* Filter */}
-                <div className="flex flex-wrap gap-1 bg-[#FFFDF5] p-1 rounded-xl border border-[#E8E2D3]">
+                <div className="flex flex-wrap gap-1 bg-[#F4FBF8] p-1 rounded-xl border border-[#D8EAE4]">
                   {(['All', 'Pending Verification', 'Verified', 'Suspended'] as const).map((st) => (
                     <button
                       key={st}
                       onClick={() => setWorkerStatusFilter(st)}
                       className={`px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
                         workerStatusFilter === st
-                          ? 'bg-[#142B4A] text-white shadow-2xs'
-                          : 'text-[#6B7280] hover:text-[#142B4A]'
+                          ? 'bg-[#115E59] text-white shadow-2xs'
+                          : 'text-[#647773] hover:text-[#115E59]'
                       }`}
                     >
                       {st === 'Pending Verification' ? 'Pending' : st}
@@ -709,7 +709,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-[#E8E2D3] text-[#6B7280] font-bold uppercase tracking-wider text-[10px]">
+                  <tr className="border-b border-[#D8EAE4] text-[#647773] font-bold uppercase tracking-wider text-[10px]">
                     <th className="py-3 px-3">Worker ID</th>
                     <th className="py-3 px-3">Verification Photo</th>
                     <th className="py-3 px-3">Worker Name</th>
@@ -721,10 +721,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <th className="py-3 px-3 text-right">Administrative Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#E8E2D3]">
+                <tbody className="divide-y divide-[#D8EAE4]">
                   {displayedWorkers.map((w) => (
-                    <tr key={w.id} className="hover:bg-[#FFFDF5] transition">
-                      <td className="py-3.5 px-3 font-mono font-bold text-[#142B4A]">
+                    <tr key={w.id} className="hover:bg-[#F4FBF8] transition">
+                      <td className="py-3.5 px-3 font-mono font-bold text-[#115E59]">
                         {w.workerId}
                       </td>
 
@@ -734,7 +734,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           <button
                             type="button"
                             onClick={() => setInspectingWorkerPhoto(w)}
-                            className="relative w-11 h-11 rounded-xl overflow-hidden border border-[#E8E2D3] hover:border-[#142B4A] shadow-2xs group cursor-pointer shrink-0 bg-slate-100"
+                            className="relative w-11 h-11 rounded-xl overflow-hidden border border-[#D8EAE4] hover:border-[#115E59] shadow-2xs group cursor-pointer shrink-0 bg-slate-100"
                             title="Click to inspect verification photo"
                           >
                             {w.verificationPhoto || w.profileImage ? (
@@ -744,8 +744,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 className="w-full h-full object-cover group-hover:scale-110 transition duration-200"
                               />
                             ) : (
-                              <div className="w-full h-full bg-[#FFF5DC] flex items-center justify-center text-[#142B4A]">
-                                <Camera className="w-4 h-4 text-[#6B7280]" />
+                              <div className="w-full h-full bg-[#E5F5EF] flex items-center justify-center text-[#115E59]">
+                                <Camera className="w-4 h-4 text-[#647773]" />
                               </div>
                             )}
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
@@ -761,24 +761,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </td>
 
                       <td className="py-3.5 px-3">
-                        <div className="font-bold text-[#253247]">{w.fullName}</div>
-                        <div className="text-[10px] text-[#6B7280]">{w.city} · {w.experienceYears || 1}y exp</div>
+                        <div className="font-bold text-[#183B3A]">{w.fullName}</div>
+                        <div className="text-[10px] text-[#647773]">{w.city} · {w.experienceYears || 1}y exp</div>
                       </td>
-                      <td className="py-3.5 px-3 font-semibold text-[#142B4A]">
+                      <td className="py-3.5 px-3 font-semibold text-[#115E59]">
                         {w.skillCategory}
                       </td>
                       <td className="py-3.5 px-3">
-                        <span className="font-bold text-[#253247]">{w.stationCode}</span>
-                        <div className="text-[10px] text-[#6B7280] truncate max-w-[130px]">{w.stationName}</div>
+                        <span className="font-bold text-[#183B3A]">{w.stationCode}</span>
+                        <div className="text-[10px] text-[#647773] truncate max-w-[130px]">{w.stationName}</div>
                       </td>
-                      <td className="py-3.5 px-3 text-[#6B7280]">
+                      <td className="py-3.5 px-3 text-[#647773]">
                         <div>{w.mobile}</div>
                         <div className="text-[10px] truncate max-w-[120px]">{w.email}</div>
                       </td>
                       <td className="py-3.5 px-3 text-center">
                         <span className={`inline-block px-2.5 py-1 text-[11px] font-bold rounded-full ${
                           w.verificationStatus === 'Verified'
-                            ? 'bg-[#EDF7F2] text-[#156140] border border-[#21865B]/30'
+                            ? 'bg-[#E5F5EF] text-[#16845B] border border-[#16845B]/30'
                             : w.verificationStatus === 'Pending Verification'
                             ? 'bg-amber-50 text-amber-800 border border-amber-300'
                             : 'bg-red-50 text-red-700 border border-red-200'
@@ -803,7 +803,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <button
                               disabled={verifyingWorkerId === w.workerId}
                               onClick={() => handleWorkerVerificationAction(w.workerId, 'Verified')}
-                              className={`px-3 py-1.5 bg-[#21865B] hover:bg-emerald-700 text-white font-bold rounded-lg transition text-xs cursor-pointer shadow-xs flex items-center gap-1.5 ${
+                              className={`px-3 py-1.5 bg-[#16845B] hover:bg-emerald-700 text-white font-bold rounded-lg transition text-xs cursor-pointer shadow-xs flex items-center gap-1.5 ${
                                 verifyingWorkerId === w.workerId ? 'opacity-70 cursor-not-allowed' : ''
                               }`}
                               title="Approve and verify worker"
@@ -826,8 +826,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                           {w.verificationStatus === 'Verified' && (
                             <div className="flex items-center gap-1.5">
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-[#156140] bg-[#EDF7F2] border border-[#21865B]/30 rounded-lg">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-[#21865B]" />
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-[#16845B] bg-[#E5F5EF] border border-[#16845B]/30 rounded-lg">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-[#16845B]" />
                                 <span>Verified</span>
                               </span>
                               <button
@@ -858,7 +858,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </table>
 
               {displayedWorkers.length === 0 && (
-                <div className="py-12 text-center text-xs text-[#6B7280]">
+                <div className="py-12 text-center text-xs text-[#647773]">
                   No railway workers found matching the current filter.
                 </div>
               )}
@@ -867,30 +867,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           {/* Station Service Requests Oversight Table */}
-          <div className="bg-white rounded-3xl border border-[#E8E2D3] shadow-xs p-6 sm:p-8 space-y-6">
-            <div className="flex items-center justify-between pb-4 border-b border-[#E8E2D3]">
+          <div className="bg-white rounded-3xl border border-[#D8EAE4] shadow-xs p-6 sm:p-8 space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-[#D8EAE4]">
               <div>
-                <h3 className="text-base font-extrabold text-[#142B4A]">
+                <h3 className="text-base font-extrabold text-[#115E59]">
                   All Station Gig Service Requests
                 </h3>
-                <p className="text-xs text-[#6B7280]">
+                <p className="text-xs text-[#647773]">
                   Live monitoring of passenger assistance calls and worker fulfillment across stations.
                 </p>
               </div>
-              <span className="text-xs font-mono font-bold text-[#142B4A] bg-[#FFF5DC] px-2.5 py-1 rounded-lg border border-[#E9B949]/40">
+              <span className="text-xs font-mono font-bold text-[#115E59] bg-[#E5F5EF] px-2.5 py-1 rounded-lg border border-[#0F766E]/40">
                 Total: {workerRequests.length}
               </span>
             </div>
 
             {workerRequests.length === 0 ? (
-              <div className="py-12 text-center text-xs text-[#6B7280]">
+              <div className="py-12 text-center text-xs text-[#647773]">
                 No passenger service requests recorded yet. Incoming requests from passengers will appear here.
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="border-b border-[#E8E2D3] text-[#6B7280] font-bold uppercase tracking-wider text-[10px]">
+                    <tr className="border-b border-[#D8EAE4] text-[#647773] font-bold uppercase tracking-wider text-[10px]">
                       <th className="py-3 px-3">Req ID</th>
                       <th className="py-3 px-3">Passenger</th>
                       <th className="py-3 px-3">Train & Coach</th>
@@ -901,37 +901,37 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <th className="py-3 px-3">Time</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E8E2D3]">
+                  <tbody className="divide-y divide-[#D8EAE4]">
                     {workerRequests.map((r) => (
-                      <tr key={r.id} className="hover:bg-[#FFFDF5] transition">
-                        <td className="py-3 px-3 font-mono font-bold text-[#142B4A]">
+                      <tr key={r.id} className="hover:bg-[#F4FBF8] transition">
+                        <td className="py-3 px-3 font-mono font-bold text-[#115E59]">
                           {r.requestId}
                         </td>
                         <td className="py-3 px-3">
-                          <div className="font-semibold text-[#253247]">{r.passengerName}</div>
-                          <div className="text-[10px] text-[#6B7280]">{r.passengerMobile}</div>
+                          <div className="font-semibold text-[#183B3A]">{r.passengerName}</div>
+                          <div className="text-[10px] text-[#647773]">{r.passengerMobile}</div>
                         </td>
-                        <td className="py-3 px-3 text-[#253247]">
+                        <td className="py-3 px-3 text-[#183B3A]">
                           <div className="font-bold">Train {r.trainNumber}</div>
-                          <div className="text-[10px] text-[#6B7280]">
+                          <div className="text-[10px] text-[#647773]">
                             Coach: {r.coachNumber || 'N/A'} · Seat: {r.seatNumber || 'N/A'}
                           </div>
                         </td>
                         <td className="py-3 px-3">
-                          <span className="font-bold text-[#142B4A]">{r.stationCode}</span>
-                          <div className="text-[10px] text-[#6B7280]">{r.stationName}</div>
+                          <span className="font-bold text-[#115E59]">{r.stationCode}</span>
+                          <div className="text-[10px] text-[#647773]">{r.stationName}</div>
                         </td>
-                        <td className="py-3 px-3 font-medium text-[#253247]">
+                        <td className="py-3 px-3 font-medium text-[#183B3A]">
                           {r.serviceCategory}
                         </td>
                         <td className="py-3 px-3">
                           {r.assignedWorkerName ? (
-                            <span className="font-bold text-[#21865B] flex items-center gap-1">
+                            <span className="font-bold text-[#16845B] flex items-center gap-1">
                               <UserCheck className="w-3.5 h-3.5" />
                               {r.assignedWorkerName}
                             </span>
                           ) : (
-                            <span className="text-[#6B7280] italic">Unassigned</span>
+                            <span className="text-[#647773] italic">Unassigned</span>
                           )}
                         </td>
                         <td className="py-3 px-3 text-center">
@@ -945,7 +945,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             {r.status}
                           </span>
                         </td>
-                        <td className="py-3 px-3 text-[#6B7280] text-[11px]">
+                        <td className="py-3 px-3 text-[#647773] text-[11px]">
                           {r.createdAt.slice(11, 16)}
                         </td>
                       </tr>
@@ -964,69 +964,69 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="space-y-6">
           {/* Top KPI Cards for Passengers */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            <div className="bg-white rounded-2xl border border-[#E8E2D3] p-5 shadow-xs">
-              <div className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">
+            <div className="bg-white rounded-2xl border border-[#D8EAE4] p-5 shadow-xs">
+              <div className="text-xs font-bold text-[#647773] uppercase tracking-wider">
                 Total Passengers
               </div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-[#142B4A] mt-1 font-mono">
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#115E59] mt-1 font-mono">
                 {users.filter((u) => !u.isAdmin).length}
               </div>
-              <p className="text-[11px] text-[#6B7280] mt-1">Multi-device registered accounts</p>
+              <p className="text-[11px] text-[#647773] mt-1">Multi-device registered accounts</p>
             </div>
 
-            <div className="bg-white rounded-2xl border border-[#E8E2D3] p-5 shadow-xs">
-              <div className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">
+            <div className="bg-white rounded-2xl border border-[#D8EAE4] p-5 shadow-xs">
+              <div className="text-xs font-bold text-[#647773] uppercase tracking-wider">
                 Passenger Grievances
               </div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-[#142B4A] mt-1 font-mono">
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#115E59] mt-1 font-mono">
                 {complaints.length}
               </div>
-              <p className="text-[11px] text-[#21865B] mt-1 font-semibold">Tracked in FIFO queue</p>
+              <p className="text-[11px] text-[#16845B] mt-1 font-semibold">Tracked in FIFO queue</p>
             </div>
 
-            <div className="bg-white rounded-2xl border border-[#E8E2D3] p-5 shadow-xs">
-              <div className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">
+            <div className="bg-white rounded-2xl border border-[#D8EAE4] p-5 shadow-xs">
+              <div className="text-xs font-bold text-[#647773] uppercase tracking-wider">
                 Worker Assistance Calls
               </div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-[#142B4A] mt-1 font-mono">
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#115E59] mt-1 font-mono">
                 {workerRequests.length}
               </div>
-              <p className="text-[11px] text-[#6B7280] mt-1">Gig worker service requests</p>
+              <p className="text-[11px] text-[#647773] mt-1">Gig worker service requests</p>
             </div>
 
-            <div className="bg-white rounded-2xl border border-[#E8E2D3] p-5 shadow-xs">
-              <div className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">
+            <div className="bg-white rounded-2xl border border-[#D8EAE4] p-5 shadow-xs">
+              <div className="text-xs font-bold text-[#647773] uppercase tracking-wider">
                 Cross-Device Sync
               </div>
-              <div className="text-lg font-extrabold text-[#21865B] mt-1 flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#21865B] animate-pulse"></span>
+              <div className="text-lg font-extrabold text-[#16845B] mt-1 flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#16845B] animate-pulse"></span>
                 <span>Active 3s Sync</span>
               </div>
-              <p className="text-[11px] text-[#6B7280] mt-1">Phones & Laptops interconnected</p>
+              <p className="text-[11px] text-[#647773] mt-1">Phones & Laptops interconnected</p>
             </div>
           </div>
 
           {/* Passengers Table */}
-          <div className="bg-white rounded-3xl border border-[#E8E2D3] shadow-xs p-6 sm:p-8 space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#E8E2D3]">
+          <div className="bg-white rounded-3xl border border-[#D8EAE4] shadow-xs p-6 sm:p-8 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#D8EAE4]">
               <div>
-                <h2 className="text-xl font-extrabold text-[#142B4A]">
+                <h2 className="text-xl font-extrabold text-[#115E59]">
                   Registered Railway Passengers Directory
                 </h2>
-                <p className="text-xs text-[#6B7280] mt-0.5">
+                <p className="text-xs text-[#647773] mt-0.5">
                   Real-time list of passengers logged in across mobile devices and platforms.
                 </p>
               </div>
 
               {/* Passenger Search */}
               <div className="relative">
-                <Search className="w-4 h-4 text-[#6B7280] absolute left-3 top-2.5" />
+                <Search className="w-4 h-4 text-[#647773] absolute left-3 top-2.5" />
                 <input
                   type="text"
                   value={passengerSearch}
                   onChange={(e) => setPassengerSearch(e.target.value)}
                   placeholder="Search passenger name, email, mobile..."
-                  className="pl-9 pr-3 py-2 text-xs bg-[#FFFDF5] border border-[#E8E2D3] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#142B4A] w-full sm:w-72"
+                  className="pl-9 pr-3 py-2 text-xs bg-[#F4FBF8] border border-[#D8EAE4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#115E59] w-full sm:w-72"
                 />
               </div>
             </div>
@@ -1034,7 +1034,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-[#E8E2D3] text-[#6B7280] font-bold uppercase tracking-wider text-[10px]">
+                  <tr className="border-b border-[#D8EAE4] text-[#647773] font-bold uppercase tracking-wider text-[10px]">
                     <th className="py-3 px-3">User ID</th>
                     <th className="py-3 px-3">Passenger Name</th>
                     <th className="py-3 px-3">Email Address</th>
@@ -1045,7 +1045,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <th className="py-3 px-3 text-right">View Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#E8E2D3]">
+                <tbody className="divide-y divide-[#D8EAE4]">
                   {displayedPassengers.map((passenger) => {
                     const passengerComplaintsCount = complaints.filter(
                       (c) =>
@@ -1060,25 +1060,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     ).length;
 
                     return (
-                      <tr key={passenger.id} className="hover:bg-[#FFFDF5] transition">
-                        <td className="py-3.5 px-3 font-mono font-bold text-[#142B4A]">
+                      <tr key={passenger.id} className="hover:bg-[#F4FBF8] transition">
+                        <td className="py-3.5 px-3 font-mono font-bold text-[#115E59]">
                           #{passenger.id}
                         </td>
                         <td className="py-3.5 px-3">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-[#142B4A] text-[#E9B949] flex items-center justify-center font-bold text-xs shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-[#115E59] text-[#0F766E] flex items-center justify-center font-bold text-xs shrink-0">
                               {passenger.fullName.charAt(0).toUpperCase()}
                             </div>
                             <div>
-                              <div className="font-bold text-[#253247]">{passenger.fullName}</div>
-                              <div className="text-[10px] text-[#6B7280]">Registered Passenger</div>
+                              <div className="font-bold text-[#183B3A]">{passenger.fullName}</div>
+                              <div className="text-[10px] text-[#647773]">Registered Passenger</div>
                             </div>
                           </div>
                         </td>
-                        <td className="py-3.5 px-3 font-medium text-[#253247]">
+                        <td className="py-3.5 px-3 font-medium text-[#183B3A]">
                           {passenger.email}
                         </td>
-                        <td className="py-3.5 px-3 font-mono text-[#6B7280]">
+                        <td className="py-3.5 px-3 font-mono text-[#647773]">
                           {passenger.mobile || '9876543210'}
                         </td>
                         <td className="py-3.5 px-3 text-center">
@@ -1097,7 +1097,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </td>
                         <td className="py-3.5 px-3 text-center">
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-[11px] font-bold text-emerald-800 border border-emerald-200">
-                            <Smartphone className="w-3 h-3 text-[#21865B]" />
+                            <Smartphone className="w-3 h-3 text-[#16845B]" />
                             <span>Mobile Connected</span>
                           </span>
                         </td>
@@ -1107,7 +1107,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               setSearchQuery(passenger.fullName);
                               setAdminTab('complaints');
                             }}
-                            className="px-2.5 py-1 text-xs font-bold text-[#142B4A] hover:bg-[#FFF5DC] rounded-lg transition border border-[#E8E2D3] cursor-pointer"
+                            className="px-2.5 py-1 text-xs font-bold text-[#115E59] hover:bg-[#E5F5EF] rounded-lg transition border border-[#D8EAE4] cursor-pointer"
                             title="Filter complaints for this passenger"
                           >
                             Filter Complaints
@@ -1120,7 +1120,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </table>
 
               {displayedPassengers.length === 0 && (
-                <div className="py-12 text-center text-xs text-[#6B7280]">
+                <div className="py-12 text-center text-xs text-[#647773]">
                   No registered passengers found matching "{passengerSearch}".
                 </div>
               )}
@@ -1132,7 +1132,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* INSPECT WORKER PHOTO MODAL */}
       {inspectingWorkerPhoto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl border border-[#E8E2D3] max-w-lg w-full p-6 shadow-2xl relative space-y-4 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-3xl border border-[#D8EAE4] max-w-lg w-full p-6 shadow-2xl relative space-y-4 animate-in fade-in zoom-in-95 duration-200">
             <button
               onClick={() => setInspectingWorkerPhoto(null)}
               className="absolute top-4 right-4 p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 cursor-pointer"
@@ -1141,20 +1141,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </button>
 
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 bg-[#E9B949] text-[#142B4A] text-[10px] font-extrabold uppercase rounded">
+              <span className="px-2.5 py-0.5 bg-[#0F766E] text-[#115E59] text-[10px] font-extrabold uppercase rounded">
                 IDENTITY AUDIT
               </span>
-              <span className="text-xs font-mono text-[#6B7280]">
+              <span className="text-xs font-mono text-[#647773]">
                 Worker ID: {inspectingWorkerPhoto.workerId}
               </span>
             </div>
 
-            <h3 className="text-xl font-extrabold text-[#142B4A]">
+            <h3 className="text-xl font-extrabold text-[#115E59]">
               {inspectingWorkerPhoto.fullName}
             </h3>
 
             {/* Large Verification Image */}
-            <div className="relative rounded-2xl overflow-hidden border-2 border-[#142B4A] bg-slate-100 max-h-72 flex items-center justify-center">
+            <div className="relative rounded-2xl overflow-hidden border-2 border-[#115E59] bg-slate-100 max-h-72 flex items-center justify-center">
               {inspectingWorkerPhoto.verificationPhoto || inspectingWorkerPhoto.profileImage ? (
                 <img
                   src={inspectingWorkerPhoto.verificationPhoto || inspectingWorkerPhoto.profileImage}
@@ -1162,7 +1162,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   className="w-full h-72 object-cover object-top"
                 />
               ) : (
-                <div className="py-16 text-center text-[#6B7280]">
+                <div className="py-16 text-center text-[#647773]">
                   <Camera className="w-12 h-12 mx-auto text-slate-400 mb-2" />
                   <p className="text-xs">No verification photo uploaded yet</p>
                 </div>
@@ -1170,31 +1170,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             {/* Worker Details Summary */}
-            <div className="bg-[#FFFDF5] p-3.5 rounded-xl border border-[#E8E2D3] space-y-1.5 text-xs">
+            <div className="bg-[#F4FBF8] p-3.5 rounded-xl border border-[#D8EAE4] space-y-1.5 text-xs">
               <div className="flex justify-between">
-                <span className="text-[#6B7280]">Station:</span>
-                <span className="font-bold text-[#142B4A]">
+                <span className="text-[#647773]">Station:</span>
+                <span className="font-bold text-[#115E59]">
                   {inspectingWorkerPhoto.stationName} ({inspectingWorkerPhoto.stationCode})
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#6B7280]">Skill Category:</span>
-                <span className="font-bold text-[#142B4A]">
+                <span className="text-[#647773]">Skill Category:</span>
+                <span className="font-bold text-[#115E59]">
                   {inspectingWorkerPhoto.skillCategory}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#6B7280]">Verification Status:</span>
+                <span className="text-[#647773]">Verification Status:</span>
                 <span className={`font-bold ${
-                  inspectingWorkerPhoto.verificationStatus === 'Verified' ? 'text-[#21865B]' : 'text-amber-700'
+                  inspectingWorkerPhoto.verificationStatus === 'Verified' ? 'text-[#16845B]' : 'text-amber-700'
                 }`}>
                   {inspectingWorkerPhoto.verificationStatus}
                 </span>
               </div>
               {inspectingWorkerPhoto.photoUpdatedAt && (
                 <div className="flex justify-between">
-                  <span className="text-[#6B7280]">Photo Updated:</span>
-                  <span className="font-mono text-[11px] text-[#253247]">
+                  <span className="text-[#647773]">Photo Updated:</span>
+                  <span className="font-mono text-[11px] text-[#183B3A]">
                     {inspectingWorkerPhoto.photoUpdatedAt}
                   </span>
                 </div>
@@ -1206,7 +1206,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <button
                 type="button"
                 onClick={() => setInspectingWorkerPhoto(null)}
-                className="px-4 py-2 text-xs font-bold text-[#6B7280] hover:text-[#142B4A] rounded-xl hover:bg-slate-100 cursor-pointer"
+                className="px-4 py-2 text-xs font-bold text-[#647773] hover:text-[#115E59] rounded-xl hover:bg-slate-100 cursor-pointer"
               >
                 Close
               </button>
@@ -1219,7 +1219,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     await handleWorkerVerificationAction(inspectingWorkerPhoto.workerId, 'Verified');
                     setInspectingWorkerPhoto(null);
                   }}
-                  className="px-5 py-2.5 bg-[#21865B] hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5 cursor-pointer"
+                  className="px-5 py-2.5 bg-[#16845B] hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5 cursor-pointer"
                 >
                   <UserCheck className="w-4 h-4" />
                   <span>Approve & Verify Worker</span>

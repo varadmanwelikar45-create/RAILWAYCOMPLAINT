@@ -65,43 +65,43 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       <div className="mb-4">
         <button
           onClick={onBack || (() => onNavigate('landing'))}
-          className="inline-flex items-center gap-2 text-xs font-bold text-[#142B4A] hover:text-[#243F63] bg-white px-3.5 py-2 rounded-xl border border-[#E8E2D3] shadow-2xs hover:bg-[#FFF5DC] transition cursor-pointer"
+          className="inline-flex items-center gap-2 text-xs font-bold text-[#183B3A] hover:text-[#0F766E] bg-white px-3.5 py-2 rounded-xl border border-[#D8EAE4] shadow-2xs hover:bg-[#E5F5EF] transition cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4 text-[#142B4A]" />
+          <ArrowLeft className="w-4 h-4 text-[#0F766E]" />
           <span>Back to Home</span>
         </button>
       </div>
 
       {/* Split-Screen Container */}
-      <div className="bg-white rounded-3xl border border-[#E8E2D3] shadow-md overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+      <div className="bg-white rounded-3xl border border-[#D8EAE4] shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12">
         
         {/* Left Side: Brand & Railway Visual */}
-        <div className="lg:col-span-5 bg-[#FFF5DC] p-8 lg:p-10 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-[#E8E2D3]">
+        <div className="lg:col-span-5 bg-[#F4FBF8] p-8 lg:p-10 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-[#D8EAE4]">
           
           <div>
             <div className="flex items-center gap-2.5 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-[#142B4A] flex items-center justify-center text-[#E9B949] shadow-xs">
+              <div className="w-10 h-10 rounded-xl bg-[#0F766E] flex items-center justify-center text-[#A7E8D0] shadow-xs">
                 <TrainTrack className="w-5 h-5" />
               </div>
               <div>
-                <span className="font-extrabold text-xl text-[#142B4A] tracking-tight">RAIL CARE</span>
-                <p className="text-[10px] text-[#6B7280] font-medium">Passenger Assistance Network</p>
+                <span className="font-extrabold text-xl text-[#183B3A] tracking-tight">RAIL CARE</span>
+                <p className="text-[10px] text-[#647773] font-medium">Passenger Assistance Network</p>
               </div>
             </div>
 
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#142B4A] leading-snug tracking-tight mb-3">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#115E59] leading-snug tracking-tight mb-3">
               On-Demand Help.<br />
-              <span className="text-[#E9B949]">At Your Coach.</span><br />
+              <span className="text-[#0F766E]">At Your Coach.</span><br />
               During Platform Halt.
             </h2>
 
-            <p className="text-xs text-[#6B7280] leading-relaxed mb-6">
+            <p className="text-xs text-[#647773] leading-relaxed mb-6">
               Sign in to book verified technicians, plumbers, electricians, or housekeeping sahayaks directly to your train coach and berth.
             </p>
           </div>
 
           {/* Railway Visual */}
-          <div className="rounded-2xl overflow-hidden border-2 border-white shadow-sm mt-4">
+          <div className="rounded-2xl overflow-hidden border-2 border-white shadow-xs mt-4">
             <img
               src={trainJourneyImg}
               onError={(e) => {
@@ -114,13 +114,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               referrerPolicy="no-referrer"
               className="w-full h-44 object-cover object-center"
             />
-            <div className="bg-[#142B4A] text-white p-3 text-[11px] font-semibold flex items-center justify-between">
+            <div className="bg-[#115E59] text-white p-3 text-[11px] font-semibold flex items-center justify-between">
               <span>Secure Authentication</span>
-              <span className="text-[#E9B949]">Mutual Live Location</span>
+              <span className="text-[#A7E8D0]">Mutual Live Location</span>
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-[#E8E2D3]/60 text-[11px] text-[#6B7280]">
+          <div className="mt-6 pt-4 border-t border-[#D8EAE4] text-[11px] text-[#647773]">
             Verified railway service workers provide rapid on-spot resolution during scheduled platform halts.
           </div>
 
@@ -130,28 +130,28 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         <div className="lg:col-span-7 p-8 sm:p-10 bg-white">
           
           <div className="mb-6">
-            <div className="text-xs font-bold text-[#E9B949] uppercase tracking-wider mb-1">
+            <div className="text-xs font-bold text-[#0F766E] uppercase tracking-wider mb-1">
               PASSENGER ACCESS
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#142B4A]">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#115E59]">
               Passenger Sign In
             </h1>
-            <p className="text-xs text-[#6B7280] mt-1">
+            <p className="text-xs text-[#647773] mt-1">
               Enter your email and password to access your bookings and live location radar.
             </p>
           </div>
 
           {initialEmail && (
-            <div className="mb-4 p-3.5 rounded-xl bg-[#FFF5DC] border border-[#E9B949]/50 text-xs text-[#142B4A] flex items-center gap-2.5 font-medium">
-              <CheckCircle2 className="w-4 h-4 text-[#21865B] shrink-0" />
+            <div className="mb-4 p-3.5 rounded-xl bg-[#CCFBF1] border border-[#A7E8D0] text-xs text-[#0F766E] flex items-center gap-2.5 font-medium">
+              <CheckCircle2 className="w-4 h-4 text-[#16845B] shrink-0" />
               <span>Account registered! Enter your password below to sign in.</span>
             </div>
           )}
 
           {error && (
-            <div className="mb-5 p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 space-y-1.5">
+            <div className="mb-5 p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-[#C74646] space-y-1.5">
               <div className="flex items-start gap-2.5">
-                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-red-600" />
+                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-[#C74646]" />
                 <span className="font-medium">{error}</span>
               </div>
               {error.toLowerCase().includes('register') && (
@@ -159,7 +159,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   <button
                     type="button"
                     onClick={() => onNavigate('register')}
-                    className="text-xs font-bold text-[#142B4A] underline hover:text-[#243F63] cursor-pointer"
+                    className="text-xs font-bold text-[#0F766E] underline hover:text-[#115E59] cursor-pointer"
                   >
                     Click here to create a new passenger account &rarr;
                   </button>
@@ -170,7 +170,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-[#253247] mb-1.5">
+              <label className="block text-xs font-bold text-[#183B3A] mb-1.5">
                 Email Address <span className="text-red-500">*</span>
               </label>
               <input
@@ -178,14 +178,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
-                className="w-full px-3.5 py-2.5 text-sm bg-[#FFFDF5] border border-[#E8E2D3] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#142B4A] focus:border-transparent transition"
+                className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#D8EAE4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E] focus:border-transparent transition text-[#183B3A]"
                 required
                 autoFocus={!initialEmail}
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#253247] mb-1.5">
+              <label className="block text-xs font-bold text-[#183B3A] mb-1.5">
                 Password <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -194,17 +194,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your account password"
-                  className="w-full px-3.5 py-2.5 pr-10 text-sm bg-[#FFFDF5] border border-[#E8E2D3] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#142B4A] focus:border-transparent transition"
+                  className="w-full px-3.5 py-2.5 pr-10 text-sm bg-white border border-[#D8EAE4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E] focus:border-transparent transition text-[#183B3A]"
                   required
                   autoFocus={Boolean(initialEmail)}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-[#6B7280] hover:text-[#142B4A] cursor-pointer"
+                  className="absolute right-3 top-3 text-[#647773] hover:text-[#0F766E] cursor-pointer"
                   title={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4 text-[#647773]" />}
                 </button>
               </div>
             </div>
@@ -212,28 +212,28 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3.5 px-4 bg-[#142B4A] hover:bg-[#243F63] text-white text-sm font-bold rounded-xl shadow-md transition-all border border-[#142B4A] hover:border-[#E9B949] cursor-pointer flex items-center justify-center gap-2 mt-4 ${
+              className={`w-full py-3.5 px-4 bg-[#0F766E] hover:bg-[#115E59] text-white text-sm font-bold rounded-xl shadow-xs transition-all border border-[#0F766E] cursor-pointer flex items-center justify-center gap-2 mt-4 ${
                 loading ? 'opacity-70 cursor-not-allowed' : ''
               }`}
             >
-              <LogIn className="w-4 h-4 text-[#E9B949]" />
+              <LogIn className="w-4 h-4 text-[#A7E8D0]" />
               <span>{loading ? 'Signing In...' : 'Sign In as Passenger'}</span>
             </button>
           </form>
 
-          <div className="mt-8 pt-4 border-t border-[#E8E2D3] flex flex-col sm:flex-row items-center justify-between text-xs text-[#6B7280] gap-2">
+          <div className="mt-8 pt-4 border-t border-[#D8EAE4] flex flex-col sm:flex-row items-center justify-between text-xs text-[#647773] gap-2">
             <span>
               New passenger?{' '}
               <button
                 onClick={() => onNavigate('register')}
-                className="text-[#142B4A] font-bold hover:underline cursor-pointer"
+                className="text-[#0F766E] font-bold hover:underline cursor-pointer"
               >
                 Register an account &rarr;
               </button>
             </span>
             <button
               onClick={onBack || (() => onNavigate('landing'))}
-              className="font-semibold text-[#6B7280] hover:text-[#142B4A] cursor-pointer"
+              className="font-semibold text-[#647773] hover:text-[#0F766E] cursor-pointer"
             >
               &larr; Back to Role Selection
             </button>

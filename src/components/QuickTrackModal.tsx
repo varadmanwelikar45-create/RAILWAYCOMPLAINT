@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Complaint, ViewMode } from '../types';
-import { Search, X, CheckCircle2, Clock, AlertCircle, Train, Calendar, ArrowRight, Tag } from 'lucide-react';
+import { Search, X, AlertCircle, ArrowRight } from 'lucide-react';
 
 interface QuickTrackModalProps {
   complaints: Complaint[];
@@ -44,20 +44,20 @@ export const QuickTrackModal: React.FC<QuickTrackModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#142B4A]/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl border border-[#E8E2D3] shadow-2xl max-w-xl w-full p-6 sm:p-8 space-y-6 animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 bg-[#115E59]/40 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl border border-[#D8EAE4] shadow-2xl max-w-xl w-full p-6 sm:p-8 space-y-6 animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 pb-4 border-b border-[#E8E2D3]">
+        <div className="flex items-start justify-between gap-3 pb-4 border-b border-[#D8EAE4]">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FFF5DC] text-[#142B4A] text-[10px] font-extrabold uppercase tracking-wider mb-1 border border-[#E9B949]/40">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#CCFBF1] text-[#0F766E] text-[10px] font-extrabold uppercase tracking-wider mb-1 border border-[#A7E8D0]">
               REAL-TIME GRIEVANCE TRACKER
             </div>
-            <h3 className="text-xl font-extrabold text-[#142B4A]">
+            <h3 className="text-xl font-extrabold text-[#115E59]">
               Track Grievance / PNR Status
             </h3>
-            <p className="text-xs text-[#6B7280] mt-0.5">
-              Enter your Reference ID (e.g., <button type="button" onClick={() => { setQuery('RC1002'); setHasSearched(true); }} className="font-mono font-bold text-[#142B4A] underline cursor-pointer">RC1002</button> or <button type="button" onClick={() => { setQuery('RC1001'); setHasSearched(true); }} className="font-mono font-bold text-[#142B4A] underline cursor-pointer">RC1001</button>) or 10-digit PNR.
+            <p className="text-xs text-[#647773] mt-0.5">
+              Enter your Reference ID (e.g., <button type="button" onClick={() => { setQuery('RC1002'); setHasSearched(true); }} className="font-mono font-bold text-[#0F766E] underline cursor-pointer">RC1002</button> or <button type="button" onClick={() => { setQuery('RC1001'); setHasSearched(true); }} className="font-mono font-bold text-[#0F766E] underline cursor-pointer">RC1001</button>) or 10-digit PNR.
             </p>
           </div>
 
@@ -72,7 +72,7 @@ export const QuickTrackModal: React.FC<QuickTrackModalProps> = ({
         {/* Search Input Form */}
         <form onSubmit={handleSearch} className="space-y-3">
           <div className="relative">
-            <Search className="w-4 h-4 text-[#6B7280] absolute left-3.5 top-3.5" />
+            <Search className="w-4 h-4 text-[#647773] absolute left-3.5 top-3.5" />
             <input
               type="text"
               value={query}
@@ -81,19 +81,19 @@ export const QuickTrackModal: React.FC<QuickTrackModalProps> = ({
                 setHasSearched(false);
               }}
               placeholder="Enter Reference ID (RC1001) or 10-digit PNR..."
-              className="w-full pl-10 pr-24 py-3 text-xs sm:text-sm bg-[#FFFDF5] border border-[#E8E2D3] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#142B4A] font-medium"
+              className="w-full pl-10 pr-24 py-3 text-xs sm:text-sm bg-white border border-[#D8EAE4] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#0F766E] text-[#183B3A] font-medium"
               autoFocus
             />
             <button
               type="submit"
-              className="absolute right-2 top-2 px-4 py-1.5 bg-[#142B4A] hover:bg-[#243F63] text-white text-xs font-bold rounded-xl transition cursor-pointer"
+              className="absolute right-2 top-2 px-4 py-1.5 bg-[#0F766E] hover:bg-[#115E59] text-white text-xs font-bold rounded-xl transition cursor-pointer"
             >
               Search
             </button>
           </div>
 
           {/* Quick Inquiry Shortcuts */}
-          <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-[#6B7280]">
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-[#647773]">
             <span>Recent Inquiries:</span>
             {complaints.slice(0, 3).map((c) => (
               <button
@@ -103,7 +103,7 @@ export const QuickTrackModal: React.FC<QuickTrackModalProps> = ({
                   setQuery(c.complaintId);
                   setHasSearched(true);
                 }}
-                className="px-2 py-0.5 bg-[#FFF5DC] text-[#142B4A] font-mono font-bold rounded-md border border-[#E9B949]/50 hover:bg-[#E9B949] transition cursor-pointer"
+                className="px-2 py-0.5 bg-[#E5F5EF] text-[#0F766E] font-mono font-bold rounded-md border border-[#A7E8D0] hover:bg-[#CCFBF1] transition cursor-pointer"
               >
                 {c.complaintId}
               </button>
@@ -113,13 +113,13 @@ export const QuickTrackModal: React.FC<QuickTrackModalProps> = ({
 
         {/* Result Area */}
         {matchedComplaint ? (
-          <div className="bg-[#FFFDF5] border border-[#E8E2D3] rounded-2xl p-5 space-y-4">
+          <div className="bg-[#F4FBF8] border border-[#D8EAE4] rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-bold text-[#6B7280] uppercase block">
+                <span className="text-[10px] font-bold text-[#647773] uppercase block">
                   Reference ID
                 </span>
-                <span className="font-mono text-xl font-extrabold text-[#142B4A]">
+                <span className="font-mono text-xl font-extrabold text-[#115E59]">
                   {matchedComplaint.complaintId}
                 </span>
               </div>
@@ -127,19 +127,19 @@ export const QuickTrackModal: React.FC<QuickTrackModalProps> = ({
                 <span
                   className={`inline-flex items-center gap-1.5 text-xs font-extrabold px-3 py-1 rounded-full ${
                     matchedComplaint.status === 'Resolved'
-                      ? 'bg-[#EDF7F2] text-[#156140] border border-[#21865B]/30'
+                      ? 'bg-[#E5F5EF] text-[#16845B] border border-[#A7E8D0]'
                       : matchedComplaint.status === 'In Progress'
-                      ? 'bg-[#EEF4FA] text-[#1B4470] border border-[#315F91]/30'
-                      : 'bg-[#FFF8E7] text-[#9A6700] border border-[#E9B949]/40'
+                      ? 'bg-[#CCFBF1] text-[#0F766E] border border-[#A7E8D0]'
+                      : 'bg-amber-50 text-[#C58B20] border border-amber-200'
                   }`}
                 >
                   <span
                     className={`w-2 h-2 rounded-full ${
                       matchedComplaint.status === 'Resolved'
-                        ? 'bg-[#21865B]'
+                        ? 'bg-[#16845B]'
                         : matchedComplaint.status === 'In Progress'
-                        ? 'bg-[#315F91] animate-pulse'
-                        : 'bg-[#D99520] animate-pulse'
+                        ? 'bg-[#0F766E] animate-pulse'
+                        : 'bg-[#C58B20] animate-pulse'
                     }`}
                   />
                   {matchedComplaint.status}
@@ -147,57 +147,57 @@ export const QuickTrackModal: React.FC<QuickTrackModalProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-xs border-t border-b border-[#E8E2D3] py-3">
+            <div className="grid grid-cols-2 gap-3 text-xs border-t border-b border-[#D8EAE4] py-3">
               <div>
-                <span className="text-[10px] text-[#6B7280] block font-bold uppercase">Train</span>
-                <span className="font-semibold text-[#142B4A]">{matchedComplaint.trainNumber}</span>
+                <span className="text-[10px] text-[#647773] block font-bold uppercase">Train</span>
+                <span className="font-semibold text-[#183B3A]">{matchedComplaint.trainNumber}</span>
               </div>
               <div>
-                <span className="text-[10px] text-[#6B7280] block font-bold uppercase">Category</span>
-                <span className="font-semibold text-[#142B4A]">{matchedComplaint.category}</span>
+                <span className="text-[10px] text-[#647773] block font-bold uppercase">Category</span>
+                <span className="font-semibold text-[#183B3A]">{matchedComplaint.category}</span>
               </div>
               <div>
-                <span className="text-[10px] text-[#6B7280] block font-bold uppercase">Passenger</span>
-                <span className="text-[#253247]">{matchedComplaint.passengerName}</span>
+                <span className="text-[10px] text-[#647773] block font-bold uppercase">Passenger</span>
+                <span className="text-[#183B3A]">{matchedComplaint.passengerName}</span>
               </div>
               <div>
-                <span className="text-[10px] text-[#6B7280] block font-bold uppercase">Logged Date</span>
-                <span className="text-[#253247]">{matchedComplaint.createdAt.slice(0, 10)}</span>
+                <span className="text-[10px] text-[#647773] block font-bold uppercase">Logged Date</span>
+                <span className="text-[#183B3A]">{matchedComplaint.createdAt.slice(0, 10)}</span>
               </div>
             </div>
 
             <div className="text-xs">
-              <span className="font-bold text-[#142B4A] block mb-0.5">Subject:</span>
-              <p className="text-[#253247] font-medium">{matchedComplaint.subject}</p>
+              <span className="font-bold text-[#115E59] block mb-0.5">Subject:</span>
+              <p className="text-[#183B3A] font-medium">{matchedComplaint.subject}</p>
             </div>
 
             <button
               onClick={() => handleViewDetails(matchedComplaint)}
-              className="w-full py-2.5 px-4 bg-[#142B4A] hover:bg-[#243F63] text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+              className="w-full py-2.5 px-4 bg-[#0F766E] hover:bg-[#115E59] text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
             >
-              <span>View Full Case Details & Audit Timeline</span>
-              <ArrowRight className="w-3.5 h-3.5 text-[#E9B949]" />
+              <span>View Full Case Details &amp; Audit Timeline</span>
+              <ArrowRight className="w-3.5 h-3.5 text-[#CCFBF1]" />
             </button>
           </div>
         ) : hasSearched && query.trim() ? (
-          <div className="py-8 text-center space-y-2 bg-[#FFFDF5] rounded-2xl border border-dashed border-[#E8E2D3]">
-            <AlertCircle className="w-8 h-8 text-amber-500 mx-auto" />
-            <h4 className="font-bold text-sm text-[#142B4A]">No Grievance Record Found</h4>
-            <p className="text-xs text-[#6B7280] max-w-sm mx-auto">
+          <div className="py-8 text-center space-y-2 bg-[#F4FBF8] rounded-2xl border border-dashed border-[#D8EAE4]">
+            <AlertCircle className="w-8 h-8 text-[#C58B20] mx-auto" />
+            <h4 className="font-bold text-sm text-[#115E59]">No Grievance Record Found</h4>
+            <p className="text-xs text-[#647773] max-w-sm mx-auto">
               No complaint matching "{query}" was found. Please check your Reference ID (e.g. RC1001) or PNR number.
             </p>
           </div>
         ) : null}
 
         {/* Footer */}
-        <div className="flex items-center justify-between text-xs text-[#6B7280] pt-2">
+        <div className="flex items-center justify-between text-xs text-[#647773] pt-2">
           <span>Need immediate assistance?</span>
           <button
             onClick={() => {
               onClose();
               onNavigate('register-complaint');
             }}
-            className="font-bold text-[#142B4A] underline hover:text-[#243F63] cursor-pointer"
+            className="font-bold text-[#0F766E] underline hover:text-[#115E59] cursor-pointer"
           >
             Lodge New Complaint &rarr;
           </button>

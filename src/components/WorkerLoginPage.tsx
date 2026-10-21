@@ -11,8 +11,6 @@ import {
   CheckCircle2, 
   Camera, 
   Upload, 
-  Image as ImageIcon, 
-  RotateCcw, 
   KeyRound, 
   Check, 
   Sparkles 
@@ -158,7 +156,7 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
     }
 
     if (!verificationPhoto) {
-      setError('Please update your verification image before signing in. This is required for divisional verification.');
+      setError('Please update your verification image before signing in. This is required for station verification.');
       return;
     }
 
@@ -190,17 +188,17 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <button
           onClick={onBack || (() => onNavigate('landing'))}
-          className="inline-flex items-center gap-2 text-xs font-bold text-[#142B4A] hover:text-[#243F63] transition cursor-pointer"
+          className="inline-flex items-center gap-2 text-xs font-bold text-[#183B3A] hover:text-[#0F766E] transition cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-4 h-4 text-[#0F766E]" />
           <span>Back to Home</span>
         </button>
 
         <div className="flex items-center gap-2 text-xs font-semibold">
-          <span className="text-[#6B7280]">Looking for a different portal?</span>
+          <span className="text-[#647773]">Looking for a different portal?</span>
           <button
             onClick={() => onNavigate('landing')}
-            className="text-[#142B4A] underline hover:text-[#243F63] font-bold cursor-pointer"
+            className="text-[#0F766E] underline hover:text-[#115E59] font-bold cursor-pointer"
           >
             Role Portals
           </button>
@@ -210,24 +208,24 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* Left Column: Worker Login Form */}
-        <div className="lg:col-span-7 bg-white rounded-3xl border border-[#E8E2D3] p-6 sm:p-8 shadow-xs">
+        <div className="lg:col-span-7 bg-white rounded-3xl border border-[#D8EAE4] p-6 sm:p-8 shadow-xs">
           <div className="flex items-center gap-2 mb-2">
-            <span className="px-2.5 py-0.5 bg-[#E9B949] text-[#142B4A] text-[10px] font-extrabold rounded-md tracking-wider uppercase">
+            <span className="px-2.5 py-0.5 bg-[#CCFBF1] text-[#0F766E] text-[10px] font-extrabold rounded-md tracking-wider uppercase border border-[#A7E8D0]">
               WORKER PORTAL
             </span>
-            <span className="text-xs text-[#6B7280] font-medium">RAIL CARE WORKFORCE</span>
+            <span className="text-xs text-[#647773] font-medium">RAIL CARE WORKFORCE</span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#142B4A] tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#115E59] tracking-tight">
             Gig Worker Sign In
           </h1>
-          <p className="text-xs text-[#6B7280] mt-1 mb-6">
+          <p className="text-xs text-[#647773] mt-1 mb-6">
             Sign in to check station assignments, manage your availability, and accept passenger assistance requests.
           </p>
 
           {error && (
-            <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2.5">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-[#C74646] text-xs flex items-center gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 text-[#C74646]" />
               <span>{error}</span>
             </div>
           )}
@@ -235,7 +233,7 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* 1. Worker Registered Email */}
             <div>
-              <label className="block text-xs font-bold text-[#142B4A] uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-[#183B3A] uppercase tracking-wider mb-1.5">
                 Worker Registered Email
               </label>
               <input
@@ -244,13 +242,13 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="e.g. ramesh.verma@worker.railcare.gov.in"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-[#E8E2D3] bg-[#FFFDF5] text-xs focus:outline-none focus:ring-2 focus:ring-[#142B4A]/30 focus:border-[#142B4A]"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-[#D8EAE4] bg-white text-xs text-[#183B3A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/30 focus:border-[#0F766E]"
               />
             </div>
 
             {/* 2. Password */}
             <div>
-              <label className="block text-xs font-bold text-[#142B4A] uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-[#183B3A] uppercase tracking-wider mb-1.5">
                 Password
               </label>
               <div className="relative">
@@ -260,42 +258,42 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter worker password"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E8E2D3] bg-[#FFFDF5] text-xs focus:outline-none focus:ring-2 focus:ring-[#142B4A]/30 focus:border-[#142B4A] pr-10"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#D8EAE4] bg-white text-xs text-[#183B3A] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/30 focus:border-[#0F766E] pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-[#6B7280] hover:text-[#142B4A] cursor-pointer"
+                  className="absolute right-3 top-2.5 text-[#647773] hover:text-[#0F766E] cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
-            {/* 3. MANDATORY REQUIREMENT: Update Worker Image for Verification Process */}
-            <div className="p-4 sm:p-5 rounded-2xl border-2 border-[#E9B949] bg-gradient-to-b from-[#FFFDF5] to-[#FFF5DC]/40 space-y-3">
+            {/* 3. Update Worker Image for Verification Process */}
+            <div className="p-4 sm:p-5 rounded-2xl border border-[#A7E8D0] bg-[#F4FBF8] space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-[#142B4A] text-[#E9B949] flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-lg bg-[#0F766E] text-[#CCFBF1] flex items-center justify-center">
                     <Camera className="w-4 h-4" />
                   </div>
                   <div>
-                    <label className="block text-xs font-extrabold text-[#142B4A] uppercase tracking-wider">
+                    <label className="block text-xs font-extrabold text-[#115E59] uppercase tracking-wider">
                       Update Image for Verification Process
                     </label>
-                    <p className="text-[10px] text-[#6B7280]">
+                    <p className="text-[10px] text-[#647773]">
                       Required: Admin will verify this live photo to approve your account.
                     </p>
                   </div>
                 </div>
-                <span className="px-2 py-0.5 rounded-full bg-[#156140] text-white text-[10px] font-bold">
+                <span className="px-2 py-0.5 rounded-full bg-[#16845B] text-white text-[10px] font-bold">
                   Live Audit
                 </span>
               </div>
 
               {/* Live Camera Stream Container */}
               {isCameraActive && (
-                <div className="relative rounded-xl overflow-hidden border border-[#142B4A] bg-black">
+                <div className="relative rounded-xl overflow-hidden border border-[#0F766E] bg-black">
                   <video
                     ref={videoRef}
                     autoPlay
@@ -307,7 +305,7 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
                     <button
                       type="button"
                       onClick={captureCameraPhoto}
-                      className="px-4 py-2 bg-[#21865B] hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-2 cursor-pointer border border-white"
+                      className="px-4 py-2 bg-[#16845B] hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-2 cursor-pointer border border-white"
                     >
                       <Camera className="w-4 h-4" />
                       <span>Take Photo</span>
@@ -324,17 +322,17 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
               )}
 
               {cameraError && (
-                <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] flex items-center gap-2">
-                  <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-[#C58B20] text-[11px] flex items-center gap-2">
+                  <AlertCircle className="w-3.5 h-3.5 text-[#C58B20] shrink-0" />
                   <span>{cameraError}</span>
                 </div>
               )}
 
               {/* Photo Preview & Selection Controls */}
               {!isCameraActive && (
-                <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-3.5 rounded-xl border border-[#E8E2D3]">
+                <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-3.5 rounded-xl border border-[#D8EAE4]">
                   {/* Thumbnail */}
-                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 border-[#142B4A] shadow-xs shrink-0 bg-slate-100 flex items-center justify-center">
+                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 border-[#0F766E] shadow-2xs shrink-0 bg-slate-100 flex items-center justify-center">
                     {verificationPhoto ? (
                       <img
                         src={verificationPhoto}
@@ -342,9 +340,9 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <Camera className="w-8 h-8 text-[#6B7280]" />
+                      <Camera className="w-8 h-8 text-[#647773]" />
                     )}
-                    <div className="absolute top-1 right-1 bg-[#21865B] text-white p-0.5 rounded-full">
+                    <div className="absolute top-1 right-1 bg-[#16845B] text-white p-0.5 rounded-full">
                       <Check className="w-3 h-3" />
                     </div>
                   </div>
@@ -355,16 +353,16 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
                       <button
                         type="button"
                         onClick={startCamera}
-                        className="px-3 py-1.5 bg-[#142B4A] hover:bg-[#243F63] text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                        className="px-3 py-1.5 bg-[#0F766E] hover:bg-[#115E59] text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
                       >
-                        <Camera className="w-3.5 h-3.5 text-[#E9B949]" />
+                        <Camera className="w-3.5 h-3.5 text-[#A7E8D0]" />
                         <span>Use Camera</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-3 py-1.5 bg-[#FFF5DC] hover:bg-[#E9B949]/30 text-[#142B4A] rounded-lg text-xs font-bold transition border border-[#E9B949]/60 flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                        className="px-3 py-1.5 bg-[#E5F5EF] hover:bg-[#CCFBF1] text-[#0F766E] rounded-lg text-xs font-bold transition border border-[#A7E8D0] flex items-center gap-1.5 cursor-pointer shadow-2xs"
                       >
                         <Upload className="w-3.5 h-3.5" />
                         <span>Upload File</span>
@@ -380,7 +378,7 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
                       />
                     </div>
 
-                    <p className="text-[10px] text-[#6B7280]">
+                    <p className="text-[10px] text-[#647773]">
                       {photoSource === 'camera'
                         ? 'Captured via live camera snapshot.'
                         : photoSource === 'upload'
@@ -392,9 +390,9 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
               )}
 
               {/* Fast Presets Options */}
-              <div className="pt-2 border-t border-[#E8E2D3]">
-                <div className="flex items-center gap-1 text-[11px] font-bold text-[#142B4A] mb-2">
-                  <Sparkles className="w-3 h-3 text-[#E9B949]" />
+              <div className="pt-2 border-t border-[#D8EAE4]">
+                <div className="flex items-center gap-1 text-[11px] font-bold text-[#183B3A] mb-2">
+                  <Sparkles className="w-3 h-3 text-[#0F766E]" />
                   <span>Or select quick verification portrait:</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
@@ -411,8 +409,8 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
                         }}
                         className={`p-1.5 rounded-xl border text-left transition flex items-center gap-2 cursor-pointer ${
                           isSelected
-                            ? 'bg-white border-[#142B4A] ring-2 ring-[#142B4A]/20 shadow-2xs'
-                            : 'bg-white/70 border-[#E8E2D3] hover:border-[#E9B949]'
+                            ? 'bg-white border-[#0F766E] ring-2 ring-[#0F766E]/20 shadow-2xs'
+                            : 'bg-white/70 border-[#D8EAE4] hover:border-[#0F766E]'
                         }`}
                       >
                         <img
@@ -421,8 +419,8 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
                           className="w-8 h-8 rounded-lg object-cover shrink-0"
                         />
                         <div className="min-w-0">
-                          <p className="text-[10px] font-bold text-[#142B4A] truncate">{preset.label}</p>
-                          <p className="text-[8px] text-[#6B7280] truncate">{preset.description}</p>
+                          <p className="text-[10px] font-bold text-[#183B3A] truncate">{preset.label}</p>
+                          <p className="text-[8px] text-[#647773] truncate">{preset.description}</p>
                         </div>
                       </button>
                     );
@@ -435,19 +433,19 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3.5 px-4 bg-[#142B4A] hover:bg-[#243F63] text-white text-xs font-bold rounded-xl shadow-md transition-all mt-4 flex items-center justify-center gap-2 cursor-pointer border border-[#142B4A] hover:border-[#E9B949] ${
+              className={`w-full py-3.5 px-4 bg-[#0F766E] hover:bg-[#115E59] text-white text-xs font-bold rounded-xl shadow-xs transition-all mt-4 flex items-center justify-center gap-2 cursor-pointer border border-[#0F766E] ${
                 loading ? 'opacity-70 cursor-not-allowed' : ''
               }`}
             >
-              <Briefcase className="w-4 h-4 text-[#E9B949]" />
+              <Briefcase className="w-4 h-4 text-[#A7E8D0]" />
               <span>{loading ? 'Authenticating & Syncing Image...' : 'Sign In & Update Verification Image'}</span>
             </button>
           </form>
 
           {/* Authorized Duty Worker Fast-Select Box */}
-          <div className="mt-8 pt-6 border-t border-[#E8E2D3]">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-[#142B4A] mb-3">
-              <KeyRound className="w-3.5 h-3.5 text-[#E9B949]" />
+          <div className="mt-8 pt-6 border-t border-[#D8EAE4]">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-[#183B3A] mb-3">
+              <KeyRound className="w-3.5 h-3.5 text-[#0F766E]" />
               <span>Authorized Station Personnel (Fast Access · Password: Worker@1234)</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -456,29 +454,29 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
                   key={w.id}
                   type="button"
                   onClick={() => handleQuickDemoWorker(w)}
-                  className="text-left p-2.5 rounded-xl border border-[#E8E2D3] hover:border-[#142B4A] hover:bg-[#FFF5DC] transition text-xs flex flex-col gap-0.5 cursor-pointer bg-[#FFFDF5]"
+                  className="text-left p-2.5 rounded-xl border border-[#D8EAE4] hover:border-[#0F766E] hover:bg-[#E5F5EF] transition text-xs flex flex-col gap-0.5 cursor-pointer bg-[#F4FBF8]"
                 >
-                  <span className="font-bold text-[#142B4A] truncate">{w.fullName}</span>
-                  <span className="text-[10px] text-[#6B7280] truncate">{w.skillCategory.split('&')[0]} · {w.stationCode}</span>
+                  <span className="font-bold text-[#183B3A] truncate">{w.fullName}</span>
+                  <span className="text-[10px] text-[#647773] truncate">{w.skillCategory.split('&')[0]} · {w.stationCode}</span>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Registration & Navigation links */}
-          <div className="mt-6 pt-4 border-t border-[#E8E2D3] flex flex-col sm:flex-row items-center justify-between text-xs text-[#6B7280] gap-2">
+          <div className="mt-6 pt-4 border-t border-[#D8EAE4] flex flex-col sm:flex-row items-center justify-between text-xs text-[#647773] gap-2">
             <span>
               Don't have a worker account?{' '}
               <button
                 onClick={() => onNavigate('worker-register')}
-                className="font-bold text-[#142B4A] underline hover:text-[#243F63] cursor-pointer"
+                className="font-bold text-[#0F766E] underline hover:text-[#115E59] cursor-pointer"
               >
                 Register as New Worker
               </button>
             </span>
             <button
               onClick={() => onNavigate('landing')}
-              className="font-semibold text-[#6B7280] hover:text-[#142B4A] cursor-pointer"
+              className="font-semibold text-[#647773] hover:text-[#0F766E] cursor-pointer"
             >
               &larr; Back to Role Selection
             </button>
@@ -487,35 +485,35 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
 
         {/* Right Column: Portal info & Policy */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="bg-white rounded-3xl border border-[#E8E2D3] p-6 shadow-xs">
-            <h3 className="text-base font-bold text-[#142B4A] mb-2 flex items-center gap-2">
-              <Shield className="w-5 h-5 text-[#E9B949]" />
+          <div className="bg-white rounded-3xl border border-[#D8EAE4] p-6 shadow-xs">
+            <h3 className="text-base font-bold text-[#115E59] mb-2 flex items-center gap-2">
+              <Shield className="w-5 h-5 text-[#0F766E]" />
               <span>Worker Verification Policy</span>
             </h3>
-            <p className="text-xs text-[#6B7280] leading-relaxed mb-4">
+            <p className="text-xs text-[#647773] leading-relaxed mb-4">
               All railway workers undergo administrative background check and station assignment before receiving live service requests.
             </p>
             <div className="space-y-2.5 text-xs">
-              <div className="flex items-center gap-2 text-[#253247]">
-                <CheckCircle2 className="w-4 h-4 text-[#21865B] shrink-0" />
+              <div className="flex items-center gap-2 text-[#183B3A]">
+                <CheckCircle2 className="w-4 h-4 text-[#16845B] shrink-0" />
                 <span>Station platform access permit</span>
               </div>
-              <div className="flex items-center gap-2 text-[#253247]">
-                <CheckCircle2 className="w-4 h-4 text-[#21865B] shrink-0" />
+              <div className="flex items-center gap-2 text-[#183B3A]">
+                <CheckCircle2 className="w-4 h-4 text-[#16845B] shrink-0" />
                 <span>Live verification photo submitted to Administrator</span>
               </div>
-              <div className="flex items-center gap-2 text-[#253247]">
-                <CheckCircle2 className="w-4 h-4 text-[#21865B] shrink-0" />
+              <div className="flex items-center gap-2 text-[#183B3A]">
+                <CheckCircle2 className="w-4 h-4 text-[#16845B] shrink-0" />
                 <span>Real-time train arrival coordination</span>
               </div>
-              <div className="flex items-center gap-2 text-[#253247]">
-                <CheckCircle2 className="w-4 h-4 text-[#21865B] shrink-0" />
+              <div className="flex items-center gap-2 text-[#183B3A]">
+                <CheckCircle2 className="w-4 h-4 text-[#16845B] shrink-0" />
                 <span>Passenger grievance resolution</span>
               </div>
             </div>
           </div>
 
-          <div className="rounded-2xl overflow-hidden border-2 border-white shadow-sm">
+          <div className="rounded-2xl overflow-hidden border border-[#D8EAE4] shadow-xs">
             <img
               src={trainJourneyImg}
               onError={(e) => {
@@ -527,12 +525,12 @@ export const WorkerLoginPage: React.FC<WorkerLoginPageProps> = ({
               alt="Railway Worker Platform"
               className="w-full h-44 object-cover"
             />
-            <div className="bg-[#142B4A] text-white p-3.5 text-xs font-semibold flex items-center justify-between">
+            <div className="bg-[#115E59] text-white p-3.5 text-xs font-semibold flex items-center justify-between">
               <div>
                 <p className="font-bold text-white">Station Gig Workforce</p>
-                <p className="text-[10px] text-white/70">Interconnected with Passengers & Admin</p>
+                <p className="text-[10px] text-[#A7E8D0]">Interconnected with Passengers & Admin</p>
               </div>
-              <span className="text-[#E9B949] font-mono">RAIL CARE</span>
+              <span className="text-[#CCFBF1] font-mono">RAIL CARE</span>
             </div>
           </div>
         </div>

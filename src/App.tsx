@@ -17,11 +17,7 @@ import { Navbar } from './components/Navbar';
 import { LandingPage } from './components/LandingPage';
 import { RegisterPage } from './components/RegisterPage';
 import { LoginPage } from './components/LoginPage';
-import { AdminLoginPage } from './components/AdminLoginPage';
 import { UserDashboard } from './components/UserDashboard';
-import { RegisterComplaint } from './components/RegisterComplaint';
-import { ComplaintDetails } from './components/ComplaintDetails';
-import { AdminDashboard } from './components/AdminDashboard';
 import { MovingTrainBackground } from './components/MovingTrainBackground';
 import { PortalSelector } from './components/PortalSelector';
 import { WorkerLoginPage } from './components/WorkerLoginPage';
@@ -190,18 +186,26 @@ export default function App() {
   };
 
   const handleBack = () => {
-    if (window.history.length > 1 && viewHistory.length > 1) {
-      try {
-        window.history.back();
-        return;
-      } catch (e) {}
-    }
-    const nextStack = [...viewHistory];
-    nextStack.pop();
-    const prevView = nextStack[nextStack.length - 1] || 'landing';
-    setViewHistory(nextStack.length > 0 ? nextStack : ['landing']);
-    setCurrentView(prevView);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setViewHistory((prev) => {
+      if (prev.length > 1) {
+        const nextStack = [...prev];
+        nextStack.pop();
+        const prevView = nextStack[nextStack.length - 1] || 'landing';
+        setCurrentView(prevView);
+        try {
+          window.history.replaceState({ view: prevView }, '', `#${prevView}`);
+        } catch (e) {}
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return nextStack;
+      } else {
+        setCurrentView('landing');
+        try {
+          window.history.replaceState({ view: 'landing' }, '', '#landing');
+        } catch (e) {}
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return ['landing'];
+      }
+    });
   };
 
   // Browser physical/header back button synchronization
@@ -213,21 +217,19 @@ export default function App() {
     } catch (e) {}
 
     const handlePopState = (event: PopStateEvent) => {
-      if (event.state && event.state.view) {
-        let targetView: ViewMode = event.state.view;
-        if (targetView === 'admin-dashboard' || targetView === 'admin-login') {
-          targetView = 'landing';
-        }
-        setCurrentView(targetView);
-        setViewHistory((prev) => {
-          if (prev.length > 1) {
-            return prev.slice(0, prev.length - 1);
-          }
-          return [targetView];
-        });
-      } else {
-        setCurrentView('landing');
+      let targetView: ViewMode =
+        (event.state && event.state.view) ||
+        (window.location.hash ? (window.location.hash.replace('#', '') as ViewMode) : 'landing');
+      if (targetView === 'admin-dashboard' || targetView === 'admin-login') {
+        targetView = 'landing';
       }
+      setCurrentView(targetView);
+      setViewHistory((prev) => {
+        if (prev.length > 1) {
+          return prev.slice(0, prev.length - 1);
+        }
+        return [targetView];
+      });
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -779,7 +781,7 @@ export default function App() {
         setWorkers((prev) => [data.worker, ...prev.filter((w) => w.id !== data.worker.id)]);
         setCurrentWorker(data.worker);
         setToast({
-          message: `Worker account created for ${data.worker.fullName}! Verification pending by divisional officer.`,
+          message: `Worker account created for ${data.worker.fullName}! Verification pending by station administration.`,
           type: 'success',
         });
         setCurrentView('worker-dashboard');
@@ -944,7 +946,7 @@ export default function App() {
           verificationStatus: status,
           action,
           workerId,
-          adminName: currentUser?.fullName || 'Senior Divisional Officer (Admin)'
+          adminName: currentUser?.fullName || 'Station Administration'
         }),
       });
       const data = await res.json();
@@ -981,7 +983,7 @@ export default function App() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#FFFDF5] text-[#253247] font-sans selection:bg-[#E9B949]/30 overflow-x-hidden">
+    <div className="relative min-h-screen bg-[#F4FBF8] text-[#183B3A] font-sans selection:bg-[#A7E8D0]/40 overflow-x-hidden">
       {/* Moving Realistic Indian Passenger Train Background */}
       <MovingTrainBackground />
 
@@ -1006,21 +1008,21 @@ export default function App() {
           <div
             className={`p-4 rounded-2xl border text-xs flex items-center justify-between shadow-xs transition-all ${
               toast.type === 'success'
-                ? 'bg-[#EDF7F2] border-[#21865B]/30 text-[#156140]'
+                ? 'bg-[#E5F5EF] border-[#A7E8D0] text-[#16845B]'
                 : toast.type === 'danger'
-                ? 'bg-red-50 border-red-200 text-red-800'
-                : 'bg-[#FFF5DC] border-[#E9B949]/40 text-[#142B4A]'
+                ? 'bg-red-50 border-red-200 text-[#C74646]'
+                : 'bg-[#CCFBF1] border-[#A7E8D0] text-[#0F766E]'
             }`}
           >
             <div className="flex items-center gap-2.5">
               {toast.type === 'success' ? (
-                <CheckCircle className="w-4 h-4 text-[#21865B] shrink-0" />
+                <CheckCircle className="w-4 h-4 text-[#16845B] shrink-0" />
               ) : toast.type === 'danger' ? (
-                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                <AlertCircle className="w-4 h-4 text-[#C74646] shrink-0" />
               ) : (
-                <Info className="w-4 h-4 text-[#142B4A] shrink-0" />
+                <Info className="w-4 h-4 text-[#0F766E] shrink-0" />
               )}
-              <span className="font-medium">{toast.message}</span>
+              <span className="font-semibold">{toast.message}</span>
             </div>
             <button
               onClick={() => setToast(null)}
@@ -1118,6 +1120,7 @@ export default function App() {
               onSubmitRequest={handleSubmitWorkerRequest}
               onNavigate={navigateTo}
               onSuccessRedirect={() => navigateTo('user-dashboard')}
+              onBack={handleBack}
             />
           ) : (
             <LoginPage
@@ -1169,33 +1172,33 @@ export default function App() {
       />
 
       {/* Production Grade Rail Care Footer */}
-      <footer className="bg-[#142B4A] text-slate-300 py-10 border-t border-[#E8E2D3]/20 mt-auto">
+      <footer className="bg-[#115E59] text-[#CCFBF1] py-10 border-t border-[#0F766E]/40 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-white/10 text-center md:text-left">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#243F63] flex items-center justify-center border border-[#E9B949]/40 text-[#E9B949]">
-                <CheckCircle className="w-5 h-5 text-[#E9B949]" />
+              <div className="w-10 h-10 rounded-xl bg-[#0F766E] flex items-center justify-center border border-[#A7E8D0]/40 text-[#CCFBF1]">
+                <CheckCircle className="w-5 h-5 text-[#A7E8D0]" />
               </div>
               <div>
                 <span className="font-extrabold text-xl text-white tracking-tight">RAIL CARE</span>
-                <p className="text-[11px] text-slate-300">Indian Railways On-Demand Station Gig Workforce &amp; Passenger Assistance Network</p>
+                <p className="text-[11px] text-[#A7E8D0]">Indian Railways On-Demand Station Gig Workforce &amp; Passenger Assistance Network</p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-5 text-xs font-semibold text-slate-300">
-              <button onClick={() => navigateTo('landing')} className="hover:text-[#E9B949] transition cursor-pointer">Role Selection</button>
-              <button onClick={() => navigateTo(currentUser ? 'book-worker' : 'login')} className="hover:text-[#E9B949] transition cursor-pointer">Book Station Worker</button>
+            <div className="flex flex-wrap items-center justify-center gap-5 text-xs font-semibold text-[#CCFBF1]">
+              <button onClick={() => navigateTo('landing')} className="hover:text-[#A7E8D0] transition cursor-pointer">Role Selection</button>
+              <button onClick={() => navigateTo(currentUser ? 'book-worker' : 'login')} className="hover:text-[#A7E8D0] transition cursor-pointer">Book Station Worker</button>
               {currentUser && (
-                <button onClick={() => navigateTo('user-dashboard')} className="hover:text-[#E9B949] transition cursor-pointer">My Bookings &amp; Radar</button>
+                <button onClick={() => navigateTo('user-dashboard')} className="hover:text-[#A7E8D0] transition cursor-pointer">My Bookings &amp; Radar</button>
               )}
               {currentWorker && (
-                <button onClick={() => navigateTo('worker-dashboard')} className="hover:text-[#E9B949] transition cursor-pointer">Worker Station Duty</button>
+                <button onClick={() => navigateTo('worker-dashboard')} className="hover:text-[#A7E8D0] transition cursor-pointer">Worker Station Duty</button>
               )}
-              <button onClick={() => setIsEmergencyOpen(true)} className="hover:text-red-400 text-red-300 transition cursor-pointer">Emergency 139 Helpline</button>
+              <button onClick={() => setIsEmergencyOpen(true)} className="hover:text-red-300 text-red-200 transition cursor-pointer">Emergency 139 Helpline</button>
             </div>
           </div>
 
-          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left text-xs text-slate-400">
+          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left text-xs text-[#A7E8D0]/80">
             <p>
               RAIL CARE · Connected Railway Station Services &amp; Rapid Coach Berth Redressal.
             </p>
