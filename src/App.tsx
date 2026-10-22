@@ -245,7 +245,7 @@ export default function App() {
       return { message: `Welcome back, ${savedWorker.fullName}! Ready for duty.`, type: 'info' };
     }
     return {
-      message: 'Welcome to RailCare. Please register your passenger account or choose your role portal to begin.',
+      message: 'Welcome to VYOM RATH. Choose your role to begin.',
       type: 'info',
     };
   });
@@ -797,6 +797,8 @@ export default function App() {
         try {
           localStorage.setItem('railcare_current_worker', JSON.stringify(data.worker));
         } catch (e) {}
+        // Synchronize full worker roster from server immediately
+        await fetchWorkersFromServer();
         setToast({
           message: `Worker account created for ${data.worker.fullName}! Verification active for station duty.`,
           type: 'success',
@@ -816,33 +818,13 @@ export default function App() {
         }
       }
 
-      return { success: false, message: data.message || 'Worker registration failed.' };
+      return { success: false, message: data.message || 'Worker registration failed. Please check the entered information.' };
     } catch (err: any) {
-      // Local fallback for offline/preview resilience
-      const fallbackWorker: Worker = {
-        id: Date.now(),
-        workerId: `WRK-${Math.floor(100 + Math.random() * 900)}`,
-        fullName: workerData.fullName || 'Railway Worker',
-        email: workerData.email || '',
-        mobile: workerData.mobile || '',
-        skillCategory: workerData.skillCategory || 'Coach Electrician & AC Technician',
-        stationCode: workerData.stationCode || 'NDLS',
-        stationName: workerData.stationName || 'New Delhi Junction',
-        city: workerData.city || 'New Delhi',
-        experienceYears: workerData.experienceYears || 3,
-        verificationStatus: 'Verified',
-        availability: 'Available',
-        totalJobsCompleted: 0,
-        createdAt: new Date().toISOString(),
+      console.error('Worker registration network error:', err);
+      return { 
+        success: false, 
+        message: 'Could not connect to the central VYOM RATH server. Please verify your connection and try again.' 
       };
-      setWorkers((prev) => [fallbackWorker, ...prev]);
-      setCurrentWorker(fallbackWorker);
-      try {
-        localStorage.setItem('railcare_current_worker', JSON.stringify(fallbackWorker));
-      } catch (e) {}
-      setToast({ message: `Worker account created for ${fallbackWorker.fullName}! Welcome to Rail Care.`, type: 'success' });
-      setCurrentView('worker-dashboard');
-      return { success: true, message: 'Registered successfully', worker: fallbackWorker };
     }
   };
 
@@ -1036,7 +1018,7 @@ export default function App() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#FFFDF5] text-[#0F172A] font-sans selection:bg-[#FEF08A] overflow-x-hidden">
+    <div className="relative min-h-screen bg-[#F8FAFB] text-[#202A2B] font-sans selection:bg-[#DDF8EF] overflow-x-hidden">
       {/* Moving Realistic Indian Passenger Train Background */}
       <MovingTrainBackground />
 
@@ -1061,10 +1043,10 @@ export default function App() {
           <div
             className={`p-4 rounded-2xl border text-xs flex items-center justify-between shadow-xs transition-all ${
               toast.type === 'success'
-                ? 'bg-amber-50 border-amber-300 text-amber-900'
+                ? 'bg-[#DDF8EF] border-[#65D6B0]/40 text-[#1E6B52]'
                 : toast.type === 'danger'
-                ? 'bg-red-50 border-red-200 text-red-800'
-                : 'bg-yellow-50 border-yellow-300 text-yellow-900'
+                ? 'bg-[#FBE0E6] border-[#D72645]/40 text-[#92182D]'
+                : 'bg-[#D7F7FC] border-[#00B8D9]/40 text-[#007D99]'
             }`}
           >
             <div className="flex items-center gap-2.5">
@@ -1190,11 +1172,13 @@ export default function App() {
             <UserDashboard
               currentUser={currentUser}
               workerRequests={workerRequests}
+              workers={workers}
               onCancelWorkerRequest={handleCancelWorkerRequest}
               onSubmitWorkerFeedback={handleSubmitWorkerFeedback}
               onNavigate={navigateTo}
               onBack={handleBack}
               onRefreshData={fetchWorkerRequestsFromServer}
+              onRefreshWorkers={fetchWorkersFromServer}
             />
           ) : (
             <LoginPage
@@ -1224,39 +1208,39 @@ export default function App() {
         currentUser={currentUser}
       />
 
-      {/* Production Grade Rail Care Footer */}
-      <footer className="bg-[#1E293B] text-slate-300 py-10 border-t border-slate-700/60 mt-auto">
+      {/* Production Grade VYOM RATH Footer */}
+      <footer className="bg-[#202A2B] text-slate-300 py-10 border-t border-[#202A2B] mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-white/10 text-center md:text-left">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center border border-amber-300 text-slate-900 shadow-sm">
-                <CheckCircle className="w-5 h-5 text-slate-900" />
+              <div className="w-10 h-10 rounded-xl bg-[#202A2B] border border-[#65D6B0]/40 flex items-center justify-center text-[#65D6B0] shadow-sm">
+                <CheckCircle className="w-5 h-5 text-[#65D6B0]" />
               </div>
               <div>
-                <span className="font-extrabold text-xl text-white tracking-tight">RAIL CARE</span>
-                <p className="text-[11px] text-amber-200">Indian Railways On-Demand Station Gig Workforce &amp; Passenger Assistance Network</p>
+                <span className="font-black text-xl text-white tracking-tight">VYOM RATH</span>
+                <p className="text-[11px] text-[#DDF8EF]">Indian Railways On-Demand Station Gig Workforce &amp; Passenger Assistance Network</p>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-5 text-xs font-semibold text-slate-200">
-              <button onClick={() => navigateTo('landing')} className="hover:text-amber-400 transition cursor-pointer">Role Selection</button>
-              <button onClick={() => navigateTo(currentUser ? 'book-worker' : 'login')} className="hover:text-amber-400 transition cursor-pointer">Book Station Worker</button>
+              <button onClick={() => navigateTo('landing')} className="hover:text-[#65D6B0] transition cursor-pointer">Home</button>
+              <button onClick={() => navigateTo(currentUser ? 'book-worker' : 'login')} className="hover:text-[#65D6B0] transition cursor-pointer">Book Station Worker</button>
               {currentUser && (
-                <button onClick={() => navigateTo('user-dashboard')} className="hover:text-amber-400 transition cursor-pointer">My Bookings &amp; Radar</button>
+                <button onClick={() => navigateTo('user-dashboard')} className="hover:text-[#65D6B0] transition cursor-pointer">Passenger Dashboard</button>
               )}
               {currentWorker && (
-                <button onClick={() => navigateTo('worker-dashboard')} className="hover:text-amber-400 transition cursor-pointer">Worker Station Duty</button>
+                <button onClick={() => navigateTo('worker-dashboard')} className="hover:text-[#00B8D9] transition cursor-pointer">Worker Station Duty</button>
               )}
-              <button onClick={() => setIsEmergencyOpen(true)} className="hover:text-red-300 text-red-200 transition cursor-pointer">Emergency 139 Helpline</button>
+              <button onClick={() => setIsEmergencyOpen(true)} className="hover:text-[#D72645] text-[#FBE0E6] transition cursor-pointer">Emergency 139 Helpline</button>
             </div>
           </div>
 
           <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left text-xs text-slate-400">
             <p>
-              RAIL CARE · Connected Railway Station Services &amp; Rapid Coach Berth Redressal.
+              VYOM RATH · Connected Railway Station Services &amp; Rapid Coach Berth Assistance.
             </p>
             <p className="text-[11px]">
-              &copy; {new Date().getFullYear()} RAIL CARE. All Rights Reserved. Central Database Connected.
+              &copy; {new Date().getFullYear()} VYOM RATH. All Rights Reserved. Central Database Connected.
             </p>
           </div>
         </div>

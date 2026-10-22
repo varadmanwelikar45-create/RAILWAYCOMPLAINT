@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ViewMode, User, Worker } from '../types';
-import { Users, Briefcase, ArrowRight, CheckCircle2, Sparkles, ArrowLeft } from 'lucide-react';
+import { Users, Briefcase, ArrowRight, ArrowLeft, UserPlus, Train, ShieldCheck } from 'lucide-react';
 
 interface PortalSelectorProps {
   currentView: ViewMode;
@@ -18,174 +18,181 @@ export const PortalSelector: React.FC<PortalSelectorProps> = ({
   onClose,
   onBack,
 }) => {
+  const [showRegisterChoice, setShowRegisterChoice] = useState(false);
+
   return (
-    <div className="bg-white rounded-3xl border border-[#D8EAE4] p-6 sm:p-10 shadow-xs space-y-8">
-      {/* Top Header with Back Button */}
-      <div className="flex items-center justify-between pb-4 border-b border-[#D8EAE4]">
-        {onBack && (
+    <div className="max-w-4xl mx-auto px-4 py-8 sm:py-12">
+      {/* Top Bar with Back Button */}
+      <div className="flex items-center justify-between mb-8">
+        {onBack ? (
           <button
             onClick={onBack}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#183B3A] hover:bg-[#E5F5EF] px-3 py-1.5 rounded-xl transition cursor-pointer"
+            className="inline-flex items-center gap-2 text-xs font-bold text-[#202A2B] hover:text-[#B94A3A] bg-white px-3.5 py-2 rounded-xl border border-[#DDE4E6] shadow-xs transition cursor-pointer"
           >
-            <ArrowLeft className="w-4 h-4 text-[#0F766E]" />
+            <ArrowLeft className="w-4 h-4 text-[#B94A3A]" />
             <span>Back</span>
           </button>
-        )}
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#CCFBF1] text-[#0F766E] text-xs font-bold uppercase tracking-wider border border-[#A7E8D0] ml-auto">
-          <Sparkles className="w-3.5 h-3.5 text-[#0F766E]" />
-          <span>RAIL CARE PORTALS · SELECT YOUR ROLE</span>
+        ) : <div />}
+
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#DDF8EF] text-[#1E6B52] text-xs font-bold uppercase tracking-wider border border-[#65D6B0]/40">
+          <ShieldCheck className="w-3.5 h-3.5 text-[#3EA684]" />
+          <span>VYOM RATH SECURE ACCESS</span>
         </div>
       </div>
 
-      <div className="text-center max-w-2xl mx-auto">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-[#115E59] tracking-tight">
-          Select Your Workspace
-        </h2>
-        <p className="text-xs sm:text-sm text-[#647773] mt-2 leading-relaxed">
-          Choose your profile to access on-demand station gig worker services with mutual live location tracking.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+      {/* Main Authentication Container */}
+      <div className="bg-white rounded-3xl border border-[#DDE4E6] p-6 sm:p-10 shadow-sm space-y-8">
         
-        {/* 1. PASSENGER PORTAL */}
-        <div className="relative rounded-3xl border border-[#D8EAE4] bg-[#F4FBF8] p-7 sm:p-8 flex flex-col justify-between hover:shadow-md transition-all group">
-          <div className="space-y-4">
-            <div className="w-14 h-14 rounded-2xl bg-[#0F766E] text-[#CCFBF1] flex items-center justify-center border border-[#A7E8D0]/30 shadow-xs">
-              <Users className="w-7 h-7" />
-            </div>
-            <div>
-              <span className="text-[10px] font-bold text-[#647773] uppercase tracking-wider">
-                PORTAL 1
-              </span>
-              <h3 className="text-xl font-extrabold text-[#115E59] group-hover:text-[#0F766E] transition-colors mt-0.5">
-                Passenger Portal
-              </h3>
-            </div>
-            <p className="text-xs text-[#647773] leading-relaxed">
-              Book verified railway gig workers for on-train assistance at upcoming stations, share your coach coordinates, and track worker live arrival.
-            </p>
-            <div className="pt-3 border-t border-[#D8EAE4] space-y-2 text-xs text-[#183B3A] font-medium">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#16845B] shrink-0" />
-                <span>Book Station Gig Workers to Your Coach</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#16845B] shrink-0" />
-                <span>Mutual Live Location &amp; Coach Radar</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#16845B] shrink-0" />
-                <span>Rate &amp; Review Worker Service</span>
-              </div>
-            </div>
+        {/* Header */}
+        <div className="text-center max-w-xl mx-auto space-y-2">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#202A2B] text-[#65D6B0] shadow-sm mb-2">
+            <Train className="w-6 h-6" />
           </div>
-
-          <div className="mt-8 pt-6 border-t border-[#D8EAE4] space-y-2.5">
-            {currentUser && !currentUser.isAdmin ? (
-              <button
-                onClick={() => {
-                  onNavigate('user-dashboard');
-                  onClose?.();
-                }}
-                className="w-full py-3.5 px-4 bg-[#0F766E] hover:bg-[#115E59] text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
-              >
-                <span>Go to Passenger Dashboard</span>
-                <ArrowRight className="w-4 h-4 text-[#CCFBF1]" />
-              </button>
-            ) : (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    onNavigate('login');
-                    onClose?.();
-                  }}
-                  className="flex-1 py-3 px-3 bg-[#0F766E] hover:bg-[#115E59] text-white text-xs font-bold rounded-xl transition text-center cursor-pointer shadow-xs"
-                >
-                  Passenger Sign In
-                </button>
-                <button
-                  onClick={() => {
-                    onNavigate('register');
-                    onClose?.();
-                  }}
-                  className="flex-1 py-3 px-3 bg-white hover:bg-[#E5F5EF] text-[#0F766E] text-xs font-bold rounded-xl transition border border-[#D8EAE4] text-center cursor-pointer"
-                >
-                  Register
-                </button>
-              </div>
-            )}
-          </div>
+          <h1 className="text-3xl sm:text-4xl font-black text-[#202A2B] tracking-tight">
+            VYOM RATH
+          </h1>
+          <p className="text-xs sm:text-sm text-[#526365] font-medium">
+            Please choose an action below to proceed.
+          </p>
         </div>
 
-        {/* 2. WORKER PORTAL */}
-        <div className="relative rounded-3xl border border-[#D8EAE4] bg-[#F4FBF8] p-7 sm:p-8 flex flex-col justify-between hover:shadow-md transition-all group">
-          <div className="space-y-4">
-            <div className="w-14 h-14 rounded-2xl bg-[#115E59] text-[#A7E8D0] flex items-center justify-center border border-[#A7E8D0]/30 shadow-xs">
-              <Briefcase className="w-7 h-7" />
+        {/* The 3 Primary Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-3xl mx-auto">
+          
+          {/* Action 1: Login as Passenger */}
+          <div className="rounded-2xl border-2 border-[#DDE4E6] hover:border-[#65D6B0] bg-[#F8FAFB] p-6 flex flex-col justify-between transition-all hover:shadow-md group">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-xl bg-[#DDF8EF] text-[#1E6B52] flex items-center justify-center border border-[#65D6B0]/30 group-hover:scale-105 transition-transform">
+                <Users className="w-6 h-6 text-[#3EA684]" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-[#7E9092] uppercase tracking-wider">
+                  Action 1
+                </span>
+                <h2 className="text-lg font-black text-[#202A2B] group-hover:text-[#1E6B52] transition-colors mt-0.5">
+                  Passenger Login
+                </h2>
+                <p className="text-xs text-[#526365] mt-1.5 leading-relaxed">
+                  Access your coach bookings, request station sahayaks, and view live technician radar.
+                </p>
+              </div>
             </div>
-            <div>
-              <span className="text-[10px] font-bold text-[#0F766E] uppercase tracking-wider">
-                PORTAL 2
-              </span>
-              <h3 className="text-xl font-extrabold text-[#115E59] group-hover:text-[#0F766E] transition-colors mt-0.5">
-                Gig Worker Portal
-              </h3>
-            </div>
-            <p className="text-xs text-[#647773] leading-relaxed">
-              For verified technicians, plumbers, electricians, housekeeping, and sahayaks to accept passenger service requests, navigate to coach berths, and manage duty.
-            </p>
-            <div className="pt-3 border-t border-[#D8EAE4] space-y-2 text-xs text-[#183B3A] font-medium">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#16845B] shrink-0" />
-                <span>Station-Based Job Dispatch</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#16845B] shrink-0" />
-                <span>Passenger Location &amp; Coach Navigation</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#16845B] shrink-0" />
-                <span>Live Availability Switch (Available / Busy)</span>
-              </div>
+
+            <div className="mt-6 pt-4 border-t border-[#DDE4E6]">
+              <button
+                onClick={() => {
+                  if (currentUser && !currentUser.isAdmin) {
+                    onNavigate('user-dashboard');
+                  } else {
+                    onNavigate('login');
+                  }
+                  onClose?.();
+                }}
+                className="w-full py-3 px-4 bg-[#202A2B] hover:bg-[#202A2B]/90 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-xs border border-[#202A2B]"
+              >
+                <span>{currentUser ? 'Open Dashboard' : 'Login as Passenger'}</span>
+                <ArrowRight className="w-4 h-4 text-[#65D6B0]" />
+              </button>
             </div>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-[#D8EAE4] space-y-2.5">
-            {currentWorker ? (
+          {/* Action 2: Login as Worker */}
+          <div className="rounded-2xl border-2 border-[#DDE4E6] hover:border-[#00B8D9] bg-[#F8FAFB] p-6 flex flex-col justify-between transition-all hover:shadow-md group">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-xl bg-[#D7F7FC] text-[#007D99] flex items-center justify-center border border-[#00B8D9]/30 group-hover:scale-105 transition-transform">
+                <Briefcase className="w-6 h-6 text-[#007D99]" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-[#7E9092] uppercase tracking-wider">
+                  Action 2
+                </span>
+                <h2 className="text-lg font-black text-[#202A2B] group-hover:text-[#007D99] transition-colors mt-0.5">
+                  Worker Login
+                </h2>
+                <p className="text-xs text-[#526365] mt-1.5 leading-relaxed">
+                  For registered railway electricians, plumbers, OBHS cleaners, and station porters.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-[#DDE4E6]">
               <button
                 onClick={() => {
-                  onNavigate('worker-dashboard');
+                  if (currentWorker) {
+                    onNavigate('worker-dashboard');
+                  } else {
+                    onNavigate('worker-login');
+                  }
                   onClose?.();
                 }}
-                className="w-full py-3.5 px-4 bg-[#0F766E] hover:bg-[#115E59] text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                className="w-full py-3 px-4 bg-[#007D99] hover:bg-[#007D99]/90 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-xs border border-[#007D99]"
               >
-                <span>Worker Hub ({currentWorker.fullName.split(' ')[0]})</span>
-                <ArrowRight className="w-4 h-4 text-[#CCFBF1]" />
+                <span>{currentWorker ? 'Open Duty Hub' : 'Login as Worker'}</span>
+                <ArrowRight className="w-4 h-4 text-[#D7F7FC]" />
               </button>
-            ) : (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    onNavigate('worker-login');
-                    onClose?.();
-                  }}
-                  className="flex-1 py-3 px-3 bg-[#0F766E] hover:bg-[#115E59] text-white text-xs font-bold rounded-xl transition text-center cursor-pointer shadow-xs"
-                >
-                  Worker Sign In
-                </button>
-                <button
-                  onClick={() => {
-                    onNavigate('worker-register');
-                    onClose?.();
-                  }}
-                  className="flex-1 py-3 px-3 bg-white hover:bg-[#E5F5EF] text-[#0F766E] text-xs font-bold rounded-xl transition border border-[#D8EAE4] text-center cursor-pointer"
-                >
-                  Join as Worker
-                </button>
-              </div>
-            )}
+            </div>
           </div>
+
+          {/* Action 3: Register */}
+          <div className="rounded-2xl border-2 border-[#DDE4E6] hover:border-[#B94A3A] bg-[#F8FAFB] p-6 flex flex-col justify-between transition-all hover:shadow-md group">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-xl bg-[#F3D8D2] text-[#7D2E27] flex items-center justify-center border border-[#B94A3A]/30 group-hover:scale-105 transition-transform">
+                <UserPlus className="w-6 h-6 text-[#B94A3A]" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-[#7E9092] uppercase tracking-wider">
+                  Action 3
+                </span>
+                <h2 className="text-lg font-black text-[#202A2B] group-hover:text-[#B94A3A] transition-colors mt-0.5">
+                  Create Account
+                </h2>
+                <p className="text-xs text-[#526365] mt-1.5 leading-relaxed">
+                  New to VYOM RATH? Register easily as either a passenger or a railway gig worker.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-[#DDE4E6]">
+              {!showRegisterChoice ? (
+                <button
+                  onClick={() => setShowRegisterChoice(true)}
+                  className="w-full py-3 px-4 bg-[#B94A3A] hover:bg-[#7D2E27] text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-xs border border-[#B94A3A]"
+                >
+                  <span>Register</span>
+                  <ArrowRight className="w-4 h-4 text-white" />
+                </button>
+              ) : (
+                <div className="space-y-2 animate-fadeIn">
+                  <button
+                    onClick={() => {
+                      onNavigate('register');
+                      onClose?.();
+                    }}
+                    className="w-full py-2 px-3 bg-white hover:bg-[#DDF8EF] text-[#202A2B] hover:text-[#1E6B52] border border-[#DDE4E6] text-xs font-bold rounded-lg transition text-left flex items-center justify-between cursor-pointer"
+                  >
+                    <span>As Passenger</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-[#3EA684]" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      onNavigate('worker-register');
+                      onClose?.();
+                    }}
+                    className="w-full py-2 px-3 bg-white hover:bg-[#D7F7FC] text-[#202A2B] hover:text-[#007D99] border border-[#DDE4E6] text-xs font-bold rounded-lg transition text-left flex items-center justify-between cursor-pointer"
+                  >
+                    <span>As Worker</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-[#007D99]" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+        </div>
+
+        {/* Footer Note */}
+        <div className="pt-4 border-t border-[#DDE4E6] text-center text-xs text-[#7E9092]">
+          <span>VYOM RATH · Connected Indian Railways Passenger Assistance &amp; Gig Workforce Network</span>
         </div>
 
       </div>

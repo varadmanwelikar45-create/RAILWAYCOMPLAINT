@@ -1,0 +1,864 @@
+# MASTER PROMPT: TRANSFORM RAILCARE INTO VYOM RATH
+
+## 1. PROJECT OBJECTIVE
+
+I have an existing application named **ChainVg**, currently branded as RailCare. I want to rename and upgrade its user interface and functionality to **VYOM RATH**.
+
+Your task is to improve the existing application, fix its technical problems, strengthen its data handling, and create a professional, responsive, reliable system.
+
+IMPORTANT: This is an existing application, not a new project.
+
+**Do not rebuild the application from scratch. Do not replace the existing backend or database. Do not delete, reset, recreate, or migrate the existing database unnecessarily.**
+
+First, inspect the complete existing project, including:
+
+* Frontend framework and components.
+* Backend framework and API endpoints.
+* Database schema, tables, and relationships.
+* Authentication and registration logic.
+* Passenger and worker dashboards.
+* Existing booking, queue, and FIFO functionality.
+* API configuration and environment variables.
+* Current deployment and network configuration.
+
+Understand how the application works before making changes.
+
+Preserve all existing working functionality unless a specific change is requested below.
+
+---
+
+## 2. APPLICATION NAME CHANGE
+
+Change the application name throughout the entire system:
+
+OLD NAME: RailCare
+
+NEW NAME: VYOM RATH
+
+Apply the new name to:
+
+* Website header and navigation.
+* Login and registration screens.
+* Passenger dashboard.
+* Worker dashboard.
+* Page titles and browser tab title.
+* Loading screens.
+* Welcome messages.
+* Footer and branding elements.
+* Application logos or text-based brand marks.
+* Mobile and tablet layouts.
+* Error pages and empty states.
+* PWA metadata, if the application already supports a progressive web app.
+
+Remove the old RailCare branding from visible interface elements.
+
+Do not rename database tables, API endpoints, internal variables, or backend resources merely to match the new brand if doing so could break existing functionality.
+
+Use a modern, distinctive, professional identity for VYOM RATH.
+
+Suggested brand direction:
+
+* Strong typography.
+* A clean and recognizable logo or text-based wordmark.
+* A modern transport and mobility aesthetic.
+* Consistent spacing, icons, buttons, and cards.
+* Smooth but lightweight transitions.
+* A trustworthy, accessible interface.
+
+Avoid excessive animations, unnecessary decorative elements, and clutter.
+
+---
+
+## 3. COMPLETE COLOR SYSTEM REDESIGN
+
+Redesign the entire application's visual system using these six color families:
+
+1. BRICK
+2. CYAN
+3. ACID LIME
+4. CARBON MINT
+5. SOLAR CRIMSON
+6. CYBER VIOLET
+
+Use all six color families as a coordinated design system.
+
+Suggested palette:
+
+BRICK
+
+* Primary brick: #B94A3A
+* Dark brick: #7D2E27
+* Light brick: #F3D8D2
+
+CYAN
+
+* Primary cyan: #00B8D9
+* Dark cyan: #007D99
+* Light cyan: #D7F7FC
+
+ACID LIME
+
+* Primary lime: #C6F000
+* Dark lime: #839900
+* Light lime: #F1F9BD
+
+CARBON MINT
+
+* Carbon: #202A2B
+* Mint: #65D6B0
+* Light mint: #DDF8EF
+
+SOLAR CRIMSON
+
+* Primary crimson: #D72645
+* Dark crimson: #92182D
+* Light crimson: #FBE0E6
+
+CYBER VIOLET
+
+* Primary violet: #8055E8
+* Dark violet: #5032A5
+* Light violet: #EAE2FF
+
+These are proposed design tokens. Adjust them slightly if necessary to improve contrast and usability, while preserving all six color identities.
+
+### Color implementation requirements
+
+Do not apply all six colors at full intensity to every screen.
+
+Instead:
+
+* Use Carbon as the primary dark neutral.
+* Use Carbon Mint for the main visual identity.
+* Use Cyan for information and secondary actions.
+* Use Brick for important branding accents.
+* Use Acid Lime for selected highlights and positive indicators.
+* Use Solar Crimson for errors and destructive actions.
+* Use Cyber Violet for selected interactive elements and special highlights.
+* Use white or light neutral surfaces where needed for readability.
+
+Create a centralized theme system using CSS variables or the existing framework's equivalent.
+
+For example:
+
+--color-carbon
+--color-carbon-mint
+--color-cyan
+--color-brick
+--color-acid-lime
+--color-solar-crimson
+--color-cyber-violet
+--color-background
+--color-surface
+--color-text-primary
+--color-text-secondary
+--color-border
+--color-success
+--color-warning
+--color-error
+
+Apply this theme consistently to:
+
+* Every dashboard.
+* Login and registration cards.
+* Forms and input fields.
+* Buttons and links.
+* Tables and lists.
+* Worker profile cards.
+* Passenger profile sections.
+* Navigation menus.
+* Status badges.
+* Queue and FIFO displays.
+* Booking interfaces.
+* Modals and dialogs.
+* Loading indicators.
+* Notifications and alerts.
+* Error messages.
+* Empty states.
+* Mobile layouts.
+
+Do not leave some pages using the old color theme.
+
+Maintain accessible text contrast, visible keyboard focus, and readable typography.
+
+---
+
+## 4. SIMPLIFY THE LOGIN AND REGISTRATION SYSTEM
+
+Remove unnecessary items, features, navigation links, promotional sections, and unrelated content from the login panels.
+
+The authentication landing screen must focus on only three primary actions:
+
+1. Login as Passenger
+2. Login as Worker
+3. Register
+
+These actions must be clearly visible and easy to understand.
+
+Do not display unrelated options, unnecessary technical information, FIFO explanations, promotional banners, excessive navigation, or unrelated dashboard links on the authentication screen.
+
+### Passenger authentication
+
+Provide:
+
+* Passenger login.
+* Passenger registration.
+* Appropriate validation.
+* Clear success and error messages.
+* Secure session handling.
+* A link between login and registration.
+
+Use the existing passenger authentication and database structure wherever possible.
+
+### Worker authentication
+
+Provide:
+
+* Worker login.
+* Worker registration.
+* Appropriate validation.
+* Clear success and error messages.
+* Secure session handling.
+* A link between login and registration.
+
+Use the existing worker authentication and database structure wherever possible.
+
+### Registration requirements
+
+The registration process must:
+
+* Validate required fields.
+* Validate email and phone number formats where applicable.
+* Prevent duplicate accounts using the existing database constraints or appropriate backend validation.
+* Store new accounts persistently in the existing database.
+* Display meaningful errors if registration fails.
+* Prevent accidental duplicate submissions.
+* Redirect the user to the appropriate dashboard after successful registration or login, following the existing authentication design.
+
+Do not create a separate authentication system if one already exists.
+
+Do not store passwords in plain text.
+
+Do not allow a passenger to access worker-only functionality simply by changing a URL or editing frontend code.
+
+Enforce passenger and worker permissions on the backend.
+
+---
+
+## 5. FIX THE WORKER REGISTRATION NETWORK ERROR
+
+### Current problem
+
+When I try to register as a worker, the application displays an error similar to:
+
+"Not connected to network."
+
+This happens even when the device has an internet connection.
+
+Do not merely change the error message or hide the error.
+
+Identify and fix the actual cause.
+
+### Step 1: Investigate the existing implementation
+
+Inspect:
+
+* Worker registration form submission.
+* Frontend event handlers.
+* Backend registration endpoint.
+* API base URL.
+* HTTP request method and headers.
+* Request payload and field names.
+* Backend server status.
+* Database connection status.
+* Database insert operation.
+* CORS configuration.
+* Authentication middleware.
+* Network request failures.
+* Environment variables.
+* Deployment URLs.
+* HTTPS and mixed-content issues.
+* Browser console errors.
+* Backend logs.
+* Response status codes and response parsing.
+
+Determine whether the error is caused by:
+
+* An incorrect API endpoint.
+* A server that is not running.
+* An incorrect host or port.
+* A malformed request.
+* A database connection failure.
+* A CORS configuration problem.
+* A failed registration query.
+* A timeout.
+* Incorrect environment configuration.
+* Incorrect error handling that labels every failure as a network problem.
+
+Fix the actual root cause.
+
+### Step 2: Correct the registration request
+
+Ensure that the worker registration form sends the correct information to the existing backend endpoint.
+
+Verify that:
+
+* The frontend and backend agree on field names.
+* The correct HTTP method is used.
+* The request uses the correct content type.
+* Required authorization or session credentials are included when appropriate.
+* The backend validates the request.
+* The database insert succeeds.
+* The backend returns a meaningful response.
+* The frontend correctly processes that response.
+
+Use the existing endpoint if it already performs the required operation.
+
+Create or modify an endpoint only if the existing implementation genuinely lacks the required functionality.
+
+### Step 3: Improve error handling
+
+Display accurate, user-friendly messages.
+
+Examples:
+
+* No internet connection: "Please check your internet connection and try again."
+* Backend unavailable: "The service is temporarily unavailable. Please try again."
+* Database error: "We couldn't save your registration. Please try again later."
+* Duplicate account: "An account with these details already exists."
+* Invalid form: Display the appropriate field-level validation message.
+* Registration successful: "Your worker account has been created successfully."
+
+Do not expose database credentials, SQL statements, stack traces, internal server information, or other sensitive technical details to users.
+
+During development, log the technical cause securely on the backend.
+
+### Step 4: Verify the fix
+
+Test worker registration from:
+
+* The original development device.
+* A second device connected to the same network.
+* A device using a different network.
+* A deployed environment, if applicable.
+
+Do not claim the issue is fixed until the registration request and database write have actually been tested.
+
+---
+
+## 6. MAKE REGISTERED WORKERS VISIBLE TO ALL PASSENGERS
+
+### Current problem
+
+When I register a worker on one device and log in as a passenger on another device, the passenger cannot reliably see the newly registered worker.
+
+I need a shared, persistent worker directory.
+
+### Required behavior
+
+For example:
+
+DEVICE A:
+
+1. Open VYOM RATH.
+2. Register a new worker.
+3. Save the worker information to the existing database.
+4. Confirm that registration succeeded.
+
+DEVICE B:
+
+1. Open VYOM RATH.
+2. Log in as a passenger.
+3. Open the worker directory.
+4. See the worker registered from Device A.
+
+The worker must be visible even if:
+
+* The passenger uses another phone.
+* The worker registered from a laptop.
+* The passenger logs in later.
+* The worker and passenger use different internet connections.
+* The application is refreshed.
+* The passenger logs out and logs back in.
+
+This must work through the shared backend and database, not through browser-local storage.
+
+### Backend requirements
+
+Inspect the existing database and worker retrieval endpoints.
+
+Implement or repair the worker listing functionality so that:
+
+1. Worker registration saves the worker record to the shared database.
+2. Passenger dashboards retrieve workers from the backend.
+3. Worker records persist after refreshes and new sessions.
+4. The worker list is not limited to the device that registered the worker.
+5. The API returns the fields required by the existing worker cards.
+6. Passenger interfaces display the returned records correctly.
+7. Database queries use parameterized statements or the ORM's safe query mechanisms.
+8. Authentication and role-based access rules are enforced.
+9. Private worker information is not exposed through public listing endpoints.
+10. Failed API requests produce clear error states rather than an empty worker list that looks like a successful result.
+
+If the application already has a worker listing endpoint, repair and reuse it.
+
+If no suitable endpoint exists, implement the smallest compatible endpoint necessary to retrieve registered workers.
+
+Do not create duplicate tables or duplicate worker records.
+
+### Worker directory fields
+
+Display only appropriate, existing worker information, such as:
+
+* Worker name.
+* Profile photo, if available.
+* Service category or skill.
+* Relevant experience or qualifications, if stored.
+* Service area or location, if available.
+* Availability, if supported.
+* Verification status, if supported.
+
+Do not invent worker details.
+
+Do not expose passwords, password hashes, authentication tokens, private identification documents, or unnecessary personal information.
+
+### Shared database requirement
+
+The worker directory must use the application's authoritative server-side database.
+
+Do not use localStorage or sessionStorage as the authoritative worker database.
+
+These browser storage mechanisms may be used for suitable non-sensitive interface preferences, but not to synchronize registered workers between devices.
+
+If the application is deployed, confirm that all devices connect to the same backend service and persistent database.
+
+Do not create separate databases for different devices.
+
+---
+
+## 7. KEEP THE WORKER DIRECTORY UPDATED
+
+After a passenger logs in, load the worker directory from the backend.
+
+Implement reliable loading, error, and empty states.
+
+When appropriate:
+
+* Fetch the latest worker list when the directory opens.
+* Refresh the list when the passenger returns to the directory.
+* Provide a manual refresh option if useful.
+* Avoid unnecessary repeated API requests.
+* Show a loading indicator while fetching records.
+* Display a clear message when no workers are registered.
+* Show a retry option if the server request fails.
+
+If real-time worker updates are already supported, preserve them.
+
+If real-time updates are not supported, use a lightweight refresh strategy compatible with the existing backend.
+
+Do not introduce WebSockets or a complex real-time architecture unless genuinely necessary.
+
+A worker registered from another device should appear after a successful refresh or the next scheduled fetch.
+
+Do not claim real-time synchronization unless it has been implemented and tested.
+
+---
+
+## 8. RESPONSIVE DESIGN FOR EVERY DEVICE
+
+Make VYOM RATH responsive across:
+
+* Small mobile phones.
+* Large mobile phones.
+* Tablets.
+* Laptops.
+* Desktop monitors.
+* Large desktop displays.
+* Smart TVs and large-screen browsers.
+
+Use a mobile-first responsive layout.
+
+Support common viewport widths, including approximately:
+
+* 320–375 px.
+* 390–430 px.
+* 600–768 px.
+* 1024 px.
+* 1280–1440 px.
+* 1920 px and larger.
+
+These are testing targets, not hard-coded device restrictions.
+
+### Mobile requirements
+
+* Single-column layouts where appropriate.
+* Buttons that are easy to tap.
+* Readable text without zooming.
+* Forms that fit the screen.
+* No unwanted horizontal scrolling.
+* Proper spacing around input fields.
+* Responsive navigation.
+* Worker cards that adapt to narrow screens.
+* Appropriate touch targets.
+
+### Tablet requirements
+
+* Balanced two-column layouts where useful.
+* Properly scaled cards and forms.
+* Flexible navigation.
+* Efficient use of screen space.
+
+### Laptop and desktop requirements
+
+* Well-organized dashboard layouts.
+* Appropriate content width.
+* Consistent spacing and alignment.
+* Tables and lists that remain readable.
+* Responsive sidebars and navigation.
+
+### Smart TV and large-screen requirements
+
+* Scale layouts appropriately for large screens.
+* Maintain a readable maximum content width.
+* Use larger, clear text where appropriate.
+* Provide visible focus indicators.
+* Support keyboard navigation.
+* Avoid excessively stretched cards and forms.
+* Ensure controls remain usable when operated with a keyboard or supported remote.
+
+Use responsive CSS, flexible grids, relative units, and media queries.
+
+Do not create separate hard-coded applications for every device.
+
+Use the existing frontend architecture and component system.
+
+---
+
+## 9. PRESERVE AND STRENGTHEN FIFO QUEUE FUNCTIONALITY
+
+The existing application may contain queue-management concepts and FIFO logic.
+
+Preserve existing queue and booking functionality.
+
+If FIFO is already implemented, inspect it and fix any bugs without replacing the entire system.
+
+FIFO means First In, First Out: the first eligible item entering a queue is processed before later eligible items.
+
+Requirements:
+
+* Maintain a reliable queue order.
+* Preserve the original queue sequence when appropriate.
+* Store queue records persistently in the existing database.
+* Avoid duplicate queue entries caused by repeated submissions.
+* Prevent simultaneous requests from corrupting queue state.
+* Keep queue updates consistent between devices.
+* Reflect booking or queue status correctly in the user interface.
+* Preserve any existing business rules for urgency or priority.
+
+IMPORTANT: FIFO and urgency-based prioritization are not identical.
+
+If the application already has an emergency or priority mechanism, preserve its intended rules. Do not silently replace an existing priority queue with strict FIFO.
+
+Do not add FIFO demonstrations, queue diagrams, data-structure explanations, or unnecessary educational panels to the login screen.
+
+Keep technical queue logic in the relevant application components and backend services.
+
+---
+
+## 10. IMPROVE AUTHENTICATION AND SYSTEM RELIABILITY
+
+Strengthen the existing system without introducing unnecessary architectural changes.
+
+Verify:
+
+* Password hashing.
+* Secure authentication.
+* Session or token expiration.
+* Correct logout behavior.
+* Role-based access control.
+* Server-side input validation.
+* Safe database queries.
+* Duplicate registration prevention.
+* Proper handling of expired sessions.
+* Appropriate API error responses.
+* Secure handling of environment variables.
+* Protection against unauthorized worker-data access.
+
+Use the application's existing authentication approach wherever possible.
+
+Do not expose secrets in frontend source code.
+
+Do not store passwords or sensitive authentication tokens in insecure browser storage.
+
+Do not disable security checks just to make registration work.
+
+If a security problem is discovered, correct it while maintaining compatibility with the existing application.
+
+---
+
+## 11. IMPROVE LOADING, EMPTY, AND ERROR STATES
+
+Every major screen must provide clear feedback.
+
+Examples:
+
+Worker directory loading:
+"Loading available workers..."
+
+No workers found:
+"No workers are registered yet. Please check again later."
+
+Worker directory request failed:
+"We couldn't load workers right now. Please try again."
+
+Registration in progress:
+"Creating your account..."
+
+Registration successful:
+"Your account has been created successfully."
+
+Session expired:
+"Your session has expired. Please log in again."
+
+Avoid:
+
+* Blank screens.
+* Infinite loading indicators.
+* Misleading network errors.
+* Fake worker records.
+* Hard-coded dashboard data presented as real.
+* Buttons that appear functional but do nothing.
+
+If the backend is unavailable, display an appropriate error and provide a retry option.
+
+Do not silently substitute sample data for live database records.
+
+---
+
+## 12. STRICT DATABASE PRESERVATION RULES
+
+This section is mandatory.
+
+The existing database must remain intact.
+
+Before changing any database-related code:
+
+1. Inspect the current database connection configuration.
+2. Identify the existing database and tables.
+3. Inspect existing models and relationships.
+4. Understand how passengers, workers, bookings, and queues are stored.
+5. Identify which queries or endpoints are failing.
+6. Reuse the existing schema wherever possible.
+
+Never:
+
+* Drop the database.
+* Delete existing tables.
+* Reset all records.
+* Replace the production database with a new database.
+* Change database credentials unnecessarily.
+* Create duplicate user or worker tables without a verified need.
+* Run destructive migrations automatically.
+* Remove existing relationships.
+* Delete existing user accounts.
+* Overwrite existing production records with test data.
+
+If a schema change is genuinely required, propose the smallest backward-compatible migration first.
+
+Preserve existing records and relationships.
+
+Do not run a migration that could cause data loss without explicit approval.
+
+Use the existing database configuration and environment variables.
+
+If you cannot establish a connection to the database, report the actual issue instead of creating a replacement database.
+
+---
+
+## 13. IMPLEMENTATION STRATEGY
+
+Work in the following order.
+
+PHASE 1 — INSPECTION
+
+* Inspect the complete project.
+* Identify the frontend and backend architecture.
+* Identify the database and authentication system.
+* Trace the worker registration flow.
+* Trace the worker listing flow.
+* Identify the actual cause of the network error.
+* Identify existing FIFO and booking logic.
+
+PHASE 2 — BRANDING AND DESIGN
+
+* Rename the visible application to VYOM RATH.
+* Implement the six-color design system.
+* Remove unnecessary login-panel elements.
+* Simplify passenger and worker authentication screens.
+* Improve typography, spacing, and interface consistency.
+
+PHASE 3 — WORKER REGISTRATION REPAIR
+
+* Correct the registration request.
+* Fix backend connectivity or request-handling problems.
+* Verify database writes.
+* Improve error handling.
+* Confirm that worker records persist.
+
+PHASE 4 — SHARED WORKER DIRECTORY
+
+* Repair or implement the required worker retrieval endpoint.
+* Connect the passenger dashboard to the real backend.
+* Display workers registered from other devices.
+* Remove any dependency on local-only worker records.
+* Verify persistence after refreshing and logging in again.
+
+PHASE 5 — RESPONSIVE DESIGN
+
+* Update layouts for mobile, tablet, laptop, desktop, and TV.
+* Check overflow and text readability.
+* Verify navigation, forms, cards, and dashboards.
+
+PHASE 6 — SECURITY AND FIFO
+
+* Verify passenger and worker permissions.
+* Preserve existing queue functionality.
+* Fix queue consistency issues if present.
+* Verify authentication and session handling.
+
+PHASE 7 — TESTING
+Test every changed flow before declaring completion.
+
+Do not stop after changing CSS or generating frontend components.
+
+The actual backend and database behavior must work.
+
+---
+
+## 14. REQUIRED TEST CASES
+
+Execute and verify these scenarios wherever the development environment permits.
+
+TEST 1: Passenger registration
+
+* Register a passenger.
+* Verify that the account is saved to the existing database.
+* Verify that duplicate registration is handled correctly.
+
+TEST 2: Worker registration
+
+* Register a worker.
+* Verify the correct backend response.
+* Verify the database record.
+* Confirm that the false "Not connected to network" error no longer occurs when the service is available.
+
+TEST 3: Cross-device visibility
+
+* Register a worker using Device A.
+* Log in as a passenger using Device B.
+* Fetch the worker directory.
+* Confirm that the registered worker appears.
+
+TEST 4: Persistence
+
+* Refresh Device B.
+* Log out and log back in.
+* Confirm that the worker is still visible.
+
+TEST 5: Multiple workers
+
+* Register multiple workers.
+* Confirm that all eligible worker records are retrieved and displayed without duplication.
+
+TEST 6: Different networks
+
+* Connect the devices to different networks.
+* Confirm that both devices communicate with the same deployed backend and database.
+
+TEST 7: Authentication
+
+* Confirm that passengers cannot access worker-only routes.
+* Confirm that workers cannot access unauthorized administrative functionality.
+* Confirm that invalid credentials are rejected.
+
+TEST 8: Responsive interface
+
+* Test small mobile, large mobile, tablet, laptop, desktop, and large-screen layouts.
+* Confirm that the main interface remains usable and readable.
+
+TEST 9: FIFO and queue
+
+* Verify that existing queue ordering remains correct.
+* Verify that repeated requests do not create unintended duplicate entries.
+* Verify that existing priority rules remain intact.
+
+TEST 10: Database integrity
+
+* Confirm that existing users and records remain intact.
+* Confirm that no destructive database operations were introduced.
+
+TEST 11: Failure handling
+
+* Test unavailable backend responses.
+* Test invalid form data.
+* Test expired authentication sessions.
+* Verify that appropriate errors appear without exposing sensitive details.
+
+---
+
+## 15. FINAL ACCEPTANCE CRITERIA
+
+The task is complete only when:
+
+1. The application is branded VYOM RATH.
+2. The six requested color families are consistently implemented.
+3. Unnecessary login-panel content has been removed.
+4. Passenger login, worker login, and registration remain available.
+5. Worker registration successfully communicates with the backend.
+6. The actual cause of the registration network error has been addressed.
+7. Worker records are saved to the existing shared database.
+8. Passengers can see eligible registered workers from other devices.
+9. Worker records persist across refreshes and sessions.
+10. The interface works across mobile, tablet, laptop, desktop, and TV-sized displays.
+11. Existing FIFO, queue, and booking functionality is preserved.
+12. Existing database records and relationships remain intact.
+13. Authentication and authorization continue to work securely.
+14. Loading, success, empty, and error states are implemented.
+15. The application has been tested rather than merely redesigned.
+
+## 16. HOW YOU SHOULD WORK
+
+Do not respond with only a suggested design, a general explanation, or a new project template.
+
+Work directly with the existing application code.
+
+Inspect the project before editing.
+
+Make focused, incremental changes to the existing files.
+
+Reuse existing components, API endpoints, database models, and services wherever possible.
+
+Avoid unnecessary dependencies and architectural rewrites.
+
+Do not invent backend responses or pretend that API requests succeeded.
+
+Do not use mock workers to make the directory appear functional.
+
+Do not claim to have tested another physical device if you have not actually done so.
+
+If access to a backend, database, environment variable, or deployment setting is missing, explain exactly what is required.
+
+After implementation, provide a concise report containing:
+
+* Files changed.
+* Branding and color changes.
+* Login and registration changes.
+* Root cause of the worker registration error.
+* Backend and database changes.
+* How cross-device worker visibility works.
+* FIFO functionality preserved.
+* Responsive design changes.
+* Tests actually completed.
+* Any remaining issues requiring manual configuration.
+
+**FINAL INSTRUCTION: Upgrade the existing ChainVg application into VYOM RATH while preserving the existing backend, database, records, and working functionality. Prioritize fixing worker registration and shared cross-device worker visibility. Make the interface professional, responsive, secure, and reliable without unnecessary features or destructive changes.**

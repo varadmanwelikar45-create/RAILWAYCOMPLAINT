@@ -2,27 +2,105 @@
 
 @layer base {
   :root {
-    --bg-primary: #FFFDF5;
-    --bg-secondary: #FFFBEB;
-    --color-primary: #EAB308;
-    --color-dark-gold: #CA8A04;
-    --color-yellow: #FACC15;
-    --color-yellow-light: #FEF9C3;
-    --color-card: #FFFFFF;
-    --color-text-primary: #0F172A;
-    --color-text-secondary: #64748B;
-    --color-border: #E2E8F0;
-    --color-success: #16A34A;
-    --color-warning: #D97706;
-    --color-error: #DC2626;
+    /* 1. CARBON MINT (Primary Visual Identity & Dark Neutral) */
+    --color-carbon: #202A2B;
+    --color-mint: #65D6B0;
+    --color-mint-dark: #3EA684;
+    --color-mint-light: #DDF8EF;
+
+    /* 2. CYAN (Information & Secondary Actions) */
+    --color-cyan: #00B8D9;
+    --color-cyan-dark: #007D99;
+    --color-cyan-light: #D7F7FC;
+
+    /* 3. BRICK (Branding Accents & Railway Heritage) */
+    --color-brick: #B94A3A;
+    --color-brick-dark: #7D2E27;
+    --color-brick-light: #F3D8D2;
+
+    /* 4. ACID LIME (Active Highlights & Positive Indicators) */
+    --color-lime: #C6F000;
+    --color-lime-dark: #839900;
+    --color-lime-light: #F1F9BD;
+
+    /* 5. SOLAR CRIMSON (Errors, Destructive Actions, Critical SOS) */
+    --color-crimson: #D72645;
+    --color-crimson-dark: #92182D;
+    --color-crimson-light: #FBE0E6;
+
+    /* 6. CYBER VIOLET (Special Highlights & Role Badges) */
+    --color-violet: #8055E8;
+    --color-violet-dark: #5032A5;
+    --color-violet-light: #EAE2FF;
+
+    /* SURFACES & ACCESSIBLE TYPOGRAPHY */
+    --color-background: #F8FAFB;
+    --color-surface: #FFFFFF;
+    --color-surface-subtle: #F0F4F6;
+    --color-text-primary: #202A2B;
+    --color-text-secondary: #526365;
+    --color-text-muted: #7E9092;
+    --color-border: #DDE4E6;
+    --color-border-subtle: #E8EDEF;
+
+    /* SEMANTIC ALIASES */
+    --color-primary: #65D6B0;
+    --color-success: #65D6B0;
+    --color-warning: #C6F000;
+    --color-error: #D72645;
+    --color-info: #00B8D9;
   }
 
   body {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: #FFFDF5;
-    color: #0F172A;
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
     margin: 0;
     padding: 0;
     -webkit-font-smoothing: antialiased;
   }
 }
+
+/* VYOM RATH Coordinated Design System Utility Classes */
+.bg-carbon { background-color: #202A2B; }
+.text-carbon { color: #202A2B; }
+.border-carbon { border-color: #202A2B; }
+
+.bg-mint { background-color: #65D6B0; }
+.bg-mint-light { background-color: #DDF8EF; }
+.text-mint { color: #65D6B0; }
+.text-mint-dark { color: #1E6B52; }
+.border-mint { border-color: #65D6B0; }
+
+.bg-cyan-brand { background-color: #00B8D9; }
+.bg-cyan-light { background-color: #D7F7FC; }
+.text-cyan-brand { color: #00B8D9; }
+.text-cyan-dark { color: #007D99; }
+.border-cyan-brand { border-color: #00B8D9; }
+
+.bg-brick { background-color: #B94A3A; }
+.bg-brick-dark { background-color: #7D2E27; }
+.bg-brick-light { background-color: #F3D8D2; }
+.text-brick { color: #B94A3A; }
+.text-brick-dark { color: #7D2E27; }
+.border-brick { border-color: #B94A3A; }
+
+.bg-lime-brand { background-color: #C6F000; }
+.bg-lime-light { background-color: #F1F9BD; }
+.text-lime-brand { color: #C6F000; }
+.text-lime-dark { color: #536300; }
+.border-lime-brand { border-color: #C6F000; }
+
+.bg-crimson-brand { background-color: #D72645; }
+.bg-crimson-dark { background-color: #92182D; }
+.bg-crimson-light { background-color: #FBE0E6; }
+.text-crimson-brand { color: #D72645; }
+.text-crimson-dark { color: #92182D; }
+.border-crimson-brand { border-color: #D72645; }
+
+.bg-violet-brand { background-color: #8055E8; }
+.bg-violet-dark { background-color: #5032A5; }
+.bg-violet-light { background-color: #EAE2FF; }
+.text-violet-brand { color: #8055E8; }
+.text-violet-dark { color: #5032A5; }
+.border-violet-brand { border-color: #8055E8; }

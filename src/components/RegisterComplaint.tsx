@@ -145,37 +145,37 @@ export const RegisterComplaint: React.FC<RegisterComplaintProps> = ({
       <div className="mb-5">
         <button
           onClick={() => onNavigate('user-dashboard')}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#183B3A] hover:text-[#0F766E] transition cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-800 hover:text-amber-700 transition cursor-pointer"
         >
-          <ArrowLeft className="w-3.5 h-3.5 text-[#0F766E]" />
+          <ArrowLeft className="w-3.5 h-3.5 text-amber-600" />
           Back to My Dashboard
         </button>
       </div>
 
       {/* Main Form Container */}
-      <div className="bg-white rounded-3xl border border-[#D8EAE4] shadow-xs p-6 sm:p-10 space-y-6">
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-10 space-y-6">
         
         {/* Header */}
-        <div className="border-b border-[#D8EAE4] pb-6">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#CCFBF1] text-[#0F766E] text-[11px] font-extrabold uppercase tracking-wider mb-2 border border-[#A7E8D0]">
+        <div className="border-b border-slate-200 pb-6">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-yellow-100 text-amber-900 text-[11px] font-extrabold uppercase tracking-wider mb-2 border border-yellow-300">
             OFFICIAL GRIEVANCE REGISTRATION
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#115E59] tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             Register a Complaint
           </h1>
-          <p className="text-xs text-[#647773] mt-1 font-normal">
+          <p className="text-xs text-slate-500 mt-1 font-normal">
             Tell us about the issue you experienced during your railway journey.
           </p>
         </div>
 
         {/* Quick Presets Bar */}
-        <div className="bg-[#F4FBF8] p-4 rounded-2xl border border-[#D8EAE4] space-y-2">
-          <div className="text-xs font-bold text-[#115E59] flex items-center justify-between">
+        <div className="bg-[#FFFDF5] p-4 rounded-2xl border border-amber-200/80 space-y-2">
+          <div className="text-xs font-bold text-slate-900 flex items-center justify-between">
             <span className="flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#0F766E]" /> Common Grievance Incident Templates
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" /> Common Grievance Incident Templates
             </span>
             {presetNotice && (
-              <span className="text-[11px] text-[#16845B] font-semibold flex items-center gap-1">
+              <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
                 <Check className="w-3 h-3" /> {presetNotice}
               </span>
             )}
@@ -186,7 +186,7 @@ export const RegisterComplaint: React.FC<RegisterComplaintProps> = ({
                 key={idx}
                 type="button"
                 onClick={() => applyPreset(tmpl)}
-                className="px-3 py-1.5 bg-white hover:bg-[#E5F5EF] text-[#183B3A] border border-[#D8EAE4] rounded-xl text-xs font-semibold shadow-2xs transition cursor-pointer"
+                className="px-3 py-1.5 bg-white hover:bg-yellow-50 text-slate-800 border border-slate-200 rounded-xl text-xs font-semibold shadow-2xs transition cursor-pointer"
               >
                 {tmpl.label}
               </button>
@@ -196,8 +196,8 @@ export const RegisterComplaint: React.FC<RegisterComplaintProps> = ({
 
         {/* Error Notification */}
         {error && (
-          <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-[#C74646] flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-[#C74646]" />
+          <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-red-600" />
             <span className="font-medium">{error}</span>
           </div>
         )}
@@ -206,21 +206,21 @@ export const RegisterComplaint: React.FC<RegisterComplaintProps> = ({
         <form onSubmit={handleSubmit} className="space-y-5">
           
           {/* Passenger Information Banner */}
-          <div className="p-4 bg-[#F4FBF8] rounded-2xl border border-[#D8EAE4] text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="p-4 bg-[#FFFDF5] rounded-2xl border border-amber-200/80 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <span className="text-[#647773]">Complainant:</span>{' '}
-              <strong className="text-[#115E59]">{currentUser.fullName}</strong>
+              <span className="text-slate-500">Complainant:</span>{' '}
+              <strong className="text-slate-900">{currentUser.fullName}</strong>
             </div>
-            <div className="text-[#647773]">
-              Email: <span className="font-mono text-[#183B3A]">{currentUser.email}</span> · Mobile:{' '}
-              <span className="font-mono text-[#183B3A]">{currentUser.mobile}</span>
+            <div className="text-slate-500">
+              Email: <span className="font-mono text-slate-800">{currentUser.email}</span> · Mobile:{' '}
+              <span className="font-mono text-slate-800">{currentUser.mobile}</span>
             </div>
           </div>
 
           {/* Train Number & PNR */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-[#183B3A] mb-1.5">
+              <label className="block text-xs font-bold text-slate-800 mb-1.5">
                 Train Number or Name <span className="text-red-500">*</span>
               </label>
               <input
@@ -228,14 +228,14 @@ export const RegisterComplaint: React.FC<RegisterComplaintProps> = ({
                 value={trainNumber}
                 onChange={(e) => setTrainNumber(e.target.value)}
                 placeholder="e.g. 12951 / Mumbai Rajdhani"
-                className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#D8EAE4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E] focus:border-transparent transition text-[#183B3A]"
+                className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 transition text-slate-800"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#183B3A] mb-1.5">
-                PNR Number <span className="text-[#647773] font-normal">(10 digits, optional)</span>
+              <label className="block text-xs font-bold text-slate-800 mb-1.5">
+                PNR Number <span className="text-slate-500 font-normal">(10 digits, optional)</span>
               </label>
               <input
                 type="text"
@@ -243,7 +243,7 @@ export const RegisterComplaint: React.FC<RegisterComplaintProps> = ({
                 onChange={(e) => setPnrNumber(e.target.value)}
                 placeholder="e.g. 2458901234"
                 maxLength={10}
-                className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#D8EAE4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E] focus:border-transparent transition text-[#183B3A]"
+                className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 transition text-slate-800"
               />
             </div>
           </div>
@@ -251,26 +251,26 @@ export const RegisterComplaint: React.FC<RegisterComplaintProps> = ({
           {/* Journey Date & Category */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-[#183B3A] mb-1.5">
+              <label className="block text-xs font-bold text-slate-800 mb-1.5">
                 Journey Date <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 value={journeyDate}
                 onChange={(e) => setJourneyDate(e.target.value)}
-                className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#D8EAE4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E] focus:border-transparent transition text-[#183B3A]"
+                className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 transition text-slate-800"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#183B3A] mb-1.5">
+              <label className="block text-xs font-bold text-slate-800 mb-1.5">
                 Grievance Category <span className="text-red-500">*</span>
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as ComplaintCategory)}
-                className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#D8EAE4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E] focus:border-transparent transition text-[#183B3A]"
+                className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 transition text-slate-800"
                 required
               >
                 {ALLOWED_CATEGORIES.map((cat) => (
@@ -284,21 +284,21 @@ export const RegisterComplaint: React.FC<RegisterComplaintProps> = ({
 
           {/* Coach / Location */}
           <div>
-            <label className="block text-xs font-bold text-[#183B3A] mb-1.5">
-              Coach &amp; Berth or Station Location <span className="text-[#647773] font-normal">(Optional)</span>
+            <label className="block text-xs font-bold text-slate-800 mb-1.5">
+              Coach &amp; Berth or Station Location <span className="text-slate-500 font-normal">(Optional)</span>
             </label>
             <input
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="e.g. Coach B3, Berth 24 or Platform 2"
-              className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#D8EAE4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E] focus:border-transparent transition text-[#183B3A]"
+              className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 transition text-slate-800"
             />
           </div>
 
           {/* Subject */}
           <div>
-            <label className="block text-xs font-bold text-[#183B3A] mb-1.5">
+            <label className="block text-xs font-bold text-slate-800 mb-1.5">
               Grievance Subject <span className="text-red-500">*</span>
             </label>
             <input
@@ -306,14 +306,14 @@ export const RegisterComplaint: React.FC<RegisterComplaintProps> = ({
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Brief summary of the issue"
-              className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#D8EAE4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E] focus:border-transparent transition text-[#183B3A]"
+              className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 transition text-slate-800"
               required
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-bold text-[#183B3A] mb-1.5">
+            <label className="block text-xs font-bold text-slate-800 mb-1.5">
               Detailed Description <span className="text-red-500">*</span>
             </label>
             <textarea
@@ -321,28 +321,28 @@ export const RegisterComplaint: React.FC<RegisterComplaintProps> = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Provide complete details including time, specific location, or staff involved..."
-              className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#D8EAE4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E] focus:border-transparent transition text-[#183B3A]"
+              className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 transition text-slate-800"
               required
             />
           </div>
 
           {/* Submission Bar */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#D8EAE4]">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
             <button
               type="button"
               onClick={() => onNavigate('user-dashboard')}
-              className="px-5 py-2.5 border border-[#D8EAE4] hover:bg-[#E5F5EF] text-[#183B3A] text-xs font-bold rounded-xl transition cursor-pointer"
+              className="px-5 py-2.5 border border-slate-200 hover:bg-yellow-50 text-slate-800 text-xs font-bold rounded-xl transition cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className={`px-6 py-3 bg-[#0F766E] hover:bg-[#115E59] text-white text-xs font-bold rounded-xl shadow-xs transition-all border border-[#0F766E] flex items-center gap-2 cursor-pointer ${
+              className={`px-6 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl shadow-sm transition-all border border-amber-500 flex items-center gap-2 cursor-pointer ${
                 submitting ? 'opacity-70 cursor-not-allowed' : ''
               }`}
             >
-              <Send className="w-3.5 h-3.5 text-[#A7E8D0]" />
+              <Send className="w-3.5 h-3.5 text-slate-950" />
               <span>{submitting ? 'Submitting to Central Database...' : 'Submit Grievance to RAIL CARE'}</span>
             </button>
           </div>

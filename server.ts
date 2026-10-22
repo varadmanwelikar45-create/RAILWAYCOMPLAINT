@@ -524,6 +524,17 @@ async function startServer() {
   const app = express();
   const PORT = parseInt(process.env.PORT || '3000', 10);
 
+  // Cross-Origin and Multi-Device Network Access Support
+  app.use((req: Request, res: Response, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(200);
+    }
+    next();
+  });
+
   app.use(express.json({ limit: '15mb' }));
   app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
@@ -916,7 +927,7 @@ async function startServer() {
         verificationDocuments,
         verificationStatus: 'Verified',
         verificationDate: nowIso,
-        verifiedBy: 'RailCare Verified Identity',
+        verifiedBy: 'VYOM RATH Verified Identity',
         availability: 'Available',
         rating: 5.0,
         totalJobsCompleted: 0,
@@ -968,7 +979,7 @@ async function startServer() {
         store.workers[workerIndex].profileImage = incomingPhoto;
         store.workers[workerIndex].photoUpdatedAt = nowIso;
         store.workers[workerIndex].verificationStatus = 'Verified';
-        store.workers[workerIndex].verifiedBy = 'RailCare Verified Identity';
+        store.workers[workerIndex].verifiedBy = 'VYOM RATH Verified Identity';
         store.workers[workerIndex].updatedAt = nowIso;
         writeStore(store);
       }

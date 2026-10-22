@@ -50,13 +50,73 @@
   "counter": 1001,
   "workers": [
     {
+      "id": 1792673714422,
+      "workerId": "WRK-120",
+      "fullName": "Manoj Kumar Sharma",
+      "email": "manoj.sharma@vyomrath.worker",
+      "mobile": "9876501234",
+      "headline": "Railway Coach Plumber & Sanitation Worker Specialist",
+      "bio": "",
+      "skillCategory": "Railway Coach Plumber & Sanitation Worker",
+      "skills": [
+        "Railway Coach Plumber & Sanitation Worker"
+      ],
+      "stationCode": "NDLS",
+      "stationCodes": [
+        "NDLS"
+      ],
+      "stationName": "New Delhi Junction",
+      "city": "New Delhi",
+      "experienceYears": 4,
+      "qualifications": "Certified Railway Contractor / Technician",
+      "verificationDocuments": "Government Identity & Police Clearance Submitted",
+      "verificationStatus": "Verified",
+      "verificationDate": "2026-10-22 12:55:14",
+      "verifiedBy": "VYOM RATH Verified Identity",
+      "availability": "Available",
+      "rating": 5,
+      "totalJobsCompleted": 0,
+      "createdAt": "2026-10-22 12:55:14",
+      "updatedAt": "2026-10-22 12:55:14"
+    },
+    {
+      "id": 1792672766503,
+      "workerId": "WRK-119",
+      "fullName": "Test Worker",
+      "email": "testworker123@example.com",
+      "mobile": "9876543210",
+      "headline": "Coach Electrician & AC Technician Specialist",
+      "bio": "Certified railway services provider stationed at New Delhi.",
+      "skillCategory": "Coach Electrician & AC Technician",
+      "skills": [
+        "Coach Electrician & AC Technician"
+      ],
+      "stationCode": "NDLS",
+      "stationCodes": [
+        "NDLS"
+      ],
+      "stationName": "New Delhi",
+      "city": "New Delhi",
+      "experienceYears": 3,
+      "qualifications": "Certified Railway Contractor / Technician",
+      "verificationDocuments": "Government Identity & Police Clearance Submitted",
+      "verificationStatus": "Verified",
+      "verificationDate": "2026-10-22 12:39:26",
+      "verifiedBy": "RailCare Verified Identity",
+      "availability": "Available",
+      "rating": 5,
+      "totalJobsCompleted": 0,
+      "createdAt": "2026-10-22 12:39:26",
+      "updatedAt": "2026-10-22 12:39:26"
+    },
+    {
       "id": 1792591452680,
       "workerId": "WRK-118",
       "fullName": "Varad Manwelikar",
       "email": "varadmanwelikar45@gmail.com",
       "mobile": "1234567890",
       "headline": "Coach Electrician & AC Technician Specialist",
-      "bio": "",
+      "bio": "Certified railway services provider stationed at New Delhi Junction.",
       "skillCategory": "Coach Electrician & AC Technician",
       "skills": [
         "Coach Electrician & AC Technician"
@@ -395,7 +455,9 @@
     "irfan.khan@worker.railcare.gov.in": "Worker@1234",
     "deepak.chougule@worker.railcare.gov.in": "Worker@1234",
     "adi@gmail.com": "0987654321",
-    "varadmanwelikar45@gmail.com": "password123"
+    "varadmanwelikar45@gmail.com": "password123",
+    "testworker123@example.com": "password123",
+    "manoj.sharma@vyomrath.worker": "WorkerPass123"
   },
   "workerRequests": [
     {
@@ -459,7 +521,7 @@
       "completedAt": "2026-10-18 08:51:38"
     }
   ],
-  "workerCounter": 118,
+  "workerCounter": 120,
   "requestCounter": 5002,
   "stations": [
     {

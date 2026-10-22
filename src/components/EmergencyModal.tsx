@@ -24,21 +24,21 @@ export const EmergencyModal: React.FC<EmergencyModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#115E59]/40 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl border border-red-200 shadow-2xl max-w-lg w-full p-6 sm:p-8 space-y-6 animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 bg-[#202A2B]/70 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl border border-[#D72645]/40 shadow-2xl max-w-lg w-full p-6 sm:p-8 space-y-6 animate-fadeIn">
         
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 pb-4 border-b border-[#D8EAE4]">
+        <div className="flex items-start justify-between gap-3 pb-4 border-b border-[#DDE4E6]">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-[#C74646] text-white flex items-center justify-center shadow-md animate-pulse">
+            <div className="w-11 h-11 rounded-2xl bg-[#D72645] text-white flex items-center justify-center shadow-md animate-pulse">
               <PhoneCall className="w-5 h-5 text-white" />
             </div>
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-50 text-[#C74646] text-[10px] font-extrabold uppercase tracking-wider mb-0.5 border border-red-200">
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#FBE0E6] text-[#92182D] text-[10px] font-black uppercase tracking-wider mb-0.5 border border-[#D72645]/30">
                 24x7 RAILWAY EMERGENCY
               </div>
-              <h3 className="text-xl font-extrabold text-[#115E59]">
-                Rail Madad &amp; Emergency Helplines
+              <h3 className="text-xl font-black text-[#202A2B]">
+                VYOM RATH Emergency SOS
               </h3>
             </div>
           </div>
@@ -48,145 +48,128 @@ export const EmergencyModal: React.FC<EmergencyModalProps> = ({
               setSosSent(false);
               onClose();
             }}
-            className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition cursor-pointer"
+            className="p-1.5 text-[#7E9092] hover:text-[#202A2B] rounded-lg hover:bg-[#F0F4F6] transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Official Direct Contact Badges */}
+        {/* Direct Contact Badges */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="p-3.5 rounded-2xl bg-[#F4FBF8] border border-[#D8EAE4] flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#0F766E] text-[#CCFBF1] flex items-center justify-center font-bold text-xs shrink-0">
+          <div className="p-3.5 rounded-2xl bg-[#F8FAFB] border border-[#DDE4E6] flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#202A2B] text-[#65D6B0] flex items-center justify-center font-black text-xs shrink-0">
               139
             </div>
             <div>
-              <div className="text-[10px] font-bold text-[#647773] uppercase">Rail Madad Helpline</div>
-              <div className="font-extrabold text-[#183B3A] text-sm">Toll-Free 139</div>
+              <div className="text-[10px] font-bold text-[#526365] uppercase">Rail Madad Helpline</div>
+              <div className="font-black text-[#202A2B] text-sm">Toll-Free 139</div>
             </div>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-[#F4FBF8] border border-[#D8EAE4] flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#C74646] text-white flex items-center justify-center font-bold text-xs shrink-0">
+          <div className="p-3.5 rounded-2xl bg-[#F8FAFB] border border-[#DDE4E6] flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#D72645] text-white flex items-center justify-center font-bold text-xs shrink-0">
               <Shield className="w-4 h-4 text-white" />
             </div>
             <div>
-              <div className="text-[10px] font-bold text-[#647773] uppercase">Security / RPF</div>
-              <div className="font-extrabold text-[#183B3A] text-sm">139 / 182</div>
+              <div className="text-[10px] font-bold text-[#526365] uppercase">Security / RPF</div>
+              <div className="font-black text-[#202A2B] text-sm">139 / 182</div>
             </div>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-[#F4FBF8] border border-[#D8EAE4] flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#16845B] text-white flex items-center justify-center font-bold text-xs shrink-0">
-              <HeartPulse className="w-4 h-4 text-white" />
+          <div className="p-3.5 rounded-2xl bg-[#F8FAFB] border border-[#DDE4E6] flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#65D6B0] text-[#202A2B] flex items-center justify-center font-black text-xs shrink-0">
+              <HeartPulse className="w-4 h-4 text-[#1E6B52]" />
             </div>
             <div>
-              <div className="text-[10px] font-bold text-[#647773] uppercase">Medical Assistance</div>
-              <div className="font-extrabold text-[#183B3A] text-sm">Station First Aid</div>
+              <div className="text-[10px] font-bold text-[#526365] uppercase">Medical Assistance</div>
+              <div className="font-black text-[#202A2B] text-sm">Station First Aid</div>
             </div>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-[#F4FBF8] border border-[#D8EAE4] flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#115E59] text-[#A7E8D0] flex items-center justify-center font-bold text-xs shrink-0">
+          <div className="p-3.5 rounded-2xl bg-[#F8FAFB] border border-[#DDE4E6] flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#007D99] text-white flex items-center justify-center font-bold text-xs shrink-0">
               112
             </div>
             <div>
-              <div className="text-[10px] font-bold text-[#647773] uppercase">National Emergency</div>
-              <div className="font-extrabold text-[#183B3A] text-sm">Police &amp; Rescue 112</div>
+              <div className="text-[10px] font-bold text-[#526365] uppercase">National Emergency</div>
+              <div className="font-black text-[#202A2B] text-sm">Police 112</div>
             </div>
           </div>
         </div>
 
         {/* Rapid SOS Trigger Form */}
-        <div className="bg-red-50/70 border border-red-200 rounded-2xl p-4 sm:p-5 space-y-4">
-          <div className="flex items-center gap-2 text-red-900 font-extrabold text-xs">
-            <AlertCircle className="w-4 h-4 text-[#C74646] shrink-0" />
-            <span>Instant Train Coach SOS Dispatch</span>
+        {sosSent ? (
+          <div className="p-5 rounded-2xl bg-[#DDF8EF] border border-[#65D6B0]/40 text-center space-y-2">
+            <CheckCircle2 className="w-10 h-10 text-[#3EA684] mx-auto" />
+            <h4 className="font-black text-[#202A2B] text-base">Emergency Broadcast Triggered</h4>
+            <p className="text-xs text-[#526365]">
+              Station master and railway security for train <strong>{trainNumber || 'your train'}</strong> have been notified. Please also dial <strong>139</strong> for immediate spoken contact.
+            </p>
           </div>
-
-          {sosSent ? (
-            <div className="bg-white border border-[#A7E8D0] rounded-xl p-4 text-center space-y-2 animate-in fade-in">
-              <CheckCircle2 className="w-8 h-8 text-[#16845B] mx-auto" />
-              <h4 className="font-extrabold text-[#115E59] text-sm">SOS Alert Transmitted to Station Control</h4>
-              <p className="text-xs text-[#647773] max-w-sm mx-auto">
-                Railway Protection Force (RPF) and station on-board medical teams at the upcoming junction have been alerted with high priority for {trainNumber || 'your train'}.
-              </p>
-              <button
-                type="button"
-                onClick={() => setSosSent(false)}
-                className="mt-2 text-xs font-bold text-[#0F766E] underline cursor-pointer"
-              >
-                Send Another Alert
-              </button>
+        ) : (
+          <form onSubmit={handleSendSos} className="space-y-4 pt-1">
+            <div className="text-xs font-black text-[#202A2B] uppercase tracking-wide">
+              Quick Coach SOS Dispatch
             </div>
-          ) : (
-            <form onSubmit={handleSendSos} className="space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[10px] font-bold text-[#183B3A] uppercase block mb-1">
-                    Train No / Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={trainNumber}
-                    onChange={(e) => setTrainNumber(e.target.value)}
-                    placeholder="e.g. 12951 Rajdhani"
-                    className="w-full text-xs p-2.5 bg-white border border-red-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C74646] text-[#183B3A]"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-[#183B3A] uppercase block mb-1">
-                    Coach &amp; Seat *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={coachSeat}
-                    onChange={(e) => setCoachSeat(e.target.value)}
-                    placeholder="e.g. B3, Seat 24"
-                    className="w-full text-xs p-2.5 bg-white border border-red-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C74646] text-[#183B3A]"
-                  />
-                </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-[#526365] mb-1">
+                  Train No. / Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. 12951 Rajdhani"
+                  value={trainNumber}
+                  onChange={(e) => setTrainNumber(e.target.value)}
+                  className="w-full px-3 py-2 text-xs border border-[#DDE4E6] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D72645] bg-white text-[#202A2B]"
+                />
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-[#183B3A] uppercase block mb-1">
-                  Type of Emergency
+                <label className="block text-[11px] font-bold text-[#526365] mb-1">
+                  Coach &amp; Berth
                 </label>
-                <select
-                  value={emergencyType}
-                  onChange={(e) => setEmergencyType(e.target.value)}
-                  className="w-full text-xs p-2.5 bg-white border border-red-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C74646] text-[#183B3A]"
-                >
-                  <option value="Medical Emergency">Medical Emergency / Severe Illness</option>
-                  <option value="Security / Threat">Security Threat / Theft / Harassment</option>
-                  <option value="Women Safety">Women Passenger Safety</option>
-                  <option value="Fire / Smoke">Fire / Smoke / Electrical Spark</option>
-                  <option value="Unattended Bag">Unattended / Suspicious Luggage</option>
-                </select>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. B4 / Berth 21"
+                  value={coachSeat}
+                  onChange={(e) => setCoachSeat(e.target.value)}
+                  className="w-full px-3 py-2 text-xs border border-[#DDE4E6] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D72645] bg-white text-[#202A2B]"
+                />
               </div>
+            </div>
 
-              <button
-                type="submit"
-                className="w-full py-3 px-4 bg-[#C74646] hover:bg-red-700 text-white text-xs font-extrabold rounded-xl transition shadow-xs flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider"
+            <div>
+              <label className="block text-[11px] font-bold text-[#526365] mb-1">
+                Emergency Category
+              </label>
+              <select
+                value={emergencyType}
+                onChange={(e) => setEmergencyType(e.target.value)}
+                className="w-full px-3 py-2 text-xs border border-[#DDE4E6] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D72645] bg-white text-[#202A2B] font-bold"
               >
-                <AlertCircle className="w-4 h-4 text-white" />
-                <span>Transmit Emergency SOS Alert</span>
-              </button>
-            </form>
-          )}
-        </div>
+                <option value="Medical Emergency">Medical Emergency / First-Aid</option>
+                <option value="Security Threat">Security / Harassment / Theft</option>
+                <option value="Fire / Hazard">Smoke / Electrical Spark / Fire</option>
+                <option value="Differently Abled Support">Divyangjan / Elderly Stretcher Support</option>
+              </select>
+            </div>
 
-        {/* Close Button */}
-        <div className="flex justify-end pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-xs font-bold text-[#647773] hover:text-[#183B3A] rounded-xl transition cursor-pointer"
-          >
-            Dismiss
-          </button>
+            <button
+              type="submit"
+              className="w-full py-3 px-4 bg-[#D72645] hover:bg-[#92182D] text-white font-black text-xs rounded-xl shadow-md transition cursor-pointer flex items-center justify-center gap-2"
+            >
+              <AlertCircle className="w-4 h-4" />
+              <span>Broadcast Coach Emergency SOS</span>
+            </button>
+          </form>
+        )}
+
+        <div className="text-[11px] text-[#526365] text-center border-t border-[#DDE4E6] pt-3">
+          For non-emergency assistance, use the Passenger Portal to book station gig workers.
         </div>
 
       </div>

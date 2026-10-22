@@ -21,12 +21,13 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Uncaught error in RailCare applet:', error, errorInfo);
+    console.error('Uncaught error in VYOM RATH applet:', error, errorInfo);
   }
 
   private handleReset = () => {
     try {
       localStorage.removeItem('railcare_current_user');
+      localStorage.removeItem('vyom_rath_current_user');
     } catch (e) {}
     this.setState({ hasError: false, error: null });
     window.location.reload();
@@ -51,35 +52,35 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-[#F4FBF8] flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-[#D8EAE4] shadow-lg p-6 sm:p-8 max-w-md w-full text-center">
-            <div className="w-14 h-14 bg-[#E5F5EF] text-[#0F766E] border-2 border-[#A7E8D0] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xs">
-              <AlertTriangle className="w-7 h-7 text-[#0F766E]" />
+        <div className="min-h-screen bg-[#F8FAFB] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-[#DDE4E6] shadow-lg p-6 sm:p-8 max-w-md w-full text-center">
+            <div className="w-14 h-14 bg-[#FBE0E6] text-[#D72645] border-2 border-[#D72645]/40 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+              <AlertTriangle className="w-7 h-7 text-[#D72645]" />
             </div>
-            <h2 className="text-xl font-extrabold text-[#115E59] mb-2 tracking-tight">
+            <h2 className="text-xl font-black text-[#202A2B] mb-2 tracking-tight">
               Application State Recovered
             </h2>
-            <p className="text-xs text-[#647773] mb-6 leading-relaxed">
-              RailCare encountered an unexpected state error. Click below to continue smoothly or return to the role selection portal.
+            <p className="text-xs text-[#526365] mb-6 leading-relaxed">
+              VYOM RATH encountered an unexpected interface state. Click below to continue smoothly or return to the role selection portal.
             </p>
             <div className="space-y-2.5">
               <button
                 onClick={this.handleReset}
-                className="w-full py-3 px-4 bg-[#0F766E] hover:bg-[#115E59] text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer border border-[#0F766E]"
+                className="w-full py-3 px-4 bg-[#202A2B] hover:bg-[#202A2B]/90 text-white text-xs font-black rounded-xl shadow-sm transition flex items-center justify-center gap-2 cursor-pointer border border-[#202A2B]"
               >
-                <RefreshCw className="w-3.5 h-3.5 text-[#A7E8D0]" />
+                <RefreshCw className="w-3.5 h-3.5 text-[#65D6B0]" />
                 <span>Reload Application</span>
               </button>
               <button
                 onClick={this.handleGoHome}
-                className="w-full py-2.5 px-4 bg-[#E5F5EF] hover:bg-[#CCFBF1] text-[#0F766E] text-xs font-bold rounded-xl transition cursor-pointer border border-[#A7E8D0] flex items-center justify-center gap-2"
+                className="w-full py-2.5 px-4 bg-[#F0F4F6] hover:bg-[#D7F7FC] text-[#202A2B] text-xs font-bold rounded-xl transition cursor-pointer border border-[#DDE4E6] flex items-center justify-center gap-2"
               >
-                <Home className="w-3.5 h-3.5" />
+                <Home className="w-3.5 h-3.5 text-[#007D99]" />
                 <span>Return to Role Selection</span>
               </button>
               <button
                 onClick={this.handleClearAll}
-                className="w-full py-2 px-4 bg-[#F4FBF8] hover:bg-slate-100 text-[#647773] text-[11px] font-semibold rounded-xl transition cursor-pointer border border-[#D8EAE4]"
+                className="w-full py-2 px-4 bg-white hover:bg-slate-50 text-[#7E9092] text-[11px] font-semibold rounded-xl transition cursor-pointer border border-[#DDE4E6]"
               >
                 Clear Local Cache &amp; Reset
               </button>
