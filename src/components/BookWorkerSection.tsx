@@ -27,6 +27,8 @@ interface BookWorkerSectionProps {
   onNavigate: (view: ViewMode) => void;
   onSuccessRedirect?: () => void;
   onBack?: () => void;
+  initialWorker?: Worker | null;
+  initialCategory?: WorkerSkillCategory | null;
 }
 
 export const BookWorkerSection: React.FC<BookWorkerSectionProps> = ({
@@ -36,18 +38,40 @@ export const BookWorkerSection: React.FC<BookWorkerSectionProps> = ({
   onNavigate,
   onSuccessRedirect,
   onBack,
+  initialWorker,
+  initialCategory,
 }) => {
-  // Form State
-  const [serviceCategory, setServiceCategory] = useState<WorkerSkillCategory>(WORKER_SKILL_CATEGORIES[0]);
-  const [selectedSkill, setSelectedSkill] = useState<string>('');
-  const [stationCode, setStationCode] = useState<string>(RAILWAY_STATIONS[0].code);
+  // Form State initialized with optional preselected worker or category
+  const [serviceCategory, setServiceCategory] = useState<WorkerSkillCategory>(
+    initialCategory || (initialWorker?.skillCategory as WorkerSkillCategory) || WORKER_SKILL_CATEGORIES[0]
+  );
+  const [selectedSkill, setSelectedSkill] = useState<string>(initialWorker?.skills?.[0] || '');
+  const [stationCode, setStationCode] = useState<string>(initialWorker?.stationCode || RAILWAY_STATIONS[0].code);
   const [trainNumber, setTrainNumber] = useState<string>('12259');
   const [trainName, setTrainName] = useState<string>('Sealdah Bikaner Duronto Express');
   const [expectedArrivalTime, setExpectedArrivalTime] = useState<string>('16:45 PM');
   const [coachNumber, setCoachNumber] = useState<string>('B3');
   const [seatNumber, setSeatNumber] = useState<string>('Berth 24');
   const [description, setDescription] = useState<string>('');
-  const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
+  const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(initialWorker ? initialWorker.id : null);
+
+  // Sync state if initialWorker or initialCategory changes
+  React.useEffect(() => {
+    if (initialWorker) {
+      if (initialWorker.skillCategory) {
+        setServiceCategory(initialWorker.skillCategory as WorkerSkillCategory);
+      }
+      if (initialWorker.skills?.[0]) {
+        setSelectedSkill(initialWorker.skills[0]);
+      }
+      if (initialWorker.stationCode) {
+        setStationCode(initialWorker.stationCode);
+      }
+      setSelectedWorkerId(initialWorker.id);
+    } else if (initialCategory) {
+      setServiceCategory(initialCategory);
+    }
+  }, [initialWorker, initialCategory]);
 
   // Modal / Preview state
   const [inspectedWorker, setInspectedWorker] = useState<Worker | null>(null);

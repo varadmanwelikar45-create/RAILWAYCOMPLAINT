@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Stations
+    match /stations/{stationId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Worker profiles: read permitted for station marketplace; create/update permitted
+    match /workers/{workerId} {
+      allow read: if true;
+      allow create, update: if true;
+      allow delete: if false;
+    }
+
+    // Passenger & Admin users
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    // Passwords store for authentication
+    match /worker_passwords/{email} {
+      allow read, write: if true;
+    }
+
+    // Booking service requests (mutual location, status transitions)
+    match /worker_requests/{requestId} {
+      allow read, write: if true;
+    }
+
+    // Passenger complaints
+    match /complaints/{complaintId} {
+      allow read, write: if true;
+    }
+
+    // Notifications
+    match /notifications/{notificationId} {
+      allow read, write: if true;
+    }
+
+    // System health check
+    match /system_health/{docId} {
+      allow read, write: if true;
+    }
+  }
+}

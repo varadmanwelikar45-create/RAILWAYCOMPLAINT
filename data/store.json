@@ -50,13 +50,73 @@
   "counter": 1001,
   "workers": [
     {
+      "id": 1792760508367,
+      "workerId": "WRK-122",
+      "fullName": "Arjun Varma",
+      "email": "arjun.varma@worker.test",
+      "mobile": "9876543210",
+      "headline": "Coach Electrician & AC Technician Specialist",
+      "bio": "Certified railway services provider stationed at New Delhi Junction.",
+      "skillCategory": "Coach Electrician & AC Technician",
+      "skills": [
+        "Coach Electrician & AC Technician"
+      ],
+      "stationCode": "NDLS",
+      "stationCodes": [
+        "NDLS"
+      ],
+      "stationName": "New Delhi Junction",
+      "city": "New Delhi",
+      "experienceYears": 3,
+      "qualifications": "Certified Railway Contractor / Technician",
+      "verificationDocuments": "Government Identity & Police Clearance Submitted",
+      "verificationStatus": "Verified",
+      "verificationDate": "2026-10-23 13:01:48",
+      "verifiedBy": "VYOM RATH Verified Identity",
+      "availability": "Available",
+      "rating": 5,
+      "totalJobsCompleted": 0,
+      "createdAt": "2026-10-23 13:01:48",
+      "updatedAt": "2026-10-23 13:01:48"
+    },
+    {
+      "id": 1792674476520,
+      "workerId": "WRK-121",
+      "fullName": "Vikram Singhania",
+      "email": "vikram.singh@vyomrath.test",
+      "mobile": "9988776655",
+      "headline": "Coach Electrician & AC Technician Specialist",
+      "bio": "Certified railway services provider stationed at New Delhi Junction.",
+      "skillCategory": "Coach Electrician & AC Technician",
+      "skills": [
+        "Coach Electrician & AC Technician"
+      ],
+      "stationCode": "NDLS",
+      "stationCodes": [
+        "NDLS"
+      ],
+      "stationName": "New Delhi Junction",
+      "city": "New Delhi",
+      "experienceYears": 1,
+      "qualifications": "Certified Railway Contractor / Technician",
+      "verificationDocuments": "Government Identity & Police Clearance Submitted",
+      "verificationStatus": "Verified",
+      "verificationDate": "2026-10-22 13:07:56",
+      "verifiedBy": "VYOM RATH Verified Identity",
+      "availability": "Available",
+      "rating": 5,
+      "totalJobsCompleted": 0,
+      "createdAt": "2026-10-22 13:07:56",
+      "updatedAt": "2026-10-22 13:07:56"
+    },
+    {
       "id": 1792673714422,
       "workerId": "WRK-120",
       "fullName": "Manoj Kumar Sharma",
       "email": "manoj.sharma@vyomrath.worker",
       "mobile": "9876501234",
       "headline": "Railway Coach Plumber & Sanitation Worker Specialist",
-      "bio": "",
+      "bio": "Certified railway services provider stationed at New Delhi Junction.",
       "skillCategory": "Railway Coach Plumber & Sanitation Worker",
       "skills": [
         "Railway Coach Plumber & Sanitation Worker"
@@ -201,7 +261,9 @@
       "availability": "Available",
       "rating": 4.9,
       "totalJobsCompleted": 142,
-      "createdAt": "2026-09-15 08:30:00"
+      "createdAt": "2026-09-15 08:30:00",
+      "activeJobId": null,
+      "updatedAt": "2026-10-23 13:25:00"
     },
     {
       "id": 102,
@@ -457,9 +519,34 @@
     "adi@gmail.com": "0987654321",
     "varadmanwelikar45@gmail.com": "password123",
     "testworker123@example.com": "password123",
-    "manoj.sharma@vyomrath.worker": "WorkerPass123"
+    "manoj.sharma@vyomrath.worker": "WorkerPass123",
+    "vikram.singh@vyomrath.test": "MySecretPass123",
+    "arjun.varma@worker.test": "password123"
   },
   "workerRequests": [
+    {
+      "id": 1792761891389,
+      "requestId": "BK-5003",
+      "passengerId": 1,
+      "passengerName": "Rahul Sharma",
+      "passengerEmail": "rahul@test.com",
+      "passengerMobile": "9876543210",
+      "trainNumber": "12259",
+      "trainName": "Sealdah Duronto Express",
+      "coachNumber": "B3",
+      "seatNumber": "Berth 24",
+      "stationCode": "NDLS",
+      "stationName": "New Delhi Junction",
+      "serviceCategory": "Coach Electrician & AC Technician",
+      "description": "AC vent blowing hot air and mobile socket not functioning",
+      "status": "Declined",
+      "assignedWorkerId": 101,
+      "assignedWorkerName": "Ramesh Kumar Verma",
+      "assignedWorkerMobile": "9871122334",
+      "createdAt": "2026-10-23 13:24:51",
+      "updatedAt": "2026-10-23 13:25:00",
+      "rejectionReason": "Currently attending emergency AC failure on Rajdhani"
+    },
     {
       "id": 1792416752721,
       "requestId": "BK-5002",
@@ -521,8 +608,8 @@
       "completedAt": "2026-10-18 08:51:38"
     }
   ],
-  "workerCounter": 120,
-  "requestCounter": 5002,
+  "workerCounter": 122,
+  "requestCounter": 5003,
   "stations": [
     {
       "code": "NDLS",

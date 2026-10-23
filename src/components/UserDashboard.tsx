@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { User, ViewMode, WorkerServiceRequest, Worker } from '../types';
+import { User, ViewMode, WorkerServiceRequest, Worker, WorkerSkillCategory } from '../types';
 import { RAILWAY_STATIONS } from '../data/mockData';
+import { ServiceDiscoveryMarketplace } from './ServiceDiscoveryMarketplace';
 import { 
   CheckCircle2, 
   MapPin, 
@@ -18,7 +19,8 @@ import {
   Search,
   Train,
   Check,
-  ShieldCheck
+  ShieldCheck,
+  Sparkles
 } from 'lucide-react';
 
 interface UserDashboardProps {
@@ -32,6 +34,7 @@ interface UserDashboardProps {
     comment: string,
     tags: string[]
   ) => Promise<{ success: boolean; message: string }>;
+  onSelectWorkerForBooking?: (worker: Worker, category?: WorkerSkillCategory) => void;
   onNavigate: (view: ViewMode) => void;
   onRefreshData?: () => void;
   onRefreshWorkers?: () => Promise<void> | void;
@@ -54,19 +57,12 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
   workers = [],
   onCancelWorkerRequest,
   onSubmitWorkerFeedback,
+  onSelectWorkerForBooking,
   onNavigate,
   onRefreshData,
   onRefreshWorkers,
   onBack,
 }) => {
-  // Navigation Tabs: 'radar' | 'directory'
-  const [activeTab, setActiveTab] = useState<'radar' | 'directory'>('radar');
-
-  // Directory search & station filters
-  const [directorySearch, setDirectorySearch] = useState('');
-  const [directoryStation, setDirectoryStation] = useState('ALL');
-  const [isRefreshingDirectory, setIsRefreshingDirectory] = useState(false);
-
   // Filter bookings belonging strictly to current passenger
   const userBookings = (workerRequests || []).filter((r) => {
     if (!r) return false;
@@ -78,16 +74,21 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
     return matchesId || matchesEmail;
   });
 
-  // Filter Bookings Status
-  const [filterWorkerStatus, setFilterWorkerStatus] = useState<'All' | 'Active' | 'Completed' | 'Cancelled'>('All');
-
   // Selected request for live location viewing
   const activeRequest = userBookings.find((r) =>
     ['Requested', 'Awaiting Worker Confirmation', 'Finding Worker', 'Worker Assigned', 'On the Way', 'Arrived at Station', 'Service In Progress'].includes(r.status)
-  ) || userBookings[0] || null;
+  ) || null;
+
+  // Navigation Tabs: 'marketplace' | 'radar'
+  const [activeTab, setActiveTab] = useState<'marketplace' | 'radar'>(() =>
+    activeRequest ? 'radar' : 'marketplace'
+  );
+
+  // Filter Bookings Status
+  const [filterWorkerStatus, setFilterWorkerStatus] = useState<'All' | 'Active' | 'Completed' | 'Cancelled'>('All');
 
   const [selectedLocationReqId, setSelectedLocationReqId] = useState<string | null>(
-    activeRequest ? activeRequest.requestId : null
+    activeRequest ? activeRequest.requestId : (userBookings[0]?.requestId || null)
   );
 
   // Live Location Sharing State
@@ -122,18 +123,6 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
     }, 5000);
     return () => clearInterval(interval);
   }, [onRefreshData]);
-
-  // Handle manual directory refresh
-  const handleManualRefreshDirectory = async () => {
-    setIsRefreshingDirectory(true);
-    try {
-      if (onRefreshWorkers) {
-        await Promise.resolve(onRefreshWorkers());
-      }
-    } finally {
-      setTimeout(() => setIsRefreshingDirectory(false), 500);
-    }
-  };
 
   // Handle passenger sharing their live location
   const handleSharePassengerLocation = () => {
@@ -193,29 +182,6 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
     }
   };
 
-  // Filtered workers for the directory
-  const filteredDirectoryWorkers = workers.filter((w) => {
-    // Station filter
-    if (directoryStation !== 'ALL') {
-      const matchesStation = w.stationCode === directoryStation || 
-        (Array.isArray(w.stationCodes) && w.stationCodes.includes(directoryStation));
-      if (!matchesStation) return false;
-    }
-
-    // Search query
-    if (directorySearch.trim()) {
-      const q = directorySearch.toLowerCase().trim();
-      const matchName = w.fullName.toLowerCase().includes(q);
-      const matchSkill = w.skillCategory.toLowerCase().includes(q);
-      const matchCity = w.city.toLowerCase().includes(q);
-      const matchId = w.workerId.toLowerCase().includes(q);
-      const matchSpecificSkill = Array.isArray(w.skills) && w.skills.some((s) => s.toLowerCase().includes(q));
-      if (!matchName && !matchSkill && !matchCity && !matchId && !matchSpecificSkill) return false;
-    }
-
-    return true;
-  });
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
@@ -264,27 +230,27 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
       {/* Main Tabs Navigation */}
       <div className="flex items-center gap-3 border-b border-[#DDE4E6] pb-2">
         <button
-          onClick={() => setActiveTab('radar')}
+          onClick={() => setActiveTab('marketplace')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition cursor-pointer ${
-            activeTab === 'radar'
+            activeTab === 'marketplace'
               ? 'bg-[#202A2B] text-white shadow-xs'
               : 'text-[#526365] hover:bg-[#F0F4F6] hover:text-[#202A2B]'
           }`}
         >
-          <Compass className="w-4 h-4 text-[#65D6B0]" />
-          <span>Live Radar &amp; My Bookings ({userBookings.length})</span>
+          <Sparkles className="w-4 h-4 text-[#65D6B0]" />
+          <span>Find Assistance Near Your Station</span>
         </button>
 
         <button
-          onClick={() => setActiveTab('directory')}
+          onClick={() => setActiveTab('radar')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition cursor-pointer ${
-            activeTab === 'directory'
+            activeTab === 'radar'
               ? 'bg-[#007D99] text-white shadow-xs'
               : 'text-[#526365] hover:bg-[#F0F4F6] hover:text-[#202A2B]'
           }`}
         >
-          <Briefcase className="w-4 h-4 text-[#D7F7FC]" />
-          <span>Station Worker Directory ({workers.length})</span>
+          <Compass className="w-4 h-4 text-[#D7F7FC]" />
+          <span>Live Radar &amp; My Bookings ({userBookings.length})</span>
         </button>
       </div>
 
@@ -617,159 +583,21 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 2: STATION WORKER DIRECTORY (SHARED CROSS-DEVICE ROSTER)               */}
+      {/* TAB: FIND ASSISTANCE NEAR YOUR STATION (SERVICE-FIRST MARKETPLACE)        */}
       {/* ========================================================================= */}
-      {activeTab === 'directory' && (
+      {activeTab === 'marketplace' && (
         <div className="space-y-6 animate-fadeIn">
-          
-          {/* Search & Filter Bar */}
-          <div className="bg-white rounded-3xl border border-[#DDE4E6] p-6 shadow-sm space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-black text-[#202A2B] tracking-tight">
-                  Indian Railways Verified Worker Roster
-                </h2>
-                <p className="text-xs text-[#526365] mt-0.5">
-                  Authoritative live registry of station technicians, electricians, plumbers, and porters. Visible across all connected devices.
-                </p>
-              </div>
-
-              {/* Live Refresh Button */}
-              <button
-                onClick={handleManualRefreshDirectory}
-                disabled={isRefreshingDirectory}
-                className="px-4 py-2 bg-[#F0F4F6] hover:bg-[#D7F7FC] text-[#202A2B] text-xs font-bold rounded-xl border border-[#DDE4E6] transition flex items-center gap-2 cursor-pointer shadow-2xs"
-                title="Fetch Latest Registered Workers from Server"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 text-[#007D99] ${isRefreshingDirectory ? 'animate-spin' : ''}`} />
-                <span>{isRefreshingDirectory ? 'Connecting to Server...' : 'Refresh Live Roster'}</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-2">
-              <div className="sm:col-span-8 relative">
-                <Search className="w-4 h-4 text-[#7E9092] absolute left-3.5 top-3" />
-                <input
-                  type="text"
-                  value={directorySearch}
-                  onChange={(e) => setDirectorySearch(e.target.value)}
-                  placeholder="Search by worker name, skill, ID (e.g. WRK-108), or city..."
-                  className="w-full pl-9 pr-3.5 py-2 text-xs bg-[#F8FAFB] border border-[#DDE4E6] rounded-xl text-[#202A2B] focus:outline-none focus:ring-2 focus:ring-[#00B8D9]"
-                />
-              </div>
-
-              <div className="sm:col-span-4">
-                <select
-                  value={directoryStation}
-                  onChange={(e) => setDirectoryStation(e.target.value)}
-                  className="w-full py-2 px-3 text-xs bg-[#F8FAFB] border border-[#DDE4E6] rounded-xl text-[#202A2B] font-bold focus:outline-none focus:ring-2 focus:ring-[#00B8D9]"
-                >
-                  <option value="ALL">All Railway Stations</option>
-                  {RAILWAY_STATIONS.map((s) => (
-                    <option key={s.code} value={s.code}>
-                      {s.name} ({s.code}) - {s.city}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Directory Cards Grid */}
-          {filteredDirectoryWorkers.length === 0 ? (
-            <div className="bg-white rounded-3xl border border-[#DDE4E6] p-12 text-center space-y-3">
-              <Briefcase className="w-12 h-12 text-[#7E9092] mx-auto opacity-50" />
-              <h3 className="text-base font-bold text-[#202A2B]">No Workers Found for This Criteria</h3>
-              <p className="text-xs text-[#526365] max-w-md mx-auto">
-                No registered workers match the selected filters. Click "Refresh Live Roster" or clear search filters to view all verified personnel.
-              </p>
-              <button
-                onClick={() => {
-                  setDirectorySearch('');
-                  setDirectoryStation('ALL');
-                  handleManualRefreshDirectory();
-                }}
-                className="px-4 py-2 bg-[#007D99] text-white text-xs font-bold rounded-xl hover:bg-[#00B8D9] transition cursor-pointer"
-              >
-                Reset Filters &amp; Reload
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {filteredDirectoryWorkers.map((worker) => (
-                <div
-                  key={worker.id}
-                  className="bg-white rounded-2xl border border-[#DDE4E6] p-5 shadow-xs hover:border-[#00B8D9] hover:shadow-md transition-all flex flex-col justify-between group"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={worker.profileImage || worker.verificationPhoto || 'https://images.unsplash.com/photo-1541888946425-d0fbb186156f?auto=format&fit=crop&w=150&q=80'}
-                          alt={worker.fullName}
-                          className="w-12 h-12 rounded-xl object-cover border border-[#DDE4E6]"
-                        />
-                        <div>
-                          <h4 className="text-sm font-black text-[#202A2B] group-hover:text-[#007D99] transition-colors">
-                            {worker.fullName}
-                          </h4>
-                          <span className="text-[10px] font-mono font-bold text-[#007D99] bg-[#D7F7FC] px-1.5 py-0.5 rounded">
-                            {worker.workerId}
-                          </span>
-                        </div>
-                      </div>
-
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${
-                        worker.availability === 'Available'
-                          ? 'bg-[#DDF8EF] text-[#1E6B52] border border-[#65D6B0]/40'
-                          : 'bg-[#FBE0E6] text-[#92182D] border border-[#D72645]/40'
-                      }`}>
-                        {worker.availability}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-xs font-bold text-[#202A2B] block">
-                        {worker.skillCategory}
-                      </span>
-                      <p className="text-[11px] text-[#526365] mt-0.5 line-clamp-2">
-                        {worker.bio || worker.headline || 'Station specialist ready for passenger assistance.'}
-                      </p>
-                    </div>
-
-                    <div className="space-y-1 text-[11px] text-[#526365] pt-2 border-t border-[#DDE4E6]">
-                      <div className="flex justify-between">
-                        <span>Station Hub:</span>
-                        <strong className="text-[#202A2B]">{worker.stationName} ({worker.stationCode})</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Experience:</span>
-                        <strong className="text-[#202A2B]">{worker.experienceYears || 2} Years</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Verification:</span>
-                        <span className="text-[#1E6B52] font-bold flex items-center gap-1">
-                          <ShieldCheck className="w-3 h-3 text-[#3EA684]" />
-                          <span>{worker.verificationStatus}</span>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 pt-3 border-t border-[#DDE4E6]">
-                    <button
-                      onClick={() => onNavigate('book-worker')}
-                      className="w-full py-2.5 bg-[#202A2B] hover:bg-[#202A2B]/90 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-xs border border-[#202A2B]"
-                    >
-                      <PlusCircle className="w-3.5 h-3.5 text-[#65D6B0]" />
-                      <span>Book This Specialist</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
+          <ServiceDiscoveryMarketplace
+            workers={workers}
+            onSelectWorkerForBooking={
+              onSelectWorkerForBooking ||
+              ((worker, category) => {
+                onNavigate('book-worker');
+              })
+            }
+            onNavigate={onNavigate}
+            currentUser={currentUser}
+          />
         </div>
       )}
 

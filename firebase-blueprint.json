@@ -1,0 +1,105 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Passenger and administrative user accounts",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number", "description": "Unique numeric user ID" },
+        "fullName": { "type": "string", "description": "Full name of the passenger" },
+        "email": { "type": "string", "format": "email", "description": "Registered email" },
+        "mobile": { "type": "string", "description": "10-digit mobile number" },
+        "isAdmin": { "type": "boolean", "description": "Whether the user is an admin" },
+        "createdAt": { "type": "string", "description": "ISO timestamp of account creation" }
+      },
+      "required": ["id", "fullName", "email", "mobile"]
+    },
+    "Worker": {
+      "title": "Worker",
+      "description": "Registered railway station gig workers and technicians",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number", "description": "Numeric internal ID" },
+        "workerId": { "type": "string", "description": "Unique Worker badge ID (e.g. WRK-101)" },
+        "fullName": { "type": "string", "description": "Full name of the worker" },
+        "email": { "type": "string", "format": "email", "description": "Worker registered email" },
+        "mobile": { "type": "string", "description": "Mobile contact number" },
+        "skillCategory": { "type": "string", "description": "Primary railway skill category" },
+        "skills": { "type": "array", "description": "Specific repair & maintenance skills" },
+        "stationCode": { "type": "string", "description": "Primary station code (e.g. NDLS)" },
+        "stationCodes": { "type": "array", "description": "All served station codes" },
+        "stationName": { "type": "string", "description": "Station name" },
+        "city": { "type": "string", "description": "Station city" },
+        "experienceYears": { "type": "number", "description": "Years of experience" },
+        "verificationStatus": { "type": "string", "enum": ["Verified", "Pending", "Rejected"] },
+        "availability": { "type": "string", "enum": ["Available", "Busy", "Off Duty"] },
+        "rating": { "type": "number", "description": "Rating score out of 5" },
+        "totalJobsCompleted": { "type": "number", "description": "Total jobs resolved" }
+      },
+      "required": ["id", "workerId", "fullName", "email", "mobile", "skillCategory", "stationCode"]
+    },
+    "WorkerServiceRequest": {
+      "title": "WorkerServiceRequest",
+      "description": "Passenger-to-worker booking assistance requests",
+      "type": "object",
+      "properties": {
+        "requestId": { "type": "string", "description": "Unique booking reference ID" },
+        "passengerId": { "type": "number", "description": "ID of the passenger" },
+        "passengerName": { "type": "string", "description": "Passenger name" },
+        "passengerEmail": { "type": "string", "description": "Passenger email" },
+        "passengerMobile": { "type": "string", "description": "Passenger mobile number" },
+        "serviceCategory": { "type": "string", "description": "Selected service category" },
+        "stationCode": { "type": "string", "description": "Railway station code" },
+        "stationName": { "type": "string", "description": "Railway station name" },
+        "trainNumber": { "type": "string", "description": "Train number" },
+        "trainName": { "type": "string", "description": "Train name" },
+        "expectedArrivalTime": { "type": "string", "description": "Expected arrival time at station" },
+        "coachNumber": { "type": "string", "description": "Coach number (e.g. B3)" },
+        "seatNumber": { "type": "string", "description": "Berth or seat number" },
+        "meetingLocation": { "type": "string", "description": "Agreed station meeting location" },
+        "description": { "type": "string", "description": "Problem details" },
+        "status": {
+          "type": "string",
+          "enum": ["Requested", "Awaiting Worker Confirmation", "Worker Assigned", "On the Way", "Arrived at Station", "Service In Progress", "Completed", "Cancelled", "Rejected"]
+        },
+        "assignedWorkerId": { "type": "number", "description": "Assigned worker internal ID" },
+        "assignedWorkerName": { "type": "string", "description": "Assigned worker name" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "description": "Last update timestamp" }
+      },
+      "required": ["requestId", "passengerId", "passengerName", "serviceCategory", "stationCode", "status"]
+    },
+    "Complaint": {
+      "title": "Complaint",
+      "description": "Official railway grievances and complaints",
+      "type": "object",
+      "properties": {
+        "complaintId": { "type": "string", "description": "Unique grievance ID" },
+        "userId": { "type": "number", "description": "User ID" },
+        "passengerName": { "type": "string", "description": "Passenger name" },
+        "category": { "type": "string", "description": "Complaint category" },
+        "subject": { "type": "string", "description": "Subject of complaint" },
+        "status": { "type": "string", "enum": ["Pending", "In Progress", "Resolved"] }
+      },
+      "required": ["complaintId", "userId", "passengerName", "category", "subject", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Passenger and admin user records"
+    },
+    "/workers/{workerId}": {
+      "schema": "Worker",
+      "description": "Verified station gig workers and technicians"
+    },
+    "/worker_requests/{requestId}": {
+      "schema": "WorkerServiceRequest",
+      "description": "Passenger service bookings and coordination records"
+    },
+    "/complaints/{complaintId}": {
+      "schema": "Complaint",
+      "description": "Railway grievances and complaints"
+    }
+  }
+}

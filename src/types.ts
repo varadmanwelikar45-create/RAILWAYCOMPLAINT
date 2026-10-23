@@ -136,6 +136,7 @@ export interface WorkerServiceRequest {
   assignedWorkerName?: string | null;
   assignedWorkerMobile?: string | null;
   completionNotes?: string;
+  rejectionReason?: string;
   feedback?: WorkerFeedback;
   passengerLocation?: {
     latitude: number;

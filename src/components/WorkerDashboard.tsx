@@ -15,7 +15,8 @@ import {
   Navigation,
   LocateFixed,
   Play,
-  ArrowLeft
+  ArrowLeft,
+  X
 } from 'lucide-react';
 
 interface WorkerDashboardProps {
@@ -23,6 +24,7 @@ interface WorkerDashboardProps {
   requests?: WorkerServiceRequest[];
   workerRequests?: WorkerServiceRequest[];
   onAcceptRequest?: (requestId: string) => Promise<{ success: boolean; message: string }>;
+  onRejectRequest?: (requestId: string, reason?: string) => Promise<{ success: boolean; message: string }> | any;
   onUpdateRequestStatus?: (
     requestId: string, 
     status: WorkerServiceRequest['status'], 
@@ -46,6 +48,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
   requests,
   workerRequests: workerRequestsProp,
   onAcceptRequest,
+  onRejectRequest,
   onUpdateRequestStatus,
   onUpdateStatus,
   onUpdateAvailability,
@@ -61,6 +64,10 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
   const [actionLoading, setActionLoading] = useState(false);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
 
+  // Rejection modal state
+  const [rejectModalReq, setRejectModalReq] = useState<WorkerServiceRequest | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+
   // Live Location & Movement status states for Worker
   const [isUpdatingLocation, setIsUpdatingLocation] = useState(false);
   const [workerStatusText, setWorkerStatusText] = useState('Walking along platform towards coach');
@@ -73,10 +80,17 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
   );
 
   const incomingRequests = workerRequests.filter((r) => {
-    // Show requests that are unassigned or requested, match station, and match category
+    // Direct requests specifically for this worker awaiting confirmation
+    if (r.assignedWorkerId === currentWorker.id && ['Requested', 'Awaiting Worker Confirmation', 'Finding Worker'].includes(r.status)) {
+      return true;
+    }
+    // General station requests matching worker's station and skill category
     const isUnassigned = !r.assignedWorkerId && ['Requested', 'Awaiting Worker Confirmation', 'Finding Worker'].includes(r.status);
-    const stationMatches = r.stationCode === currentWorker.stationCode;
+    const stationMatches =
+      r.stationCode === currentWorker.stationCode ||
+      (Array.isArray(currentWorker.stationCodes) && currentWorker.stationCodes.includes(r.stationCode));
     const categoryMatches =
+      !r.serviceCategory ||
       r.serviceCategory.toLowerCase().includes(currentWorker.skillCategory.toLowerCase()) ||
       currentWorker.skillCategory.toLowerCase().includes(r.serviceCategory.toLowerCase());
     return isUnassigned && stationMatches && categoryMatches;
@@ -124,6 +138,25 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
       if (res.success) {
         setActionNotice('Service assignment accepted! Proceed to passenger coach.');
         setActiveTab('current-job');
+      } else {
+        setActionNotice(res.message);
+      }
+      setTimeout(() => setActionNotice(null), 4000);
+    } finally {
+      setActionLoading(false);
+      onRefreshData?.();
+    }
+  };
+
+  const handleReject = async (requestId: string, reason?: string) => {
+    if (!onRejectRequest) return;
+    try {
+      setActionLoading(true);
+      const res = await onRejectRequest(requestId, reason || rejectReason);
+      if (res.success) {
+        setActionNotice(`Booking #${requestId} declined.`);
+        setRejectModalReq(null);
+        setRejectReason('');
       } else {
         setActionNotice(res.message);
       }
@@ -315,6 +348,104 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
             <p className="text-slate-600 leading-relaxed">
               Your profile is currently under review by railway station administrators. You will be able to receive passenger calls once verified.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* High-Priority "New Service Booking Request" Notification Banner */}
+      {incomingRequests.length > 0 && !activeJob && (
+        <div className="bg-[#202A2B] text-white rounded-3xl p-6 sm:p-8 border-2 border-[#65D6B0] shadow-xl relative overflow-hidden animate-fadeIn">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-[#65D6B0]/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
+
+          <div className="relative z-10 space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-3 w-3 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#65D6B0] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-[#65D6B0]"></span>
+                </span>
+                <span className="text-[11px] font-black uppercase tracking-widest text-[#65D6B0] bg-[#65D6B0]/20 px-3 py-1 rounded-lg border border-[#65D6B0]/30">
+                  NEW SERVICE BOOKING REQUEST ({incomingRequests.length} PENDING)
+                </span>
+              </div>
+              <span className="text-xs font-mono text-slate-400">
+                Ref #{incomingRequests[0].requestId} · Station {incomingRequests[0].stationCode}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 bg-white/5 p-5 rounded-2xl border border-white/10 text-xs">
+              <div>
+                <span className="text-[11px] text-[#65D6B0] font-bold block">Passenger &amp; Contact</span>
+                <strong className="text-sm text-white block mt-0.5">{incomingRequests[0].passengerName}</strong>
+                <a href={`tel:${incomingRequests[0].passengerMobile}`} className="text-slate-300 hover:text-white underline mt-0.5 block font-mono">
+                  📞 {incomingRequests[0].passengerMobile}
+                </a>
+              </div>
+
+              <div>
+                <span className="text-[11px] text-[#65D6B0] font-bold block">Train &amp; Coach Location</span>
+                <strong className="text-sm text-white block mt-0.5">
+                  Train {incomingRequests[0].trainNumber}
+                </strong>
+                <span className="text-slate-300 block">
+                  Coach <strong className="text-white">{incomingRequests[0].coachNumber || 'B3'}</strong> · Seat <strong className="text-white">{incomingRequests[0].seatNumber || 'Berth 24'}</strong>
+                </span>
+              </div>
+
+              <div>
+                <span className="text-[11px] text-[#65D6B0] font-bold block">Station &amp; Expected Arrival</span>
+                <strong className="text-sm text-white block mt-0.5">
+                  {incomingRequests[0].stationName} ({incomingRequests[0].stationCode})
+                </strong>
+                <span className="text-slate-300 block">
+                  ⏱️ {incomingRequests[0].expectedArrivalTime || 'Approaching Platform'}
+                </span>
+              </div>
+
+              <div>
+                <span className="text-[11px] text-[#65D6B0] font-bold block">Meeting Point</span>
+                <strong className="text-sm text-white block mt-0.5">
+                  Platform Doorway
+                </strong>
+                <span className="text-slate-300 block">
+                  Coach {incomingRequests[0].coachNumber || 'B3'} Halt Position
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-white/5 p-4 rounded-xl border border-white/10 text-xs text-slate-200">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Service Requirement &amp; Description:</span>
+              <p className="italic font-medium text-slate-100">"{incomingRequests[0].description}"</p>
+            </div>
+
+            {/* Accept / Reject Action Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+              <p className="text-xs text-slate-400">
+                Please accept immediately to coordinate meeting point and start platform movement.
+              </p>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  disabled={actionLoading}
+                  onClick={() => setRejectModalReq(incomingRequests[0])}
+                  className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-[#B94A3A] text-white hover:text-white border border-white/20 text-xs font-bold transition cursor-pointer flex items-center gap-2"
+                >
+                  <X className="w-4 h-4 text-[#D72645]" />
+                  <span>Reject Booking</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={actionLoading}
+                  onClick={() => handleAccept(incomingRequests[0].requestId)}
+                  className="px-7 py-2.5 rounded-xl bg-[#65D6B0] hover:bg-[#65D6B0]/90 text-[#202A2B] font-black text-xs transition cursor-pointer flex items-center gap-2 shadow-lg"
+                >
+                  <Check className="w-4 h-4 stroke-[3]" />
+                  <span>Accept Booking &amp; Proceed</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -742,16 +873,27 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
                     <span className="text-[11px] text-slate-500">
                       Berth: <strong>{req.seatNumber || 'N/A'}</strong>
                     </span>
-                    <button
-                      disabled={actionLoading || Boolean(activeJob)}
-                      onClick={() => handleAccept(req.requestId)}
-                      className={`px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-extrabold rounded-xl transition cursor-pointer shadow-sm flex items-center gap-1.5 ${
-                        activeJob ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      <Check className="w-4 h-4" />
-                      <span>{activeJob ? 'Finish Active Job First' : 'Accept Assignment'}</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        disabled={actionLoading}
+                        onClick={() => setRejectModalReq(req)}
+                        className="px-3.5 py-1.5 bg-[#FBE0E6] hover:bg-[#B94A3A] hover:text-white text-[#B94A3A] text-xs font-bold rounded-xl transition cursor-pointer border border-[#B94A3A]/20 flex items-center gap-1"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        <span>Reject</span>
+                      </button>
+
+                      <button
+                        disabled={actionLoading || Boolean(activeJob)}
+                        onClick={() => handleAccept(req.requestId)}
+                        className={`px-4 py-1.5 bg-[#007D99] hover:bg-[#00B8D9] text-white text-xs font-black rounded-xl transition cursor-pointer shadow-xs flex items-center gap-1.5 ${
+                          activeJob ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                        <span>{activeJob ? 'Busy' : 'Accept Assignment'}</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -885,6 +1027,90 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Rejection Reason Modal */}
+      {rejectModalReq && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 space-y-5 shadow-2xl border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-[#FBE0E6] text-[#B94A3A] flex items-center justify-center">
+                  <X className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">
+                    Decline Booking #{rejectModalReq.requestId}
+                  </h3>
+                  <span className="text-[10px] text-slate-500">
+                    Train {rejectModalReq.trainNumber} · Coach {rejectModalReq.coachNumber || 'B3'}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setRejectModalReq(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-900 cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600">
+              Please specify the reason so the central station coordinator can immediately route this request to another available specialist.
+            </p>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-800 block">Quick Reason:</label>
+              {[
+                'Currently engaged in critical platform repair',
+                'Too far from platform halt position',
+                'Shift handover in progress',
+                'Tools/equipment currently unavailable',
+              ].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setRejectReason(preset)}
+                  className={`w-full text-left p-2.5 rounded-xl border text-xs font-medium transition cursor-pointer ${
+                    rejectReason === preset
+                      ? 'border-[#B94A3A] bg-[#FBE0E6] text-[#92182D] font-bold'
+                      : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  {preset}
+                </button>
+              ))}
+
+              <div className="pt-2">
+                <input
+                  type="text"
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="Or enter custom reason..."
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#B94A3A]"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={() => setRejectModalReq(null)}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={() => handleReject(rejectModalReq.requestId, rejectReason)}
+                className="px-5 py-2 rounded-xl bg-[#B94A3A] hover:bg-[#B94A3A]/90 text-white text-xs font-black transition cursor-pointer shadow-xs"
+              >
+                Confirm Decline
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

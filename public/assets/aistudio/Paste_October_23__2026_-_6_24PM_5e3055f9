@@ -1,0 +1,836 @@
+# VYOMRATH — Production-Ready Railway Assistance Marketplace
+
+## ROLE
+
+Act as a senior full-stack software engineer, backend architect, database engineer, real-time systems developer, cybersecurity specialist, and UI/UX designer.
+
+Upgrade my existing VYOMRATH railway assistance website into a reliable, scalable, real-time platform that connects railway passengers with suitable service providers at nearby railway stations.
+
+This is an existing project. Inspect the complete application, understand its current architecture, and modify the existing implementation.
+
+Do not create a separate application or replace the project with a demonstration.
+
+# 1. CRITICAL PROJECT PRESERVATION RULES
+
+Before modifying any code, inspect the existing frontend, backend, authentication system, database configuration, API routes, and application workflows.
+
+Follow these rules strictly:
+
+* Preserve the existing database, including its schema, tables, collections, relationships, and stored records.
+* Do not delete existing passenger accounts, worker accounts, complaints, bookings, or other application data.
+* Preserve the existing authentication system and password-security mechanisms.
+* Preserve working passenger registration and login.
+* Preserve working worker registration and login, correcting defects where necessary.
+* Preserve existing complaint submission, complaint tracking, and other functional features.
+* Do not rename or remove existing API endpoints unless a change is absolutely necessary for compatibility.
+* Do not change existing API request or response formats without checking every dependent component.
+* Do not replace the current backend with mock APIs, hardcoded data, or browser-only storage.
+* Do not create a second database or duplicate user-management system.
+* Do not expose database credentials, authentication secrets, or private user information in frontend code.
+* Keep the application compatible with its existing deployment environment.
+
+If database changes are genuinely necessary, use backward-compatible migrations and additive changes wherever possible. Preserve existing records, verify compatibility, and provide a rollback strategy.
+
+**Priority: Fix and extend the existing application rather than rebuilding it from scratch.**
+
+# 2. REMOVE THE EMERGENCY HELPLINE 139 SECTION
+
+Remove the emergency helpline 139 section currently displayed at the bottom of the website.
+
+Requirements:
+
+* Remove the complete 139 promotional component and its associated content.
+* Remove unnecessary empty space left behind.
+* Check shared layouts and other pages for duplicate instances of this section.
+* Preserve unrelated footer content, navigation, contact information, and application features.
+* Do not modify authentication, backend logic, or database records to accomplish this visual change.
+
+# 3. FIX THE WORKER LOGIN ERROR
+
+## Current problem
+
+When I try to log in as a worker, the website displays:
+
+"No internet connection. Please connect to server."
+
+The device has an internet connection, so investigate the actual cause.
+
+## Required investigation
+
+Inspect the complete worker authentication flow, including:
+
+1. Worker login form submission.
+2. Frontend API base URL and environment configuration.
+3. Worker authentication endpoint and HTTP method.
+4. Backend server startup and availability.
+5. Database connectivity and worker account lookup.
+6. Password verification.
+7. Authentication tokens, cookies, and session management.
+8. CORS configuration and request headers.
+9. Incorrect localhost URLs or outdated deployment URLs.
+10. Differences between passenger and worker authentication.
+11. API response handling and exception handling.
+12. Network failures caused by incorrect endpoints, server errors, or timeouts.
+
+Trace the login request from the frontend to the backend and database.
+
+Fix the actual root cause.
+
+Do not simply change the displayed error message.
+
+Do not bypass authentication, automatically approve workers, hardcode credentials, or create fake successful login responses.
+
+## Expected behaviour
+
+* A registered worker with valid credentials can log in successfully.
+* Incorrect credentials produce an appropriate authentication error.
+* Genuine network failures display a network-connection message.
+* Backend failures display an appropriate server-error message.
+* Successful authentication opens the worker dashboard.
+* Worker sessions remain secure and follow the existing authentication architecture.
+
+Test passenger login after fixing worker login to ensure neither workflow is broken.
+
+# 4. LANDING PAGE AND ROLE-BASED DASHBOARDS
+
+The landing page must provide two clear options:
+
+1. Login as Passenger
+2. Login as Worker
+
+Keep registration available through the existing authentication flow.
+
+Use a modern, responsive interface consistent with VYOMRATH's existing visual identity.
+
+## Passenger dashboard
+
+After passenger login, display:
+
+* A personalized welcome section.
+* Passenger profile information.
+* A search field for finding railway assistance.
+* A railway station selector.
+* Train details relevant to the passenger's journey.
+* Available service categories.
+* Nearby verified workers.
+* Current and previous bookings.
+* Booking status and notifications.
+* Location-sharing controls.
+* Complaint and service history.
+
+## Worker dashboard
+
+After worker login, display:
+
+* Worker profile and verification status.
+* Skills and service categories.
+* Supported railway stations.
+* Availability controls.
+* Incoming booking requests.
+* Passenger and train meeting information.
+* Booking acceptance and rejection actions.
+* Confirmed bookings.
+* Navigation to the agreed meeting location.
+* Booking status updates.
+* Service completion actions.
+* Booking history and relevant earnings information, if supported.
+
+Both dashboards must use the existing authenticated user identity and backend.
+
+A passenger must never access another user's private dashboard merely by changing a URL or identifier.
+
+# 5. REPLACE THE LARGE WORKER PROFILE BOX WITH SERVICE DISCOVERY
+
+## Current problem
+
+The landing page displays worker profiles inside one large box. This is not a suitable experience for discovering and booking assistance.
+
+Replace it with a service-first marketplace.
+
+The experience should allow passengers to search for a problem, select an appropriate service, discover nearby workers, compare available options, and book a worker.
+
+## Service discovery interface
+
+At the top of the passenger dashboard, display:
+
+**Heading:** Find Assistance Near Your Station
+
+**Supporting text:** Discover skilled service providers, book assistance, and coordinate your meeting.
+
+Include:
+
+* A search bar.
+* A railway station selector.
+* A service-category selector.
+* A location and availability filter.
+* A clear search button.
+* A responsive grid of service categories.
+* A list of available workers matching the passenger's requirements.
+
+Use compact worker cards rather than one oversized profile container.
+
+Each worker card should display available information such as:
+
+* Name and profile photograph.
+* Verified status.
+* Service category and skills.
+* Experience, when available.
+* Genuine rating information, if available.
+* Current availability.
+* Supported station or service area.
+* Indicative fee, if supported.
+* View Profile button.
+* Book Service button.
+
+Show only real data retrieved from the backend.
+
+Never invent worker identities, ratings, availability, or reviews.
+
+## Worker search and filtering
+
+Passengers should be able to search workers using:
+
+* Railway station.
+* Distance from the relevant meeting point.
+* Service category.
+* Worker skills.
+* Availability.
+* Verification status.
+* Indicative price, if supported.
+
+Return only workers who match the selected criteria.
+
+Sort results using relevant factors such as service compatibility, availability, distance, and estimated arrival time.
+
+Do not treat a worker as available simply because their profile exists in the database.
+
+# 6. COMPLETE PASSENGER-TO-WORKER BOOKING WORKFLOW
+
+Implement the following end-to-end workflow.
+
+## Step 1: Passenger logs in
+
+The passenger logs in using the existing passenger authentication system.
+
+The backend identifies the authenticated passenger.
+
+## Step 2: Passenger selects a service
+
+The passenger searches for a railway-related problem or selects a supported service category.
+
+Examples include electrical assistance, cleaning and maintenance, food assistance, technical assistance, or general support.
+
+Only show categories supported by the application.
+
+## Step 3: Passenger provides journey information
+
+Allow the passenger to provide relevant information:
+
+* Train number, when applicable.
+* Train name, when available.
+* Train arrival or departure time.
+* Expected arrival time at the selected station.
+* Railway station name.
+* Platform number, if known.
+* Problem description.
+* Required service category.
+* Preferred meeting location.
+* Additional details relevant to the service.
+
+Do not require train information for bookings that do not depend on a train journey.
+
+Validate all submitted data on the backend.
+
+Where train information is not independently verified, clearly identify it as passenger-provided information.
+
+Do not fabricate live train data.
+
+## Step 4: Passenger discovers nearby workers
+
+The backend retrieves workers matching the service requirements and relevant location.
+
+Consider:
+
+* Worker skills.
+* Worker availability.
+* Worker verification.
+* Distance from the meeting location.
+* Current location freshness.
+* Expected travel time.
+* Booking conflicts.
+* Supported service areas.
+
+Display the matching workers in a clean, responsive interface.
+
+## Step 5: Passenger selects a worker
+
+The passenger opens a worker profile and reviews the available service information.
+
+The passenger selects a worker and submits a booking request.
+
+The booking must include a unique booking ID and references to the passenger, worker, service, station, meeting location, and applicable train information.
+
+## Step 6: Backend creates the booking
+
+The backend must validate the booking request before saving it.
+
+Verify that:
+
+* The passenger is authenticated.
+* The worker exists.
+* The worker is eligible for the requested service.
+* The worker is available.
+* The selected service is supported.
+* The meeting details are valid.
+* The worker has not already accepted a conflicting booking.
+* The passenger cannot submit a booking for another user's identity.
+
+Create the booking using a database transaction or an equivalent reliable mechanism where supported.
+
+Prevent duplicate bookings caused by repeated button clicks, retries, or concurrent requests.
+
+Use an appropriate initial booking status, such as PENDING.
+
+## Step 7: Worker receives a booking notification
+
+Immediately after a booking request is successfully recorded, notify the selected worker.
+
+Example notification:
+
+"New Service Booking Request"
+
+"Passenger: [Passenger Name]"
+
+"Service: [Requested Service]"
+
+"Station: [Railway Station]"
+
+"Train: [Train Number and Name, if applicable]"
+
+"Expected Arrival: [Time]"
+
+"Meeting Point: [Agreed Location]"
+
+"Please review the request and accept or reject it."
+
+The worker must be able to:
+
+* View booking details.
+* Accept the booking.
+* Reject the booking.
+* See relevant train and meeting information.
+* Receive updates when the passenger changes or cancels a request.
+
+Only expose the information needed to fulfil the booking.
+
+Do not expose private passenger information before it is necessary and authorized.
+
+## Step 8: Worker accepts the booking
+
+When the worker accepts the request:
+
+1. Validate the worker's identity on the backend.
+2. Confirm that the booking is still pending.
+3. Recheck worker availability and conflicting bookings.
+4. Update the booking status atomically.
+5. Prevent a second worker from accepting the same booking.
+6. Notify the passenger.
+7. Display the confirmed booking in both dashboards.
+8. Enable authorized meeting-location sharing.
+
+If the worker rejects the request, update the booking status and notify the passenger.
+
+Never rely solely on frontend button states to prevent booking conflicts.
+
+## Step 9: Passenger and worker coordinate their meeting
+
+After the booking is accepted, provide both parties with the information required to meet at the agreed railway station or service location.
+
+The system must distinguish between:
+
+* The train's expected arrival time.
+* The passenger's current location.
+* The worker's current location.
+* The agreed meeting location.
+* The worker's estimated time to reach that location.
+* The train's estimated arrival time, if reliable data is available.
+
+Display these details clearly on the booking screen.
+
+The worker is a service provider, not a passenger transportation provider. The passenger and worker coordinate their meeting, and the worker provides the booked assistance at the agreed location.
+
+## Step 10: Service completion
+
+After the worker provides the service:
+
+1. The worker marks the booking as service completed.
+2. The backend validates the action and updates the booking status.
+3. The passenger receives a notification.
+4. The passenger can confirm completion or report a problem.
+5. The booking is stored in the passenger's and worker's history.
+6. Any rating or review is stored only after the relevant authorized action.
+
+Keep an auditable record of important booking status changes.
+
+# 7. REAL-TIME LOCATION SHARING AND ARRIVAL ESTIMATES
+
+Implement a secure location-coordination system for accepted bookings.
+
+Location sharing must not expose a passenger's or worker's precise location to every user of the application.
+
+## Location permission
+
+Request device location permission only when required.
+
+Explain why location access is needed before requesting it.
+
+Provide controls to start or stop sharing.
+
+If permission is denied, allow the booking to continue with a manually selected meeting point where possible.
+
+Do not pretend that live tracking is active when location data is unavailable.
+
+## Location access rules
+
+* Passengers may view the assigned worker's location only when the booking is accepted and location sharing is authorized.
+* Workers may view the relevant passenger location only when the booking is accepted and the passenger has authorized sharing.
+* Other passengers must not be able to view the worker's private live location.
+* Unassigned workers must not be able to access a passenger's precise location.
+* Booking cancellation or completion must end or appropriately restrict location sharing.
+* Expired or stale location data must be identified clearly.
+
+Use authenticated backend authorization for every location request and update.
+
+Do not rely on hidden frontend buttons as a security mechanism.
+
+## Real-time updates
+
+Use the real-time technology supported by the existing architecture, such as WebSockets, Server-Sent Events, or a suitable managed real-time service.
+
+Avoid unnecessary architectural replacement.
+
+Update the booking interface when:
+
+* A worker accepts or rejects a request.
+* A booking status changes.
+* A participant shares a new location.
+* A meeting location changes.
+* An arrival estimate changes.
+* A booking is cancelled or completed.
+
+Use reasonable update intervals, rate limits, and stale-location indicators to avoid excessive requests and battery consumption.
+
+## Distance and ETA
+
+Calculate the distance between the worker and the agreed meeting location using valid coordinates.
+
+Estimate arrival time using a suitable routing or mapping service where available.
+
+Do not calculate road travel time using straight-line distance alone.
+
+When no routing service is configured, clearly label the result as an approximate estimate rather than a reliable navigation ETA.
+
+For train arrival estimates, use a verified data source if one is already integrated or can be configured properly.
+
+Do not fabricate live train tracking, platform details, or arrival times.
+
+Show timestamps indicating when location or train information was last updated.
+
+# 8. STRONG DATABASE AND BACKEND FOR MULTIPLE USERS
+
+The application must support many registered passengers, many registered workers, and many simultaneous booking requests.
+
+First, audit the existing database and determine which entities and relationships already exist.
+
+Reuse existing tables or collections wherever possible.
+
+Do not create duplicate entities when existing structures already serve the same purpose.
+
+Where the current schema lacks necessary capabilities, implement compatible migrations or additions.
+
+## Logical data model
+
+Ensure the existing data model can reliably represent the following entities and relationships.
+
+### A. Users
+
+Store the shared identity information needed for authentication and account management.
+
+Each account must have a unique identifier.
+
+Enforce uniqueness for the relevant login identifiers.
+
+Preserve existing password-hashing and authentication practices.
+
+Support the appropriate passenger and worker roles without permitting users to grant themselves privileged roles.
+
+### B. Passenger profiles
+
+Store passenger-specific information associated with the authenticated user.
+
+Include only fields necessary for the application's features.
+
+### C. Worker profiles
+
+Store worker-specific information, including:
+
+* Skills.
+* Supported service categories.
+* Service areas.
+* Verification status.
+* Availability.
+* Relevant experience.
+* Profile information.
+* Location-sharing preferences.
+
+Keep worker profiles linked to the corresponding authenticated account.
+
+Do not store a second copy of authentication credentials inside worker profiles.
+
+### D. Services and skills
+
+Represent the supported services and worker skills.
+
+Ensure workers can be matched to appropriate service requests.
+
+### E. Bookings
+
+Represent the booking lifecycle, including:
+
+* Unique booking identifier.
+* Passenger reference.
+* Worker reference.
+* Service reference.
+* Booking status.
+* Request time.
+* Acceptance or rejection time.
+* Station information.
+* Meeting-point information.
+* Relevant train details.
+* Estimated arrival information.
+* Completion time.
+* Cancellation information, when applicable.
+
+Use valid foreign keys or equivalent referential integrity mechanisms supported by the existing database.
+
+### F. Notifications
+
+Store notification records associated with their intended recipients.
+
+Include:
+
+* Notification identifier.
+* Recipient identifier.
+* Related booking identifier, where applicable.
+* Notification type.
+* Message or structured payload.
+* Creation timestamp.
+* Read status.
+* Delivery status, where supported.
+
+A notification must never be delivered to an unauthorized user.
+
+### G. Location updates
+
+Store only the location information necessary for authorized active bookings.
+
+Associate location records with the appropriate user and booking context.
+
+Include timestamps and mechanisms for identifying stale data.
+
+Apply an appropriate retention policy and avoid retaining precise location history indefinitely.
+
+### H. Booking status history
+
+Maintain an auditable history of important transitions, including booking creation, acceptance, rejection, cancellation, and completion.
+
+Record the actor, timestamp, and relevant status transition.
+
+## Database integrity
+
+Implement or verify:
+
+* Unique identifiers.
+* Foreign-key constraints where supported.
+* Appropriate indexes.
+* Valid status values.
+* Required-field validation.
+* Referential integrity.
+* Transactional booking updates.
+* Safe concurrent writes.
+* Consistent timestamps.
+* Database connection pooling where appropriate.
+* Reliable error handling and recovery.
+
+Use indexes for frequent lookups, such as worker skills, service categories, supported stations, booking status, passenger ID, worker ID, and booking timestamps.
+
+Do not introduce unnecessary indexes without evaluating the existing database and query patterns.
+
+Never store database passwords, API secrets, or private service credentials in client-side code.
+
+# 9. HANDLE MANY SIMULTANEOUS USERS AND BOOKINGS
+
+The application must support multiple passengers and workers operating simultaneously.
+
+Design the backend so that one passenger's activity cannot interfere with another passenger's booking.
+
+Implement:
+
+* Server-side validation for all important actions.
+* Efficient database queries and pagination.
+* Appropriate database connection management.
+* Atomic booking acceptance and assignment.
+* Protection against duplicate booking submissions.
+* Protection against conflicting worker bookings.
+* Idempotency for critical operations where appropriate.
+* Reliable notification processing.
+* Authentication and authorization on every protected endpoint.
+* Rate limiting for sensitive endpoints.
+* Proper transaction boundaries.
+* Useful server logs without exposing passwords, authentication tokens, or unnecessary personal information.
+
+Avoid loading every worker, booking, notification, or location record into the browser.
+
+Return only the records needed for the current view.
+
+Use pagination or bounded queries for large datasets.
+
+If the existing infrastructure requires background jobs or a message queue for reliable notification delivery, implement an approach compatible with the current deployment rather than adding unnecessary services.
+
+# 10. SECURITY AND PRIVACY
+
+Treat passenger and worker information as private.
+
+Requirements:
+
+* Enforce role-based access control on the backend.
+* Verify ownership before returning or modifying bookings.
+* Restrict access to private worker and passenger profile fields.
+* Protect location data with booking-specific authorization.
+* Validate and sanitize incoming data.
+* Use secure password handling.
+* Keep secrets in appropriate server-side environment variables.
+* Avoid leaking stack traces or database errors to end users.
+* Apply suitable rate limits to login, booking, and location endpoints.
+* Prevent users from modifying bookings that belong to other people.
+* Prevent workers from accessing bookings that have not been assigned or made available to them.
+* Prevent passengers from viewing other passengers' private bookings.
+* Ensure account roles and verification status cannot be manipulated through frontend requests.
+
+Location sharing must be limited to the period and purpose for which it is authorized.
+
+# 11. UI/UX DESIGN REQUIREMENTS
+
+Make VYOMRATH look like a polished, professional railway assistance marketplace.
+
+Maintain the existing brand identity and compatible color palette.
+
+Use:
+
+* A clean landing page.
+* Separate passenger and worker login flows.
+* A modern service-discovery interface.
+* Compact worker cards.
+* Clear service categories.
+* A responsive booking interface.
+* A dedicated booking-details screen.
+* A real-time meeting and location section.
+* A clear worker booking-request screen.
+* Consistent buttons, typography, spacing, and icons.
+* Loading, empty, error, and success states.
+* Responsive layouts for phones, tablets, laptops, and desktop screens.
+
+Do not overcrowd the landing page with oversized worker profiles.
+
+Do not redesign unrelated working screens unnecessarily.
+
+Make sure the back button and browser history continue to work correctly.
+
+Do not navigate users to the login screen unexpectedly when they move between authenticated pages.
+
+# 12. API AND BACKEND IMPLEMENTATION
+
+Inspect the current API architecture before deciding what to add.
+
+Reuse existing endpoints when they already provide the required functionality.
+
+Where capabilities are missing, add secure endpoints compatible with the existing conventions for:
+
+* Searching available workers.
+* Viewing an authorized worker profile.
+* Creating a booking request.
+* Listing passenger bookings.
+* Listing worker booking requests.
+* Accepting a booking.
+* Rejecting a booking.
+* Cancelling a booking.
+* Updating booking status.
+* Retrieving authorized notifications.
+* Marking notifications as read.
+* Sharing and retrieving authorized location updates.
+* Retrieving meeting-point and arrival information.
+* Completing a service.
+
+Use the appropriate HTTP methods and status codes.
+
+Validate permissions and business rules on the server.
+
+Keep request and response formats consistent with the existing frontend.
+
+Do not claim that real-time functionality is implemented if the backend only refreshes the page manually.
+
+# 13. ERROR HANDLING AND RELIABILITY
+
+Handle these cases explicitly:
+
+* Worker login failure.
+* Passenger login failure.
+* Backend unavailable.
+* Database unavailable.
+* Worker offline.
+* Location permission denied.
+* Location unavailable.
+* Stale location.
+* Invalid station or meeting coordinates.
+* Invalid train information.
+* Booking already accepted.
+* Worker no longer available.
+* Duplicate booking request.
+* Passenger cancellation.
+* Worker rejection.
+* Notification delivery failure.
+* Session expiration.
+* Unauthorized booking access.
+* Network interruption during a booking.
+
+Show clear, useful error messages and allow safe retries where appropriate.
+
+Do not show a successful booking until the backend has confirmed that it was saved.
+
+If a booking request times out, verify its status before retrying so that the passenger does not accidentally create duplicate bookings.
+
+# 14. TESTING REQUIREMENTS
+
+After implementing the changes, test the complete workflow.
+
+### Test A: Passenger authentication
+
+* Register a passenger using the existing registration system.
+* Log in successfully.
+* Confirm the passenger dashboard opens.
+* Confirm existing passenger functionality remains available.
+
+### Test B: Worker authentication
+
+* Log in with a valid worker account.
+* Confirm the server-connection error is resolved.
+* Confirm invalid credentials are rejected.
+* Confirm the worker dashboard opens.
+* Confirm passenger login still works.
+
+### Test C: Worker discovery
+
+* Register multiple workers.
+* Assign different service categories and supported stations.
+* Confirm passengers see only matching workers.
+* Confirm unavailable workers are handled correctly.
+
+### Test D: Booking
+
+* Passenger A selects Worker X.
+* Submit a booking request.
+* Confirm the booking is stored in the database.
+* Confirm Worker X receives the request.
+* Confirm Worker X can accept or reject it.
+* Confirm Passenger A receives the resulting update.
+
+### Test E: Multiple passengers and workers
+
+* Passenger A books Worker X.
+* Passenger B attempts to book Worker X.
+* Confirm the system applies the configured availability and concurrent-booking rules.
+* Confirm the same booking cannot be accepted twice.
+* Confirm unrelated workers and passengers are unaffected.
+
+### Test F: Location sharing
+
+* Accept a booking.
+* Enable authorized location sharing.
+* Confirm both parties see only the information they are permitted to access.
+* Confirm stale or unavailable locations are identified.
+* Confirm sharing ends or becomes appropriately restricted after cancellation or completion.
+
+### Test G: Data persistence
+
+* Refresh both dashboards.
+* Log out and log back in.
+* Confirm bookings and relevant statuses are retrieved from the backend.
+* Confirm worker and passenger accounts remain intact.
+* Confirm data is not dependent on temporary frontend state.
+
+### Test H: Responsive design
+
+Test the landing page, booking workflow, and both dashboards on mobile, tablet, laptop, and desktop screen sizes.
+
+# 15. IMPLEMENTATION WORKFLOW
+
+Follow this order:
+
+1. Inspect the existing project structure and technology stack.
+2. Identify the actual cause of the worker login error.
+3. Fix worker login and test passenger authentication.
+4. Remove the bottom emergency helpline 139 component.
+5. Inspect the existing database schema and booking-related data structures.
+6. Implement or improve worker discovery and service filtering.
+7. Implement the complete booking lifecycle.
+8. Add worker notifications.
+9. Implement authorized location sharing and arrival estimates.
+10. Strengthen database integrity and concurrent booking handling.
+11. Improve the passenger and worker dashboards.
+12. Test security, persistence, responsiveness, and failure scenarios.
+13. Verify that existing functionality has not regressed.
+
+Do not stop after generating a plan or changing the interface.
+
+Make the actual changes in the existing project files and backend.
+
+If a required external integration, such as live train data, mapping, or real-time messaging, is not configured, identify the missing dependency and implement the supported portions without fabricating results.
+
+# 16. FINAL ACCEPTANCE CRITERIA
+
+The upgrade is complete only when:
+
+* The bottom emergency helpline 139 section has been removed.
+* Worker login no longer incorrectly reports a connection failure when the backend is working.
+* Passenger and worker authentication continue to function.
+* Passengers can discover suitable workers near relevant railway stations.
+* Passengers can submit genuine booking requests.
+* Workers can receive, view, accept, and reject requests.
+* Booking information persists in the existing database.
+* Both parties receive appropriate booking-status updates.
+* Authorized passengers and workers can coordinate their meeting locations.
+* Location privacy and booking ownership are enforced on the backend.
+* The system handles concurrent booking requests safely.
+* Existing accounts and stored records remain intact.
+* The application works on supported devices and the configured deployment environment.
+* No critical functionality is replaced with mock data or simulated success responses.
+
+## FINAL INSTRUCTION
+
+Start by inspecting the existing implementation. Determine the current framework, backend, database, authentication architecture, and deployment configuration.
+
+Then implement the changes incrementally in the existing project.
+
+Prioritize correctness, security, data integrity, and working end-to-end functionality over visual demonstrations.
+
+When finished, provide a concise report identifying:
+
+1. The root cause of the worker login error.
+2. The files and components changed.
+3. The database changes made, if any.
+4. The booking and notification functionality implemented.
+5. The location-sharing functionality implemented.
+6. The tests performed and their actual results.
+7. Any external API keys, services, or configuration still required.
+
+Do not claim a feature is working unless you have verified it.

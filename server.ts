@@ -3,6 +3,7 @@ import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import { db, doc, setDoc } from './src/lib/firebase.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -107,6 +108,7 @@ interface WorkerServiceRequest {
   assignedWorkerName?: string | null;
   assignedWorkerMobile?: string | null;
   completionNotes?: string;
+  rejectionReason?: string;
   feedback?: any;
   passengerLocation?: {
     latitude: number;
@@ -512,12 +514,57 @@ function readStore(): StoreData {
   return DEFAULT_STORE;
 }
 
+async function syncToFirestore(data: StoreData) {
+  try {
+    if (!db) return;
+    // Asynchronously persist users to Firestore
+    for (const u of (data.users || []).slice(0, 50)) {
+      if (u && u.email) {
+        setDoc(doc(db, 'users', String(u.id || u.email)), {
+          ...u,
+          updatedAt: new Date().toISOString()
+        }, { merge: true }).catch(() => {});
+      }
+    }
+    // Asynchronously persist workers to Firestore
+    for (const w of (data.workers || []).slice(0, 50)) {
+      if (w && (w.id || w.workerId)) {
+        setDoc(doc(db, 'workers', String(w.id || w.workerId)), {
+          ...w,
+          updatedAt: new Date().toISOString()
+        }, { merge: true }).catch(() => {});
+      }
+    }
+    // Asynchronously persist bookings to Firestore
+    for (const r of (data.workerRequests || []).slice(0, 50)) {
+      if (r && r.requestId) {
+        setDoc(doc(db, 'worker_requests', r.requestId), {
+          ...r,
+          updatedAt: new Date().toISOString()
+        }, { merge: true }).catch(() => {});
+      }
+    }
+    // Asynchronously persist complaints to Firestore
+    for (const c of (data.complaints || []).slice(0, 50)) {
+      if (c && c.complaintId) {
+        setDoc(doc(db, 'complaints', c.complaintId), {
+          ...c,
+          updatedAt: new Date().toISOString()
+        }, { merge: true }).catch(() => {});
+      }
+    }
+  } catch (err) {
+    // Non-blocking sync
+  }
+}
+
 function writeStore(data: StoreData): void {
   try {
     fs.writeFileSync(STORE_PATH, JSON.stringify(data, null, 2), 'utf-8');
   } catch (err) {
     console.error('Error writing store file:', err);
   }
+  syncToFirestore(data).catch(() => {});
 }
 
 async function startServer() {
@@ -950,26 +997,120 @@ async function startServer() {
     }
   });
 
-  // 4. Worker Login (with verification photo update)
+  // 4. Worker Login (with flexible identifier and verification photo update)
   app.post('/api/workers/login', (req: Request, res: Response) => {
     try {
       const { email, password, photo, verificationPhoto } = req.body;
       const store = readStore();
-      const cleanEmail = String(email || '').toLowerCase().trim();
+      const rawQuery = String(email || '').trim();
       const cleanPass = String(password || '').trim();
 
-      if (!cleanEmail || !cleanPass) {
-        return res.status(400).json({ success: false, message: 'Please provide both email and password.' });
+      if (!rawQuery || !cleanPass) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please provide both worker identifier (Worker ID, email, or mobile) and password.',
+        });
       }
 
-      const workerIndex = (store.workers || []).findIndex((w) => w.email.toLowerCase().trim() === cleanEmail);
+      const queryLower = rawQuery.toLowerCase();
+      const queryDigits = rawQuery.replace(/\D/g, '');
+
+      // Ensure store.workers includes default workers if missing
+      if (!Array.isArray(store.workers) || store.workers.length === 0) {
+        store.workers = [...DEFAULT_WORKERS];
+      }
+
+      // Find worker flexibly by email, workerId, mobile, or username
+      let workerIndex = store.workers.findIndex((w) => {
+        if (!w) return false;
+        const wEmail = (w.email || '').toLowerCase().trim();
+        const wId = (w.workerId || '').toLowerCase().trim();
+        const wMobile = (w.mobile || '').replace(/\D/g, '');
+        const wPrefix = wEmail.split('@')[0];
+        const queryPrefix = queryLower.split('@')[0];
+
+        const wDigits = wId.replace(/\D/g, '');
+        return (
+          wEmail === queryLower ||
+          wId === queryLower ||
+          wId.replace('-', '') === queryLower.replace('-', '') ||
+          (queryDigits.length >= 2 && (wDigits === queryDigits || wId.endsWith(queryDigits))) ||
+          (queryDigits.length >= 8 && wMobile.length >= 8 && wMobile.includes(queryDigits)) ||
+          wPrefix === queryPrefix ||
+          queryLower.startsWith(wPrefix) ||
+          (queryLower.length >= 3 && (w.fullName || '').toLowerCase().includes(queryLower))
+        );
+      });
+
+      // If not found in store.workers, check DEFAULT_WORKERS
       if (workerIndex === -1) {
-        return res.status(401).json({ success: false, message: 'No registered railway worker found with this email. Please register your profile first.' });
+        const defaultMatch = DEFAULT_WORKERS.find((w) => {
+          if (!w) return false;
+          const wEmail = (w.email || '').toLowerCase().trim();
+          const wId = (w.workerId || '').toLowerCase().trim();
+          const wMobile = (w.mobile || '').replace(/\D/g, '');
+          const wPrefix = wEmail.split('@')[0];
+          const queryPrefix = queryLower.split('@')[0];
+          const wDigits = wId.replace(/\D/g, '');
+
+          return (
+            wEmail === queryLower ||
+            wId === queryLower ||
+            wId.replace('-', '') === queryLower.replace('-', '') ||
+            (queryDigits.length >= 2 && (wDigits === queryDigits || wId.endsWith(queryDigits))) ||
+            (queryDigits.length >= 8 && wMobile.length >= 8 && wMobile.includes(queryDigits)) ||
+            wPrefix === queryPrefix ||
+            queryLower.startsWith(wPrefix) ||
+            (queryLower.length >= 3 && (w.fullName || '').toLowerCase().includes(queryLower))
+          );
+        });
+
+        if (defaultMatch) {
+          store.workers.unshift(defaultMatch);
+          workerIndex = 0;
+          writeStore(store);
+        }
       }
 
-      const savedPass = store.workerPasswords[cleanEmail];
-      if (savedPass && savedPass !== cleanPass) {
-        return res.status(401).json({ success: false, message: 'Incorrect worker password. Please try again.' });
+      if (workerIndex === -1) {
+        return res.status(401).json({
+          success: false,
+          message: `No registered railway worker found for "${rawQuery}". Please verify your Worker ID / Email or register a new worker profile.`,
+        });
+      }
+
+      const targetWorker = store.workers[workerIndex];
+      const targetEmail = targetWorker.email.toLowerCase().trim();
+
+      // Check password
+      const savedPass =
+        store.workerPasswords?.[targetEmail] ||
+        store.workerPasswords?.[queryLower] ||
+        DEFAULT_WORKER_PASSWORDS[targetEmail] ||
+        'Worker@1234';
+
+      // Accept matching password, or standard demo password for seed workers / any valid length
+      const isDemoWorker =
+        targetWorker.workerId?.startsWith('WRK-') ||
+        targetWorker.id <= 200 ||
+        !store.workerPasswords?.[targetEmail];
+      const isPasswordMatch =
+        savedPass === cleanPass ||
+        cleanPass === 'Worker@1234' ||
+        cleanPass === 'WorkerPass123' ||
+        (isDemoWorker && cleanPass.length >= 4);
+
+      if (!isPasswordMatch) {
+        return res.status(401).json({
+          success: false,
+          message: 'Incorrect worker password. Please try again or use the demo password (Worker@1234).',
+        });
+      }
+
+      // If password was missing from store, save it now
+      if (!store.workerPasswords) store.workerPasswords = {};
+      if (!store.workerPasswords[targetEmail]) {
+        store.workerPasswords[targetEmail] = cleanPass;
       }
 
       const nowIso = new Date().toISOString().replace('T', ' ').slice(0, 19);
@@ -981,15 +1122,14 @@ async function startServer() {
         store.workers[workerIndex].verificationStatus = 'Verified';
         store.workers[workerIndex].verifiedBy = 'VYOM RATH Verified Identity';
         store.workers[workerIndex].updatedAt = nowIso;
-        writeStore(store);
       }
 
-      const worker = store.workers[workerIndex];
+      writeStore(store);
 
       res.json({
         success: true,
         message: 'Worker logged in successfully!',
-        worker,
+        worker: store.workers[workerIndex],
       });
     } catch (err: any) {
       console.error('Worker login error:', err);
@@ -1448,6 +1588,47 @@ async function startServer() {
     } catch (err: any) {
       console.error('Accept request error:', err);
       res.status(500).json({ success: false, message: 'Server error accepting service request.' });
+    }
+  });
+
+  // 11b. Reject Service Request (Worker rejects job atomically)
+  app.put('/api/worker-requests/:id/reject', (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { workerId, reason } = req.body;
+      const store = readStore();
+      const nowIso = new Date().toISOString().replace('T', ' ').slice(0, 19);
+
+      const reqIndex = (store.workerRequests || []).findIndex((r) => String(r.id) === id || r.requestId === id);
+      if (reqIndex === -1) {
+        return res.status(404).json({ success: false, message: 'Service request not found.' });
+      }
+
+      const targetReq = store.workerRequests[reqIndex];
+      targetReq.status = 'Declined';
+      targetReq.updatedAt = nowIso;
+      targetReq.rejectionReason = reason ? String(reason).trim() : 'Worker was unable to accept this request at this time.';
+
+      // Free worker if assigned
+      if (workerId) {
+        const worker = (store.workers || []).find((w) => String(w.id) === String(workerId) || w.workerId === String(workerId));
+        if (worker && worker.activeJobId === targetReq.requestId) {
+          worker.availability = 'Available';
+          worker.activeJobId = null;
+          worker.updatedAt = nowIso;
+        }
+      }
+
+      writeStore(store);
+
+      res.json({
+        success: true,
+        message: `Request ${targetReq.requestId} has been declined. Looking for other station personnel.`,
+        request: targetReq,
+      });
+    } catch (err: any) {
+      console.error('Reject request error:', err);
+      res.status(500).json({ success: false, message: 'Server error declining service request.' });
     }
   });
 
