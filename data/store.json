@@ -6,7 +6,7 @@
       "email": "admin@railcare.gov.in",
       "mobile": "9876543210",
       "isAdmin": true,
-      "updatedAt": "2026-10-24T11:34:25.137Z"
+      "updatedAt": "2026-10-24T11:57:49.225Z"
     },
     {
       "id": 1792163973952,
@@ -14,7 +14,7 @@
       "email": "rahul@test.com",
       "mobile": "9876543210",
       "isAdmin": false,
-      "updatedAt": "2026-10-24T11:34:25.139Z"
+      "updatedAt": "2026-10-24T11:57:49.225Z"
     },
     {
       "id": 1792312573530,
@@ -22,7 +22,7 @@
       "email": "varadmanwelikar45@gmail.com",
       "mobile": "1234567890",
       "isAdmin": false,
-      "updatedAt": "2026-10-24T11:34:25.139Z"
+      "updatedAt": "2026-10-24T11:57:49.225Z"
     }
   ],
   "passwords": {
@@ -110,7 +110,7 @@
       "rating": 5,
       "totalJobsCompleted": 0,
       "createdAt": "2026-10-23 13:01:48",
-      "updatedAt": "2026-10-24T11:34:25.140Z"
+      "updatedAt": "2026-10-24T11:57:49.225Z"
     },
     {
       "id": 1792674476520,
@@ -140,7 +140,7 @@
       "rating": 5,
       "totalJobsCompleted": 0,
       "createdAt": "2026-10-22 13:07:56",
-      "updatedAt": "2026-10-24T11:34:25.140Z"
+      "updatedAt": "2026-10-24T11:57:49.225Z"
     },
     {
       "id": 1792673714422,
@@ -170,7 +170,7 @@
       "rating": 5,
       "totalJobsCompleted": 0,
       "createdAt": "2026-10-22 12:55:14",
-      "updatedAt": "2026-10-24T11:34:25.140Z"
+      "updatedAt": "2026-10-24T11:57:49.226Z"
     },
     {
       "id": 1792672766503,
@@ -200,7 +200,7 @@
       "rating": 5,
       "totalJobsCompleted": 0,
       "createdAt": "2026-10-22 12:39:26",
-      "updatedAt": "2026-10-24T11:34:25.140Z"
+      "updatedAt": "2026-10-24T11:57:49.226Z"
     },
     {
       "id": 1792591452680,
@@ -230,7 +230,7 @@
       "rating": 5,
       "totalJobsCompleted": 0,
       "createdAt": "2026-10-21 14:04:12",
-      "updatedAt": "2026-10-24T11:34:25.140Z"
+      "updatedAt": "2026-10-24T11:57:49.226Z"
     },
     {
       "id": 1792312505760,
@@ -258,7 +258,7 @@
       "rating": 5,
       "totalJobsCompleted": 1,
       "createdAt": "2026-10-18 08:35:05",
-      "updatedAt": "2026-10-24T11:34:25.141Z",
+      "updatedAt": "2026-10-24T11:57:49.226Z",
       "verificationDate": "2026-10-18 08:48:11",
       "verifiedBy": "RailCare Verified Identity",
       "activeJobId": null
@@ -295,8 +295,8 @@
       "rating": 4.9,
       "totalJobsCompleted": 142,
       "createdAt": "2026-09-15 08:30:00",
-      "activeJobId": "BK-5004",
-      "updatedAt": "2026-10-24T11:34:25.141Z"
+      "activeJobId": "BK-9936",
+      "updatedAt": "2026-10-24 12:05:30"
     },
     {
       "id": 102,
@@ -329,7 +329,7 @@
       "rating": 4.8,
       "totalJobsCompleted": 98,
       "createdAt": "2026-09-20 10:15:00",
-      "updatedAt": "2026-10-24T11:34:25.142Z"
+      "updatedAt": "2026-10-24T11:57:49.226Z"
     },
     {
       "id": 103,
@@ -363,7 +363,7 @@
       "rating": 4.95,
       "totalJobsCompleted": 210,
       "createdAt": "2026-08-10 11:00:00",
-      "updatedAt": "2026-10-24T11:34:25.142Z"
+      "updatedAt": "2026-10-24T11:57:49.226Z"
     },
     {
       "id": 104,
@@ -396,7 +396,7 @@
       "rating": 4.75,
       "totalJobsCompleted": 85,
       "createdAt": "2026-10-01 09:40:00",
-      "updatedAt": "2026-10-24T11:34:25.142Z"
+      "updatedAt": "2026-10-24T11:57:49.226Z"
     },
     {
       "id": 105,
@@ -428,7 +428,7 @@
       "rating": 4.9,
       "totalJobsCompleted": 167,
       "createdAt": "2026-09-05 14:20:00",
-      "updatedAt": "2026-10-24T11:34:25.142Z"
+      "updatedAt": "2026-10-24T11:57:49.226Z"
     },
     {
       "id": 106,
@@ -462,7 +462,7 @@
       "rating": 5,
       "totalJobsCompleted": 120,
       "createdAt": "2026-08-01 07:00:00",
-      "updatedAt": "2026-10-24T11:34:25.142Z"
+      "updatedAt": "2026-10-24T11:57:49.226Z"
     },
     {
       "id": 107,
@@ -495,7 +495,7 @@
       "rating": 4.85,
       "totalJobsCompleted": 114,
       "createdAt": "2026-09-10 11:20:00",
-      "updatedAt": "2026-10-24T11:34:25.143Z"
+      "updatedAt": "2026-10-24T11:57:49.226Z"
     },
     {
       "id": 108,
@@ -526,22 +526,22 @@
       "createdAt": "2026-10-15 14:00:00",
       "verificationDate": "2026-10-18 08:58:43",
       "verifiedBy": "RailCare Verified Identity",
-      "updatedAt": "2026-10-24T11:34:25.143Z",
+      "updatedAt": "2026-10-24T11:57:49.226Z",
       "activeJobId": "BK-5002",
       "reviews": [
         {
-          "passengerName": "Rahul Sharma",
-          "id": 1792416777913,
-          "workerId": 108,
           "requestId": "BK-5002",
+          "rating": 5,
+          "workerId": 108,
           "tags": [
             "⚡ Rapid Arrival",
             "🤝 Courteous & Humble"
           ],
           "comment": "Deepak arrived right at platform 2. Extremely helpful!",
+          "createdAt": "2026-10-19 13:32:57",
+          "id": 1792416777913,
           "passengerId": 101,
-          "rating": 5,
-          "createdAt": "2026-10-19 13:32:57"
+          "passengerName": "Rahul Sharma"
         }
       ]
     }
@@ -565,6 +565,29 @@
   },
   "workerRequests": [
     {
+      "assignedWorkerId": 101,
+      "requestId": "BK-9936",
+      "id": 1792843175003,
+      "assignedWorkerMobile": "9871122334",
+      "stationCode": "CSMT",
+      "stationName": "Chhatrapati Shivaji Maharaj Terminus",
+      "passengerEmail": "varadmanwelikar45@gmail.com",
+      "trainName": "Sealdah Bikaner Duronto Express",
+      "expectedArrivalTime": "16:45 PM",
+      "description": "Hhhhg",
+      "passengerId": 1792591155268,
+      "serviceCategory": "Coach Cleaning & Housekeeping Worker",
+      "seatNumber": "Berth 24",
+      "passengerName": "varad manwelikar",
+      "status": "Worker Assigned",
+      "trainNumber": "12259",
+      "assignedWorkerName": "Ramesh Kumar Verma",
+      "passengerMobile": "9638527410",
+      "coachNumber": "B3",
+      "updatedAt": "2026-10-24 12:05:30",
+      "createdAt": "2026-10-24 11:59:35"
+    },
+    {
       "id": 1792841665136,
       "requestId": "BK-5004",
       "passengerId": 1,
@@ -584,7 +607,7 @@
       "assignedWorkerName": "Ramesh Kumar Verma",
       "assignedWorkerMobile": "9871122334",
       "createdAt": "2026-10-24 11:34:25",
-      "updatedAt": "2026-10-24T11:34:25.143Z"
+      "updatedAt": "2026-10-24T11:57:49.227Z"
     },
     {
       "id": 1792761891389,
@@ -606,7 +629,7 @@
       "assignedWorkerName": "Ramesh Kumar Verma",
       "assignedWorkerMobile": "9871122334",
       "createdAt": "2026-10-23 13:24:51",
-      "updatedAt": "2026-10-24T11:34:25.143Z",
+      "updatedAt": "2026-10-24T11:57:49.227Z",
       "rejectionReason": "Currently attending emergency AC failure on Rajdhani"
     },
     {
@@ -629,20 +652,20 @@
       "assignedWorkerName": "Deepak Subhash Chougule",
       "assignedWorkerMobile": "9890123456",
       "createdAt": "2026-10-19 13:32:32",
-      "updatedAt": "2026-10-24T11:34:25.143Z",
+      "updatedAt": "2026-10-24T11:57:49.227Z",
       "feedback": {
+        "comment": "Deepak arrived right at platform 2. Extremely helpful!",
+        "passengerId": 101,
+        "id": 1792416777913,
+        "createdAt": "2026-10-19 13:32:57",
+        "rating": 5,
         "tags": [
           "⚡ Rapid Arrival",
           "🤝 Courteous & Humble"
         ],
-        "comment": "Deepak arrived right at platform 2. Extremely helpful!",
-        "requestId": "BK-5002",
         "passengerName": "Rahul Sharma",
         "workerId": 108,
-        "id": 1792416777913,
-        "createdAt": "2026-10-19 13:32:57",
-        "rating": 5,
-        "passengerId": 101
+        "requestId": "BK-5002"
       }
     },
     {
@@ -666,7 +689,7 @@
       "assignedWorkerName": "ADITYA NAWADE",
       "assignedWorkerMobile": "8790654312",
       "createdAt": "2026-10-18 08:37:43",
-      "updatedAt": "2026-10-24T11:34:25.143Z",
+      "updatedAt": "2026-10-24T11:57:49.227Z",
       "completedAt": "2026-10-18 08:51:38"
     }
   ],

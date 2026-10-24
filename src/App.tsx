@@ -1117,6 +1117,61 @@ export default function App() {
 
   const handleAcceptWorkerRequest = async (requestId: string) => {
     if (!currentWorker) return { success: false, message: 'No worker logged in.' };
+    const nowIso = new Date().toISOString().replace('T', ' ').slice(0, 19);
+
+    // 1. Optimistically update local requests and worker status immediately (0ms UI latency)
+    setWorkerRequests((prev) =>
+      prev.map((r) =>
+        r.requestId === requestId || String(r.id) === requestId
+          ? {
+              ...r,
+              status: 'Worker Assigned',
+              assignedWorkerId: currentWorker.id,
+              assignedWorkerName: currentWorker.fullName,
+              assignedWorkerMobile: currentWorker.mobile,
+              updatedAt: nowIso,
+            }
+          : r
+      )
+    );
+
+    const updatedWorker: Worker = {
+      ...currentWorker,
+      availability: 'Busy',
+      activeJobId: requestId,
+      updatedAt: nowIso,
+    };
+    setCurrentWorker(updatedWorker);
+    try {
+      localStorage.setItem('railcare_current_worker', JSON.stringify(updatedWorker));
+    } catch (e) {}
+
+    // 2. Direct real-time write to Cloud Firestore so passenger's device updates instantly via onSnapshot
+    if (db) {
+      setDoc(
+        doc(db, 'worker_requests', requestId),
+        sanitizeFirestorePayload({
+          status: 'Worker Assigned',
+          assignedWorkerId: currentWorker.id,
+          assignedWorkerName: currentWorker.fullName,
+          assignedWorkerMobile: currentWorker.mobile,
+          updatedAt: nowIso,
+        }),
+        { merge: true }
+      ).catch(() => {});
+
+      setDoc(
+        doc(db, 'workers', String(currentWorker.id)),
+        sanitizeFirestorePayload({
+          availability: 'Busy',
+          activeJobId: requestId,
+          updatedAt: nowIso,
+        }),
+        { merge: true }
+      ).catch(() => {});
+    }
+
+    // 3. Dual sync to backend server
     try {
       const res = await fetch(`/api/worker-requests/${requestId}/accept`, {
         method: 'PUT',
@@ -1127,20 +1182,42 @@ export default function App() {
           workerMobile: currentWorker.mobile,
         }),
       });
-      const data = await res.json();
-      if (res.ok && data.success) {
+      if (res.ok) {
         fetchWorkerRequestsFromServer();
         fetchWorkersFromServer();
-        setToast({ message: `Accepted service request #${requestId}!`, type: 'success' });
-        return { success: true, message: 'Accepted successfully' };
       }
-      return { success: false, message: data.message || 'Failed to accept request.' };
-    } catch (e: any) {
-      return { success: false, message: 'Network error accepting request.' };
+    } catch (e) {
+      console.warn('Backend accept sync notice (Firestore real-time sync active):', e);
     }
+
+    setToast({ message: `Accepted service request #${requestId}! Proceed to passenger coach.`, type: 'success' });
+    return { success: true, message: 'Accepted successfully' };
   };
 
   const handleRejectWorkerRequest = async (requestId: string, reason?: string) => {
+    const nowIso = new Date().toISOString().replace('T', ' ').slice(0, 19);
+
+    // Optimistically mark declined locally
+    setWorkerRequests((prev) =>
+      prev.map((r) =>
+        r.requestId === requestId || String(r.id) === requestId
+          ? { ...r, status: 'Declined' as WorkerRequestStatus, rejectionReason: reason || 'Declined by worker', updatedAt: nowIso }
+          : r
+      )
+    );
+
+    if (db) {
+      setDoc(
+        doc(db, 'worker_requests', requestId),
+        sanitizeFirestorePayload({
+          status: 'Declined',
+          rejectionReason: reason || 'Declined by worker',
+          updatedAt: nowIso,
+        }),
+        { merge: true }
+      ).catch(() => {});
+    }
+
     try {
       const res = await fetch(`/api/worker-requests/${requestId}/reject`, {
         method: 'PUT',
@@ -1150,22 +1227,12 @@ export default function App() {
           reason: reason || 'Worker was unavailable at the requested time.',
         }),
       });
-      const data = await res.json();
-      if (res.ok && data.success) {
+      if (res.ok) {
         fetchWorkerRequestsFromServer();
         fetchWorkersFromServer();
-        setToast({ message: `Service request #${requestId} declined.`, type: 'info' });
-        return { success: true, message: 'Declined successfully' };
       }
     } catch (e: any) {}
-    // Fallback local update
-    setWorkerRequests((prev) =>
-      prev.map((r) =>
-        r.requestId === requestId || String(r.id) === requestId
-          ? { ...r, status: 'Declined' as WorkerRequestStatus, rejectionReason: reason || 'Declined by worker' }
-          : r
-      )
-    );
+
     setToast({ message: `Service request #${requestId} declined.`, type: 'info' });
     return { success: true, message: 'Declined successfully' };
   };
@@ -1175,23 +1242,72 @@ export default function App() {
     newStatus: WorkerRequestStatus,
     completionNotes?: string
   ) => {
+    const nowIso = new Date().toISOString().replace('T', ' ').slice(0, 19);
+
+    // 1. Optimistic local state update
+    setWorkerRequests((prev) =>
+      prev.map((r) =>
+        r.requestId === requestId || String(r.id) === requestId
+          ? {
+              ...r,
+              status: newStatus,
+              completionNotes: completionNotes || r.completionNotes,
+              updatedAt: nowIso,
+              ...(newStatus === 'Completed' ? { completedAt: nowIso } : {}),
+            }
+          : r
+      )
+    );
+
+    if (newStatus === 'Completed' && currentWorker) {
+      const updatedWorker: Worker = {
+        ...currentWorker,
+        availability: 'Available',
+        activeJobId: null,
+        totalJobsCompleted: (currentWorker.totalJobsCompleted || 0) + 1,
+        updatedAt: nowIso,
+      };
+      setCurrentWorker(updatedWorker);
+      try {
+        localStorage.setItem('railcare_current_worker', JSON.stringify(updatedWorker));
+      } catch (e) {}
+
+      if (db) {
+        setDoc(doc(db, 'workers', String(currentWorker.id)), sanitizeFirestorePayload(updatedWorker), { merge: true }).catch(() => {});
+      }
+    }
+
+    // 2. Direct Cloud Firestore broadcast
+    if (db) {
+      setDoc(
+        doc(db, 'worker_requests', requestId),
+        sanitizeFirestorePayload({
+          status: newStatus,
+          completionNotes: completionNotes || undefined,
+          updatedAt: nowIso,
+          ...(newStatus === 'Completed' ? { completedAt: nowIso } : {}),
+        }),
+        { merge: true }
+      ).catch(() => {});
+    }
+
+    // 3. Backend server sync
     try {
       const res = await fetch(`/api/worker-requests/${requestId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus, completionNotes }),
       });
-      const data = await res.json();
-      if (res.ok && data.success) {
+      if (res.ok) {
         fetchWorkerRequestsFromServer();
         fetchWorkersFromServer();
-        setToast({ message: `Service request #${requestId} marked as "${newStatus}".`, type: 'success' });
-        return { success: true, message: 'Updated successfully' };
       }
-      return { success: false, message: data.message || 'Failed to update request.' };
     } catch (e: any) {
-      return { success: false, message: 'Network error updating request status.' };
+      console.warn('Status update sync notice (Firestore real-time sync active):', e);
     }
+
+    setToast({ message: `Service request #${requestId} marked as "${newStatus}".`, type: 'success' });
+    return { success: true, message: 'Updated successfully' };
   };
 
   const handleSubmitWorkerRequest = async (requestData: any) => {
