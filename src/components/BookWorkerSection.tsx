@@ -133,6 +133,10 @@ export const BookWorkerSection: React.FC<BookWorkerSectionProps> = ({
     setSubmitting(true);
     try {
       const res = await onSubmitRequest({
+        passengerId: currentUser?.id,
+        passengerName: currentUser?.fullName,
+        passengerEmail: currentUser?.email,
+        passengerMobile: currentUser?.mobile,
         serviceCategory,
         requestedSkill: selectedSkill || undefined,
         stationCode: selectedStation.code,
@@ -145,10 +149,12 @@ export const BookWorkerSection: React.FC<BookWorkerSectionProps> = ({
         seatNumber: seatNumber.trim() || undefined,
         description: description.trim(),
         selectedWorkerId: selectedWorkerId || undefined,
+        assignedWorkerId: selectedWorkerId || undefined,
       });
 
       if (res && res.success) {
-        setBookingConfirmedSuccess(`Booking #${res.bookingId || 'CONFIRMED'} created successfully!`);
+        const confirmedId = res.bookingId || res.requestId || 'CONFIRMED';
+        setBookingConfirmedSuccess(`Booking #${confirmedId} created successfully!`);
         setTimeout(() => {
           if (onSuccessRedirect) {
             onSuccessRedirect();

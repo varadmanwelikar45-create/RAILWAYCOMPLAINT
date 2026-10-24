@@ -258,11 +258,11 @@
       "verificationStatus": "Verified",
       "verificationDate": "2026-09-15 08:30:00",
       "verifiedBy": "RailCare Verified Identity",
-      "availability": "Available",
+      "availability": "Busy",
       "rating": 4.9,
       "totalJobsCompleted": 142,
       "createdAt": "2026-09-15 08:30:00",
-      "activeJobId": null,
+      "activeJobId": "BK-5004",
       "updatedAt": "2026-10-23 13:25:00"
     },
     {
@@ -525,6 +525,28 @@
   },
   "workerRequests": [
     {
+      "id": 1792841665136,
+      "requestId": "BK-5004",
+      "passengerId": 1,
+      "passengerName": "Varad Manwelikar",
+      "passengerEmail": "varadmanwelikar45@gmail.com",
+      "passengerMobile": "9876543210",
+      "trainNumber": "12259",
+      "trainName": "Sealdah Duronto Express",
+      "coachNumber": "B3",
+      "seatNumber": "Berth 24",
+      "stationCode": "NDLS",
+      "stationName": "New Delhi Junction",
+      "serviceCategory": "Coach Electrician & AC Technician",
+      "description": "AC blower speed issue and berth lamp repair",
+      "status": "Worker Assigned",
+      "assignedWorkerId": 101,
+      "assignedWorkerName": "Ramesh Kumar Verma",
+      "assignedWorkerMobile": "9871122334",
+      "createdAt": "2026-10-24 11:34:25",
+      "updatedAt": "2026-10-24 11:34:25"
+    },
+    {
       "id": 1792761891389,
       "requestId": "BK-5003",
       "passengerId": 1,
@@ -609,7 +631,7 @@
     }
   ],
   "workerCounter": 122,
-  "requestCounter": 5003,
+  "requestCounter": 5004,
   "stations": [
     {
       "code": "NDLS",

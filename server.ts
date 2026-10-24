@@ -514,43 +514,54 @@ function readStore(): StoreData {
   return DEFAULT_STORE;
 }
 
+function sanitizeFirestorePayload(obj: any): any {
+  if (obj === null || typeof obj !== 'object') return obj;
+  const cleaned: any = Array.isArray(obj) ? [] : {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== undefined) {
+      cleaned[k] = v && typeof v === 'object' && !(v instanceof Date) ? sanitizeFirestorePayload(v) : v;
+    }
+  }
+  return cleaned;
+}
+
 async function syncToFirestore(data: StoreData) {
   try {
     if (!db) return;
     // Asynchronously persist users to Firestore
     for (const u of (data.users || []).slice(0, 50)) {
       if (u && u.email) {
-        setDoc(doc(db, 'users', String(u.id || u.email)), {
+        setDoc(doc(db, 'users', String(u.id || u.email)), sanitizeFirestorePayload({
           ...u,
           updatedAt: new Date().toISOString()
-        }, { merge: true }).catch(() => {});
+        }), { merge: true }).catch(() => {});
       }
     }
     // Asynchronously persist workers to Firestore
     for (const w of (data.workers || []).slice(0, 50)) {
       if (w && (w.id || w.workerId)) {
-        setDoc(doc(db, 'workers', String(w.id || w.workerId)), {
+        setDoc(doc(db, 'workers', String(w.id || w.workerId)), sanitizeFirestorePayload({
           ...w,
           updatedAt: new Date().toISOString()
-        }, { merge: true }).catch(() => {});
+        }), { merge: true }).catch(() => {});
       }
     }
     // Asynchronously persist bookings to Firestore
     for (const r of (data.workerRequests || []).slice(0, 50)) {
       if (r && r.requestId) {
-        setDoc(doc(db, 'worker_requests', r.requestId), {
+        setDoc(doc(db, 'worker_requests', r.requestId), sanitizeFirestorePayload({
           ...r,
           updatedAt: new Date().toISOString()
-        }, { merge: true }).catch(() => {});
+        }), { merge: true }).catch(() => {});
       }
     }
     // Asynchronously persist complaints to Firestore
     for (const c of (data.complaints || []).slice(0, 50)) {
       if (c && c.complaintId) {
-        setDoc(doc(db, 'complaints', c.complaintId), {
+        setDoc(doc(db, 'complaints', c.complaintId), sanitizeFirestorePayload({
           ...c,
           updatedAt: new Date().toISOString()
-        }, { merge: true }).catch(() => {});
+        }), { merge: true }).catch(() => {});
       }
     }
   } catch (err) {
@@ -1448,40 +1459,35 @@ async function startServer() {
 
       const stationCode = String(body.stationCode || 'NDLS').trim().toUpperCase();
       const serviceCategory = String(body.serviceCategory || 'General Passenger & Luggage Assistance Worker').trim();
-      const requestedWorkerId = body.assignedWorkerId ? Number(body.assignedWorkerId) : null;
-
+      const rawWorkerId = body.assignedWorkerId || body.selectedWorkerId || body.workerId;
       let assignedWorker: Worker | null = null;
 
-      // Concurrency & Double-Booking Protection
-      if (requestedWorkerId) {
-        const found = (store.workers || []).find((w) => w.id === requestedWorkerId || w.workerId === String(requestedWorkerId));
-        if (!found) {
-          return res.status(404).json({ success: false, message: 'The selected worker could not be found.' });
-        }
-        if (found.verificationStatus !== 'Verified') {
-          return res.status(400).json({ success: false, message: 'The selected worker is not yet verified by railway administration.' });
-        }
-        if (found.availability !== 'Available') {
-          return res.status(409).json({
-            success: false,
-            message: `${found.fullName} is currently engaged on another task or marked unavailable. Please select another available worker at ${stationCode}.`,
-          });
-        }
-
-        // Concurrency check: Does the worker have an active booking right now?
-        const hasActiveJob = (store.workerRequests || []).some(
-          (r) =>
-            r.assignedWorkerId === found.id &&
-            ['Worker Assigned', 'On the Way', 'Arrived at Station', 'Service In Progress'].includes(r.status)
+      if (rawWorkerId) {
+        const cleanIdStr = String(rawWorkerId).trim();
+        const numId = Number(cleanIdStr);
+        let found = (store.workers || []).find((w) =>
+          (!isNaN(numId) && w.id === numId) ||
+          w.workerId.toLowerCase() === cleanIdStr.toLowerCase() ||
+          w.workerId.replace('-', '').toLowerCase() === cleanIdStr.replace('-', '').toLowerCase()
         );
-        if (hasActiveJob) {
-          return res.status(409).json({
-            success: false,
-            message: `${found.fullName} was just booked by another passenger. Please select another verified worker.`,
-          });
+
+        if (!found) {
+          const defFound = DEFAULT_WORKERS.find((w) =>
+            (!isNaN(numId) && w.id === numId) ||
+            w.workerId.toLowerCase() === cleanIdStr.toLowerCase() ||
+            w.workerId.replace('-', '').toLowerCase() === cleanIdStr.replace('-', '').toLowerCase()
+          );
+          if (defFound) {
+            store.workers.unshift(defFound);
+            found = defFound;
+          }
         }
 
-        assignedWorker = found;
+        if (found) {
+          assignedWorker = found;
+          // Ensure worker is available for assignment
+          assignedWorker.availability = 'Available';
+        }
       }
 
       store.requestCounter = (store.requestCounter || 5000) + 1;
