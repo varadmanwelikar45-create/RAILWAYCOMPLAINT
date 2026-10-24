@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="rathGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#65D6B0" />
+      <stop offset="100%" stop-color="#00B8D9" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="#202A2B" />
+  <!-- Speed Lines -->
+  <path d="M10 24h10M6 32h16M10 40h10" stroke="#65D6B0" stroke-width="2.5" stroke-linecap="round" opacity="0.6" />
+  <!-- Streamlined Train Nose -->
+  <path d="M26 18c6-2 14-2 20 2l8 8c3 3 4 8 4 12v6c0 3-2 5-5 5H28c-4 0-7-3-7-7V25c0-4 2-6 5-7z" fill="url(#rathGrad)" />
+  <!-- Windshield -->
+  <path d="M34 22c5-1 11-1 15 2l4 4H32l2-6z" fill="#202A2B" />
+  <!-- Headlights -->
+  <circle cx="48" cy="42" r="3" fill="#FFFFFF" />
+  <circle cx="34" cy="42" r="2" fill="#FFFFFF" opacity="0.8" />
+  <!-- Rail Track -->
+  <path d="M12 55h44" stroke="#65D6B0" stroke-width="2.5" stroke-linecap="round" />
+</svg>

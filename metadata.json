@@ -1,6 +1,6 @@
 {
   "name": "RailCare — Railway Complaint Management System",
-  "description": "On-demand railway passenger assistance and gig workforce network platform featuring live mutual location tracking, direct coach service dispatch, and responsive passenger coordination.",
+  "description": "Report a railway issue and get help at your coach. Book verified station specialists, track assistance live on platform, and resolve grievances fast.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

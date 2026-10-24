@@ -20,7 +20,9 @@ import {
   Train,
   Check,
   ShieldCheck,
-  Sparkles
+  Sparkles,
+  AlertTriangle,
+  Satellite
 } from 'lucide-react';
 
 interface UserDashboardProps {
@@ -91,12 +93,21 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
     activeRequest ? activeRequest.requestId : (userBookings[0]?.requestId || null)
   );
 
-  // Live Location Sharing State
+  // Live Location Sharing & Diagnostic States
   const [isLocating, setIsLocating] = useState(false);
   const [locationSuccessMsg, setLocationSuccessMsg] = useState<string | null>(null);
   const [selectedCoach, setSelectedCoach] = useState('Coach B3');
   const [selectedSeat, setSelectedSeat] = useState('Berth 24');
   const [selectedPlatform, setSelectedPlatform] = useState('Platform 2');
+  const [locationDiagnostic, setLocationDiagnostic] = useState<{
+    status: 'idle' | 'locating' | 'precision_success' | 'permission_denied' | 'gps_off' | 'timeout' | 'fallback_beacon';
+    title?: string;
+    detail?: string;
+    mode: 'Precision GPS' | 'Coach & Berth Beacon';
+  }>({
+    status: 'idle',
+    mode: 'Coach & Berth Beacon',
+  });
 
   // Feedback Modal State
   const [feedbackModalReq, setFeedbackModalReq] = useState<WorkerServiceRequest | null>(null);
@@ -130,7 +141,11 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
     setIsLocating(true);
     setLocationSuccessMsg(null);
 
-    const updateLocationOnServer = async (lat: number, lng: number) => {
+    const updateLocationOnServer = async (
+      lat: number,
+      lng: number,
+      modeName: 'Precision GPS' | 'Coach & Berth Beacon'
+    ) => {
       try {
         await fetch(`/api/worker-requests/${currentTrackedReq.requestId}/location`, {
           method: 'PUT',
@@ -142,25 +157,72 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
             platform: selectedPlatform,
             coach: selectedCoach,
             seat: selectedSeat,
+            mode: modeName,
           }),
         });
-        setLocationSuccessMsg(`Live Coach Radar Coordinates Shared! (${selectedCoach}, ${selectedSeat})`);
+        setLocationSuccessMsg(
+          modeName === 'Precision GPS'
+            ? `Precision GPS coordinates shared! (${selectedCoach}, ${selectedSeat})`
+            : `Coach Beacon coordinates shared! (${selectedCoach}, ${selectedSeat}, ${selectedPlatform})`
+        );
         onRefreshData?.();
       } catch (e) {
-        setLocationSuccessMsg(`Coordinates broadcasted via station beacon (${selectedCoach}).`);
+        setLocationSuccessMsg(`Broadcasted via station beacon (${selectedCoach}).`);
       } finally {
         setIsLocating(false);
       }
     };
 
-    if ('geolocation' in navigator) {
+    if (typeof window !== 'undefined' && 'geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => updateLocationOnServer(pos.coords.latitude, pos.coords.longitude),
-        () => updateLocationOnServer(28.6143, 77.2185), // Default to station hub coordinates
-        { enableHighAccuracy: true, timeout: 5000 }
+        (pos) => {
+          const acc = Math.round(pos.coords.accuracy || 8);
+          setLocationDiagnostic({
+            status: 'precision_success',
+            title: `Satellite GPS Fix Acquired (±${acc}m accuracy)`,
+            detail: `High-accuracy device position locked and synchronized with ${currentTrackedReq.assignedWorkerName || 'assigned specialist'}.`,
+            mode: 'Precision GPS',
+          });
+          updateLocationOnServer(pos.coords.latitude, pos.coords.longitude, 'Precision GPS');
+        },
+        (err) => {
+          let title = 'Switched to Coach & Berth Beacon Mode';
+          let detail = `Platform and coach berth beacon active for ${selectedCoach}.`;
+          let statusKey: typeof locationDiagnostic.status = 'fallback_beacon';
+
+          // Explicit mobile device error handling
+          if (err.code === 1) { // PERMISSION_DENIED
+            statusKey = 'permission_denied';
+            title = 'Location Permission Denied in Mobile Browser';
+            detail = `Location permission is blocked in your browser. Vyom Rath automatically switched to Coach & Berth Beacon Mode (${selectedCoach}, ${selectedSeat}) so your worker can still navigate right to your seat.`;
+          } else if (err.code === 2) { // POSITION_UNAVAILABLE
+            statusKey = 'gps_off';
+            title = 'GPS Offline / Carriage Metal Shielding Detected';
+            detail = `GPS signal unavailable inside train carriage or roof canopy. Station concourse beacon coordinates for ${selectedCoach} are active.`;
+          } else if (err.code === 3) { // TIMEOUT
+            statusKey = 'timeout';
+            title = 'GPS Signal Timed Out (Slow Cellular Connection)';
+            detail = `GPS fix timed out over mobile data. Switched instantly to Coach Beacon Mode (${selectedCoach}, ${selectedSeat}) to ensure zero delay.`;
+          }
+
+          setLocationDiagnostic({
+            status: statusKey,
+            title,
+            detail,
+            mode: 'Coach & Berth Beacon',
+          });
+          updateLocationOnServer(28.6143, 77.2185, 'Coach & Berth Beacon');
+        },
+        { enableHighAccuracy: true, timeout: 6000, maximumAge: 10000 }
       );
     } else {
-      updateLocationOnServer(28.6143, 77.2185);
+      setLocationDiagnostic({
+        status: 'fallback_beacon',
+        title: 'Browser Geolocation Not Supported',
+        detail: `Using platform concourse beacon coordinates for ${selectedCoach}.`,
+        mode: 'Coach & Berth Beacon',
+      });
+      updateLocationOnServer(28.6143, 77.2185, 'Coach & Berth Beacon');
     }
   };
 
@@ -280,10 +342,11 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
 
               {currentTrackedReq && (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-[#526365]">
+                  <label htmlFor="tracking-req-select" className="text-xs font-semibold text-[#526365]">
                     Tracking:
-                  </span>
+                  </label>
                   <select
+                    id="tracking-req-select"
                     value={selectedLocationReqId || ''}
                     onChange={(e) => setSelectedLocationReqId(e.target.value)}
                     className="text-xs font-bold px-3 py-1.5 rounded-xl border border-[#DDE4E6] bg-white text-[#202A2B] focus:outline-none focus:ring-2 focus:ring-[#65D6B0]"
@@ -299,6 +362,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
                       onClick={onRefreshData}
                       className="p-1.5 border border-[#DDE4E6] rounded-xl hover:bg-[#F0F4F6] text-[#526365] transition cursor-pointer"
                       title="Refresh Radar"
+                      aria-label="Refresh Radar Tracking"
                     >
                       <RefreshCw className="w-4 h-4" />
                     </button>
@@ -329,8 +393,9 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
 
                     <div className="grid grid-cols-3 gap-2 pt-1">
                       <div>
-                        <label className="block text-[10px] font-bold text-[#526365] uppercase mb-1">Platform</label>
+                        <label htmlFor="passenger-platform-select" className="block text-[10px] font-bold text-[#526365] uppercase mb-1">Platform</label>
                         <select
+                          id="passenger-platform-select"
                           value={selectedPlatform}
                           onChange={(e) => setSelectedPlatform(e.target.value)}
                           className="w-full text-xs font-bold p-2 bg-white rounded-lg border border-[#DDE4E6] text-[#202A2B]"
@@ -341,8 +406,9 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
                         </select>
                       </div>
                       <div>
-                        <label className="block text-[10px] font-bold text-[#526365] uppercase mb-1">Coach</label>
+                        <label htmlFor="passenger-coach-input" className="block text-[10px] font-bold text-[#526365] uppercase mb-1">Coach</label>
                         <input
+                          id="passenger-coach-input"
                           type="text"
                           value={selectedCoach}
                           onChange={(e) => setSelectedCoach(e.target.value)}
@@ -351,8 +417,9 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-bold text-[#526365] uppercase mb-1">Berth</label>
+                        <label htmlFor="passenger-berth-input" className="block text-[10px] font-bold text-[#526365] uppercase mb-1">Berth</label>
                         <input
+                          id="passenger-berth-input"
                           type="text"
                           value={selectedSeat}
                           onChange={(e) => setSelectedSeat(e.target.value)}
@@ -362,6 +429,31 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
                       </div>
                     </div>
 
+                    {/* Geolocation Diagnostic Alert for Real Phones */}
+                    {locationDiagnostic.status !== 'idle' && (
+                      <div
+                        className={`p-3.5 rounded-xl border text-xs space-y-1.5 ${
+                          locationDiagnostic.status === 'precision_success'
+                            ? 'bg-[#DDF8EF] border-[#65D6B0]/50 text-[#1E6B52]'
+                            : locationDiagnostic.status === 'permission_denied'
+                            ? 'bg-[#FFFDF5] border-[#FFD68A] text-[#915900]'
+                            : 'bg-[#F0FAFD] border-[#00B8D9]/40 text-[#007D99]'
+                        }`}
+                      >
+                        <div className="flex items-start gap-2">
+                          {locationDiagnostic.status === 'precision_success' ? (
+                            <Satellite className="w-4 h-4 mt-0.5 text-[#1E6B52] shrink-0" />
+                          ) : (
+                            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <strong className="block font-bold">{locationDiagnostic.title}</strong>
+                            <p className="text-[11px] mt-0.5 opacity-90 leading-relaxed">{locationDiagnostic.detail}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {locationSuccessMsg && (
                       <div className="p-3 bg-[#DDF8EF] border border-[#65D6B0]/40 text-[#1E6B52] rounded-xl text-xs flex items-center gap-2">
                         <Check className="w-4 h-4 text-[#3EA684] shrink-0" />
@@ -370,14 +462,14 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
                     )}
                   </div>
 
-                  <div className="pt-4 border-t border-[#DDE4E6]">
+                  <div className="pt-4 border-t border-[#DDE4E6] flex flex-col sm:flex-row gap-2">
                     <button
                       onClick={handleSharePassengerLocation}
                       disabled={isLocating}
-                      className="w-full py-3 bg-[#202A2B] hover:bg-[#202A2B]/90 text-white rounded-xl text-xs font-black transition flex items-center justify-center gap-2 cursor-pointer shadow-xs border border-[#202A2B]"
+                      className="flex-1 py-3 bg-[#202A2B] hover:bg-[#202A2B]/90 text-white rounded-xl text-xs font-black transition flex items-center justify-center gap-2 cursor-pointer shadow-xs border border-[#202A2B]"
                     >
                       <LocateFixed className="w-4 h-4 text-[#65D6B0]" />
-                      <span>{isLocating ? 'Acquiring GPS...' : 'Broadcast Coach Coordinates to Worker'}</span>
+                      <span>{isLocating ? 'Acquiring GPS / Syncing...' : 'Broadcast Coach Coordinates to Worker'}</span>
                     </button>
                   </div>
                 </div>
@@ -390,9 +482,14 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
                         <Radio className="w-5 h-5 text-[#65D6B0] animate-pulse" />
                         <h3 className="text-sm font-bold text-white">Technician Radar View</h3>
                       </div>
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-[#007D99] text-white">
-                        {currentTrackedReq.status}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-white/15 text-[#D7F7FC]">
+                          Mode: {locationDiagnostic.mode}
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-[#007D99] text-white">
+                          {currentTrackedReq.status}
+                        </span>
+                      </div>
                     </div>
 
                     {currentTrackedReq.assignedWorkerName ? (

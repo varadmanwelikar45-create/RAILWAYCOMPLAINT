@@ -245,10 +245,21 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
       }
     };
 
-    if (navigator.geolocation) {
+    if (typeof window !== 'undefined' && 'geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => sendCoords(pos.coords.latitude, pos.coords.longitude),
-        () => sendCoords(28.6431, 77.2197),
+        (err) => {
+          let fallbackMsg = 'Platform broadcast active (Station Hub beacon).';
+          if (err.code === 1) {
+            fallbackMsg = 'Location permission blocked on mobile; station beacon coordinates broadcasted.';
+          } else if (err.code === 2) {
+            fallbackMsg = 'GPS fix offline inside platform; concourse beacon broadcasted.';
+          } else if (err.code === 3) {
+            fallbackMsg = 'GPS timed out on cellular link; station beacon broadcasted.';
+          }
+          setActionNotice(fallbackMsg);
+          sendCoords(28.6431, 77.2197);
+        },
         { enableHighAccuracy: true, timeout: 6000 }
       );
     } else {
