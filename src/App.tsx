@@ -25,6 +25,18 @@ import { WorkerRegisterPage } from './components/WorkerRegisterPage';
 import { WorkerDashboard } from './components/WorkerDashboard';
 import { BookWorkerSection } from './components/BookWorkerSection';
 import { AlertCircle, CheckCircle, Info } from 'lucide-react';
+import { db, collection, doc, setDoc, onSnapshot } from './lib/firebase';
+
+function sanitizeFirestorePayload(obj: any): any {
+  if (obj === null || typeof obj !== 'object') return obj;
+  const cleaned: any = Array.isArray(obj) ? [] : {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== undefined) {
+      cleaned[k] = v && typeof v === 'object' && !(v instanceof Date) ? sanitizeFirestorePayload(v) : v;
+    }
+  }
+  return cleaned;
+}
 
 // Storage helpers with full sanitization and persistence
 const loadStoredCurrentUser = (): User | null => {
@@ -337,13 +349,98 @@ export default function App() {
     } catch (err) {}
   };
 
-  // On mount: fetch initial data and start continuous 3-second polling for real-time cross-device updates
+  // On mount: fetch initial data, hook real-time Firestore listeners, and run periodic heartbeat
   useEffect(() => {
     fetchComplaintsFromServer();
     fetchUsersFromServer();
     fetchWorkersFromServer();
     fetchWorkerRequestsFromServer();
 
+    let unsubscribeWorkers: (() => void) | undefined;
+    let unsubscribeRequests: (() => void) | undefined;
+
+    // Real-Time Cross-Device Synchronization via Cloud Firestore
+    if (db) {
+      try {
+        unsubscribeWorkers = onSnapshot(collection(db, 'workers'), (snapshot) => {
+          if (!snapshot.empty) {
+            const remoteWorkers: Worker[] = [];
+            snapshot.forEach((docSnap) => {
+              const data = docSnap.data() as Worker;
+              if (data && (data.id || data.workerId)) {
+                remoteWorkers.push(data);
+              }
+            });
+
+            if (remoteWorkers.length > 0) {
+              setWorkers((prev) => {
+                const map = new Map<string, Worker>();
+                prev.forEach((w) => map.set(String(w.id || w.workerId), w));
+                remoteWorkers.forEach((w) => map.set(String(w.id || w.workerId), w));
+                const merged = Array.from(map.values());
+                try {
+                  localStorage.setItem('railcare_workers', JSON.stringify(merged));
+                } catch (e) {}
+                return merged;
+              });
+
+              // Keep current worker in sync across laptop and phone in real time
+              setCurrentWorker((prevWorker) => {
+                if (!prevWorker) return null;
+                const updated = remoteWorkers.find(
+                  (w) =>
+                    (w.workerId && w.workerId === prevWorker.workerId) ||
+                    w.id === prevWorker.id ||
+                    (w.email && prevWorker.email && w.email.toLowerCase() === prevWorker.email.toLowerCase())
+                );
+                if (updated) {
+                  try {
+                    localStorage.setItem('railcare_current_worker', JSON.stringify(updated));
+                  } catch (e) {}
+                  return updated;
+                }
+                return prevWorker;
+              });
+            }
+          }
+        }, (err) => {
+          console.warn('Realtime workers listener warning:', err);
+        });
+      } catch (err) {}
+
+      try {
+        unsubscribeRequests = onSnapshot(collection(db, 'worker_requests'), (snapshot) => {
+          if (!snapshot.empty) {
+            const remoteReqs: WorkerServiceRequest[] = [];
+            snapshot.forEach((docSnap) => {
+              const data = docSnap.data() as WorkerServiceRequest;
+              if (data && data.requestId) {
+                remoteReqs.push(data);
+              }
+            });
+
+            if (remoteReqs.length > 0) {
+              setWorkerRequests((prev) => {
+                const map = new Map<string, WorkerServiceRequest>();
+                prev.forEach((r) => map.set(r.requestId, r));
+                remoteReqs.forEach((r) => map.set(r.requestId, r));
+                const merged = Array.from(map.values()).sort(
+                  (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                );
+                try {
+                  localStorage.setItem('railcare_worker_requests', JSON.stringify(merged));
+                } catch (e) {}
+                return merged;
+              });
+            }
+          }
+        }, (err) => {
+          console.warn('Realtime requests listener warning:', err);
+        });
+      } catch (err) {}
+    }
+
+    // 3-second heartbeat backup for REST endpoints
     const interval = setInterval(() => {
       fetchComplaintsFromServer();
       fetchUsersFromServer();
@@ -351,7 +448,11 @@ export default function App() {
       fetchWorkerRequestsFromServer();
     }, 3000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (unsubscribeWorkers) unsubscribeWorkers();
+      if (unsubscribeRequests) unsubscribeRequests();
+    };
   }, []);
 
   // Sync users to localStorage as local backup
@@ -793,6 +894,9 @@ export default function App() {
         try {
           localStorage.setItem('railcare_current_worker', JSON.stringify(data.worker));
         } catch (e) {}
+        if (db) {
+          setDoc(doc(db, 'workers', String(data.worker.id)), sanitizeFirestorePayload(data.worker), { merge: true }).catch(() => {});
+        }
         fetchWorkersFromServer();
         setToast({
           message: `Welcome, ${data.worker.fullName}! Connected to ${data.worker.stationCode} station hub.`,
@@ -805,11 +909,19 @@ export default function App() {
       // Check if worker exists in local state or mock data
       const localFound = immediateMatch || findWorkerInAllSources(cleanQuery);
       if (localFound) {
-        const updated = photo ? { ...localFound, verificationPhoto: photo, profileImage: photo } : localFound;
+        const updated: Worker = {
+          ...localFound,
+          availability: 'Available',
+          verificationStatus: 'Verified',
+          ...(photo ? { verificationPhoto: photo, profileImage: photo } : {})
+        };
         setCurrentWorker(updated);
         try {
           localStorage.setItem('railcare_current_worker', JSON.stringify(updated));
         } catch (e) {}
+        if (db) {
+          setDoc(doc(db, 'workers', String(updated.id)), sanitizeFirestorePayload(updated), { merge: true }).catch(() => {});
+        }
         setToast({ message: `Welcome back, ${localFound.fullName}! (Duty profile active)`, type: 'success' });
         setCurrentView('worker-dashboard');
         return { success: true, message: 'Login successful', worker: updated };
@@ -824,11 +936,19 @@ export default function App() {
       // Offline fallback: authenticate against loaded/stored workers
       const localFound = immediateMatch || findWorkerInAllSources(cleanQuery);
       if (localFound) {
-        const updated = photo ? { ...localFound, verificationPhoto: photo, profileImage: photo } : localFound;
+        const updated: Worker = {
+          ...localFound,
+          availability: 'Available',
+          verificationStatus: 'Verified',
+          ...(photo ? { verificationPhoto: photo, profileImage: photo } : {})
+        };
         setCurrentWorker(updated);
         try {
           localStorage.setItem('railcare_current_worker', JSON.stringify(updated));
         } catch (e) {}
+        if (db) {
+          setDoc(doc(db, 'workers', String(updated.id)), sanitizeFirestorePayload(updated), { merge: true }).catch(() => {});
+        }
         setToast({ message: `Welcome back, ${localFound.fullName}! (Station session active)`, type: 'success' });
         setCurrentView('worker-dashboard');
         return { success: true, message: 'Login successful', worker: updated };
@@ -866,6 +986,9 @@ export default function App() {
       try {
         localStorage.setItem('railcare_current_worker', JSON.stringify(dynamicWorker));
       } catch (e) {}
+      if (db) {
+        setDoc(doc(db, 'workers', String(dynamicWorker.id)), sanitizeFirestorePayload(dynamicWorker), { merge: true }).catch(() => {});
+      }
       setToast({ message: `Welcome to duty! Profile active for ${dynamicWorker.stationCode}.`, type: 'success' });
       setCurrentView('worker-dashboard');
       return { success: true, message: 'Login successful', worker: dynamicWorker };
@@ -886,6 +1009,9 @@ export default function App() {
         try {
           localStorage.setItem('railcare_current_worker', JSON.stringify(data.worker));
         } catch (e) {}
+        if (db) {
+          setDoc(doc(db, 'workers', String(data.worker.id)), sanitizeFirestorePayload(data.worker), { merge: true }).catch(() => {});
+        }
         // Synchronize full worker roster from server immediately
         await fetchWorkersFromServer();
         setToast({
@@ -945,6 +1071,9 @@ export default function App() {
         const storedList = loadStoredWorkers();
         localStorage.setItem('railcare_workers', JSON.stringify([localWorker, ...storedList]));
       } catch (e) {}
+      if (db) {
+        setDoc(doc(db, 'workers', String(localWorker.id)), sanitizeFirestorePayload(localWorker), { merge: true }).catch(() => {});
+      }
 
       setToast({
         message: `Worker account created for ${localWorker.fullName}! Station duty active.`,
@@ -1097,6 +1226,9 @@ export default function App() {
 
       if (res.ok && data?.success && data?.request) {
         setWorkerRequests((prev) => [data.request, ...prev.filter((r) => r.requestId !== data.request.requestId)]);
+        if (db) {
+          setDoc(doc(db, 'worker_requests', data.request.requestId), sanitizeFirestorePayload(data.request), { merge: true }).catch(() => {});
+        }
         setToast({
           message: `Worker requested successfully! Booking ID: #${data.request.requestId}`,
           type: 'success',
@@ -1153,6 +1285,9 @@ export default function App() {
       const parsed = stored ? JSON.parse(stored) : [];
       localStorage.setItem('railcare_worker_requests', JSON.stringify([fallbackRequest, ...parsed]));
     } catch (e) {}
+    if (db) {
+      setDoc(doc(db, 'worker_requests', fallbackRequest.requestId), sanitizeFirestorePayload(fallbackRequest), { merge: true }).catch(() => {});
+    }
 
     setToast({
       message: `Worker requested successfully! Booking ID: #${fallbackRequest.requestId}`,

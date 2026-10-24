@@ -12,6 +12,7 @@ import {
   where,
   orderBy,
   limit,
+  onSnapshot,
   Firestore
 } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
@@ -30,5 +31,6 @@ export {
   query,
   where,
   orderBy,
-  limit
+  limit,
+  onSnapshot
 };

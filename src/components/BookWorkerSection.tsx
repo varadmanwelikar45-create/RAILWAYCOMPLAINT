@@ -17,7 +17,8 @@ import {
   Eye, 
   X, 
   Sparkles,
-  ArrowLeft
+  ArrowLeft,
+  Search
 } from 'lucide-react';
 
 interface BookWorkerSectionProps {
@@ -54,6 +55,8 @@ export const BookWorkerSection: React.FC<BookWorkerSectionProps> = ({
   const [seatNumber, setSeatNumber] = useState<string>('Berth 24');
   const [description, setDescription] = useState<string>('');
   const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(initialWorker ? initialWorker.id : null);
+  const [workerSearchTerm, setWorkerSearchTerm] = useState<string>('');
+  const [showAllWorkers, setShowAllWorkers] = useState<boolean>(false);
 
   // Sync state if initialWorker or initialCategory changes
   React.useEffect(() => {
@@ -85,31 +88,49 @@ export const BookWorkerSection: React.FC<BookWorkerSectionProps> = ({
   // Available skills in the selected category
   const availableSkills = CATEGORY_SKILL_MAP[serviceCategory] || [];
 
-  // Filter verified, eligible workers stationed at the selected station
-  const eligibleStationWorkers = allWorkers.filter((w) => {
-    // 1. Must be verified
-    if (w.verificationStatus !== 'Verified') return false;
+  // Filter verified, eligible workers stationed at the selected station or matched by search/all
+  const eligibleStationWorkers = React.useMemo(() => {
+    return allWorkers.filter((w) => {
+      // Exclude only explicitly rejected or suspended
+      if (w.verificationStatus === 'Rejected' || w.verificationStatus === 'Suspended') return false;
 
-    // 2. Must match the service category
-    const catMatches =
-      w.skillCategory.toLowerCase().trim() === serviceCategory.toLowerCase().trim() ||
-      Boolean((w as any).serviceCategories?.some((c: string) => c.toLowerCase().trim() === serviceCategory.toLowerCase().trim()));
-    if (!catMatches) return false;
+      // Always include currently selected worker so user sees their chosen worker
+      if (selectedWorkerId && w.id === selectedWorkerId) return true;
 
-    // 3. Must serve the selected railway station
-    const servesStation =
-      w.stationCode === stationCode ||
-      (w.stationCodes && w.stationCodes.includes(stationCode));
-    if (!servesStation) return false;
+      // When searching by name, ID, or phone
+      if (workerSearchTerm.trim()) {
+        const q = workerSearchTerm.toLowerCase().trim();
+        const qDigits = q.replace(/\D/g, '');
+        const inName = (w.fullName || '').toLowerCase().includes(q);
+        const inId = (w.workerId || '').toLowerCase().includes(q) || (w.workerId || '').toLowerCase().replace('-', '').includes(q.replace('-', ''));
+        const inMobile = qDigits.length >= 3 && (w.mobile || '').replace(/\D/g, '').includes(qDigits);
+        const inBio = (w.bio || '').toLowerCase().includes(q);
+        const inHeadline = (w.headline || '').toLowerCase().includes(q);
+        const inCategory = (w.skillCategory || '').toLowerCase().includes(q);
+        const inStation = (w.stationName || '').toLowerCase().includes(q) || (w.stationCode || '').toLowerCase().includes(q);
+        const inSkills = Array.isArray(w.skills) && w.skills.some((sk) => sk.toLowerCase().includes(q));
 
-    // 4. If a specific skill is requested, match it if possible
-    if (selectedSkill && w.skills && w.skills.length > 0) {
-      const hasSkill = w.skills.some((sk) => sk.toLowerCase().includes(selectedSkill.toLowerCase()));
-      if (!hasSkill) return false;
-    }
+        return inName || inId || inMobile || inBio || inHeadline || inCategory || inStation || inSkills;
+      }
 
-    return true;
-  });
+      // If user toggles show all workers
+      if (showAllWorkers) return true;
+
+      // Category matching
+      const catMatches =
+        w.skillCategory.toLowerCase().trim() === serviceCategory.toLowerCase().trim() ||
+        Boolean((w as any).serviceCategories?.some((c: string) => c.toLowerCase().trim() === serviceCategory.toLowerCase().trim()));
+      if (!catMatches) return false;
+
+      // Station matching
+      const servesStation =
+        w.stationCode === stationCode ||
+        (w.stationCodes && w.stationCodes.includes(stationCode));
+      if (!servesStation) return false;
+
+      return true;
+    });
+  }, [allWorkers, selectedWorkerId, workerSearchTerm, showAllWorkers, serviceCategory, stationCode]);
 
   const selectedWorker = selectedWorkerId
     ? allWorkers.find((w) => w.id === selectedWorkerId) || null
@@ -406,8 +427,46 @@ export const BookWorkerSection: React.FC<BookWorkerSectionProps> = ({
                 <span>Step 3: Discover &amp; Select Verified Specialist</span>
               </h3>
               <span className="text-[11px] text-slate-500">
-                Showing verified workers at {selectedStation.name}
+                {workerSearchTerm
+                  ? `Search results for "${workerSearchTerm}" (${eligibleStationWorkers.length} matching)`
+                  : showAllWorkers
+                  ? `Showing all verified specialists across all railway stations (${eligibleStationWorkers.length})`
+                  : `Showing verified workers at ${selectedStation.name}`}
               </span>
+            </div>
+
+            {/* Quick Search & Broad Station Filter in Step 3 */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  value={workerSearchTerm}
+                  onChange={(e) => setWorkerSearchTerm(e.target.value)}
+                  placeholder="Find specific worker by name, ID (e.g. WRK-108), or phone..."
+                  className="w-full pl-9 pr-8 py-2 text-xs rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"
+                />
+                {workerSearchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => setWorkerSearchTerm('')}
+                    className="absolute right-2.5 top-2 text-xs text-slate-400 hover:text-slate-600 cursor-pointer font-bold"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAllWorkers(!showAllWorkers)}
+                className={`px-3 py-2 rounded-xl text-xs font-bold border transition cursor-pointer whitespace-nowrap ${
+                  showAllWorkers
+                    ? 'bg-[#202A2B] text-white border-[#202A2B]'
+                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                {showAllWorkers ? '✓ Showing All Stations' : 'Show All Stations'}
+              </button>
             </div>
 
             {eligibleStationWorkers.length === 0 ? (
@@ -524,6 +583,14 @@ export const BookWorkerSection: React.FC<BookWorkerSectionProps> = ({
                             <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">
                               {worker.bio || `Specialist with ${worker.experienceYears || 3}+ years of railway coach experience.`}
                             </p>
+                            <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500 pt-1">
+                              <span className="font-bold text-slate-800 bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 rounded">
+                                📍 {worker.stationName || worker.stationCode}
+                              </span>
+                              <span className="font-medium text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">
+                                {worker.skillCategory}
+                              </span>
+                            </div>
                           </div>
 
                           {/* Skills Badges */}
@@ -557,6 +624,12 @@ export const BookWorkerSection: React.FC<BookWorkerSectionProps> = ({
                             type="button"
                             onClick={() => {
                               setSelectedWorkerId(worker.id);
+                              if (worker.stationCode && worker.stationCode !== stationCode) {
+                                setStationCode(worker.stationCode);
+                              }
+                              if (worker.skillCategory && worker.skillCategory !== serviceCategory) {
+                                setServiceCategory(worker.skillCategory as WorkerSkillCategory);
+                              }
                             }}
                             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm ${
                               isSelected

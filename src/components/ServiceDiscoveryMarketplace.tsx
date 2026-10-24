@@ -56,13 +56,33 @@ export const ServiceDiscoveryMarketplace: React.FC<ServiceDiscoveryMarketplacePr
   // Filter workers based on search, station, category, availability
   const filteredWorkers = useMemo(() => {
     return (workers || []).filter((w) => {
-      // Must be verified
-      if (w.verificationStatus !== 'Verified') return false;
+      // Exclude only explicitly rejected or suspended profiles
+      if (w.verificationStatus === 'Rejected' || w.verificationStatus === 'Suspended') return false;
 
       // Availability filter
       if (onlyAvailable && w.availability !== 'Available') return false;
 
-      // Station filter
+      // Priority Search: If search term is provided, search globally across all stations and categories!
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase().trim();
+        const qDigits = q.replace(/\D/g, '');
+        const inName = (w.fullName || '').toLowerCase().includes(q);
+        const inId = (w.workerId || '').toLowerCase().includes(q) || (w.workerId || '').toLowerCase().replace('-', '').includes(q.replace('-', ''));
+        const inMobile = qDigits.length >= 3 && (w.mobile || '').replace(/\D/g, '').includes(qDigits);
+        const inBio = (w.bio || '').toLowerCase().includes(q);
+        const inHeadline = (w.headline || '').toLowerCase().includes(q);
+        const inCategory = (w.skillCategory || '').toLowerCase().includes(q);
+        const inCity = (w.city || '').toLowerCase().includes(q);
+        const inStation = (w.stationName || '').toLowerCase().includes(q) || (w.stationCode || '').toLowerCase().includes(q);
+        const inSkills = Array.isArray(w.skills) && w.skills.some((sk) => sk.toLowerCase().includes(q));
+
+        if (inName || inId || inMobile || inBio || inHeadline || inCategory || inCity || inStation || inSkills) {
+          return true;
+        }
+        return false;
+      }
+
+      // Station filter (only when not explicitly searching by name/ID)
       if (selectedStation !== 'ALL') {
         const matchesStation =
           w.stationCode === selectedStation ||
@@ -70,7 +90,7 @@ export const ServiceDiscoveryMarketplace: React.FC<ServiceDiscoveryMarketplacePr
         if (!matchesStation) return false;
       }
 
-      // Category filter
+      // Category filter (only when not explicitly searching by name/ID)
       if (selectedCategory !== 'ALL') {
         const cat = selectedCategory.toLowerCase();
         const matchesCat =
@@ -78,23 +98,6 @@ export const ServiceDiscoveryMarketplace: React.FC<ServiceDiscoveryMarketplacePr
           w.skillCategory.toLowerCase().includes(cat) ||
           (Array.isArray((w as any).serviceCategories) && (w as any).serviceCategories.some((c: string) => c.toLowerCase() === cat));
         if (!matchesCat) return false;
-      }
-
-      // Search term (name, skill, workerId, station name, city)
-      if (searchTerm.trim()) {
-        const q = searchTerm.toLowerCase().trim();
-        const inName = (w.fullName || '').toLowerCase().includes(q);
-        const inId = (w.workerId || '').toLowerCase().includes(q);
-        const inBio = (w.bio || '').toLowerCase().includes(q);
-        const inHeadline = (w.headline || '').toLowerCase().includes(q);
-        const inCategory = (w.skillCategory || '').toLowerCase().includes(q);
-        const inCity = (w.city || '').toLowerCase().includes(q);
-        const inStation = (w.stationName || '').toLowerCase().includes(q);
-        const inSkills = Array.isArray(w.skills) && w.skills.some((sk) => sk.toLowerCase().includes(q));
-
-        if (!inName && !inId && !inBio && !inHeadline && !inCategory && !inCity && !inStation && !inSkills) {
-          return false;
-        }
       }
 
       return true;

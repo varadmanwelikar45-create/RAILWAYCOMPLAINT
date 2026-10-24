@@ -3,7 +3,7 @@ import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { db, doc, setDoc } from './src/lib/firebase.ts';
+import { db, doc, setDoc, getDocs, collection } from './src/lib/firebase.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -578,7 +578,98 @@ function writeStore(data: StoreData): void {
   syncToFirestore(data).catch(() => {});
 }
 
+async function hydrateFromFirestore(store: StoreData): Promise<StoreData> {
+  try {
+    if (!db) return store;
+    // 1. Hydrate workers from Firestore
+    try {
+      const workersSnap = await getDocs(collection(db, 'workers'));
+      if (!workersSnap.empty) {
+        let addedCount = 0;
+        workersSnap.forEach((docSnap) => {
+          const remoteWorker = docSnap.data() as Worker;
+          if (remoteWorker && (remoteWorker.id || remoteWorker.workerId)) {
+            const existingIdx = store.workers.findIndex(
+              (w) =>
+                (w.workerId && w.workerId === remoteWorker.workerId) ||
+                w.id === remoteWorker.id ||
+                (w.email && remoteWorker.email && w.email.toLowerCase() === remoteWorker.email.toLowerCase())
+            );
+            if (existingIdx >= 0) {
+              store.workers[existingIdx] = { ...store.workers[existingIdx], ...remoteWorker };
+            } else {
+              store.workers.unshift(remoteWorker);
+              addedCount++;
+            }
+          }
+        });
+        if (addedCount > 0) {
+          console.log(`[Firestore Hydration] Synced ${addedCount} workers from Firestore.`);
+        }
+      }
+    } catch (e) {
+      console.warn('Firestore workers hydration warning:', e);
+    }
+
+    // 2. Hydrate worker requests from Firestore
+    try {
+      const reqsSnap = await getDocs(collection(db, 'worker_requests'));
+      if (!reqsSnap.empty) {
+        reqsSnap.forEach((docSnap) => {
+          const remoteReq = docSnap.data() as WorkerServiceRequest;
+          if (remoteReq && remoteReq.requestId) {
+            const existingIdx = store.workerRequests.findIndex(
+              (r) => r.requestId === remoteReq.requestId || r.id === remoteReq.id
+            );
+            if (existingIdx >= 0) {
+              store.workerRequests[existingIdx] = { ...store.workerRequests[existingIdx], ...remoteReq };
+            } else {
+              store.workerRequests.unshift(remoteReq);
+            }
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Firestore worker_requests hydration warning:', e);
+    }
+
+    // 3. Hydrate users from Firestore
+    try {
+      const usersSnap = await getDocs(collection(db, 'users'));
+      if (!usersSnap.empty) {
+        usersSnap.forEach((docSnap) => {
+          const remoteUser = docSnap.data() as User;
+          if (remoteUser && remoteUser.email) {
+            const existingIdx = store.users.findIndex(
+              (u) => u.email.toLowerCase() === remoteUser.email.toLowerCase() || u.id === remoteUser.id
+            );
+            if (existingIdx >= 0) {
+              store.users[existingIdx] = { ...store.users[existingIdx], ...remoteUser };
+            } else {
+              store.users.push(remoteUser);
+            }
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Firestore users hydration warning:', e);
+    }
+
+    // Persist combined state locally
+    fs.writeFileSync(STORE_PATH, JSON.stringify(store, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Error hydrating from Firestore:', err);
+  }
+  return store;
+}
+
 async function startServer() {
+  // Hydrate local cache from cloud Firestore on startup
+  const initialStore = readStore();
+  hydrateFromFirestore(initialStore).catch((err) => {
+    console.warn('Initial Firestore hydration failed non-critically:', err);
+  });
+
   const app = express();
   const PORT = parseInt(process.env.PORT || '3000', 10);
 
@@ -1009,7 +1100,7 @@ async function startServer() {
   });
 
   // 4. Worker Login (with flexible identifier and verification photo update)
-  app.post('/api/workers/login', (req: Request, res: Response) => {
+  app.post('/api/workers/login', async (req: Request, res: Response) => {
     try {
       const { email, password, photo, verificationPhoto } = req.body;
       const store = readStore();
@@ -1083,6 +1174,42 @@ async function startServer() {
         }
       }
 
+      // If not found in memory, query Firestore directly to ensure cross-instance persistence
+      if (workerIndex === -1 && db) {
+        try {
+          const snap = await getDocs(collection(db, 'workers'));
+          if (!snap.empty) {
+            snap.forEach((docSnap) => {
+              const w = docSnap.data() as Worker;
+              if (w && (w.id || w.workerId)) {
+                if (!store.workers.some((sw) => sw.id === w.id || sw.workerId === w.workerId)) {
+                  store.workers.unshift(w);
+                }
+              }
+            });
+            workerIndex = store.workers.findIndex((w) => {
+              if (!w) return false;
+              const wEmail = (w.email || '').toLowerCase().trim();
+              const wId = (w.workerId || '').toLowerCase().trim();
+              const wMobile = (w.mobile || '').replace(/\D/g, '');
+              const wPrefix = wEmail.split('@')[0];
+              const queryPrefix = queryLower.split('@')[0];
+              const wDigits = wId.replace(/\D/g, '');
+              return (
+                wEmail === queryLower ||
+                wId === queryLower ||
+                wId.replace('-', '') === queryLower.replace('-', '') ||
+                (queryDigits.length >= 2 && (wDigits === queryDigits || wId.endsWith(queryDigits))) ||
+                (queryDigits.length >= 8 && wMobile.length >= 8 && wMobile.includes(queryDigits)) ||
+                wPrefix === queryPrefix ||
+                queryLower.startsWith(wPrefix) ||
+                (queryLower.length >= 3 && (w.fullName || '').toLowerCase().includes(queryLower))
+              );
+            });
+          }
+        } catch (e) {}
+      }
+
       if (workerIndex === -1) {
         return res.status(401).json({
           success: false,
@@ -1130,16 +1257,27 @@ async function startServer() {
         store.workers[workerIndex].verificationPhoto = incomingPhoto;
         store.workers[workerIndex].profileImage = incomingPhoto;
         store.workers[workerIndex].photoUpdatedAt = nowIso;
-        store.workers[workerIndex].verificationStatus = 'Verified';
-        store.workers[workerIndex].verifiedBy = 'VYOM RATH Verified Identity';
-        store.workers[workerIndex].updatedAt = nowIso;
       }
+      // Ensure logged in worker is verified and available for duty across all devices
+      store.workers[workerIndex].verificationStatus = 'Verified';
+      if (!store.workers[workerIndex].verifiedBy) {
+        store.workers[workerIndex].verifiedBy = 'VYOM RATH Duty Authorization';
+      }
+      if (!store.workers[workerIndex].availability) {
+        store.workers[workerIndex].availability = 'Available';
+      }
+      store.workers[workerIndex].updatedAt = nowIso;
 
       writeStore(store);
 
+      // Immediately synchronize this worker to Firestore
+      if (db) {
+        setDoc(doc(db, 'workers', String(store.workers[workerIndex].id)), sanitizeFirestorePayload(store.workers[workerIndex]), { merge: true }).catch(() => {});
+      }
+
       res.json({
         success: true,
-        message: 'Worker logged in successfully!',
+        message: 'Worker logged in successfully! Station profile active for passengers.',
         worker: store.workers[workerIndex],
       });
     } catch (err: any) {
