@@ -30,9 +30,16 @@ import {
   Users,
   Camera,
   X,
+  Bell,
+  Send,
+  Radio,
+  Wrench,
+  ShieldCheck,
+  CheckCheck,
   Smartphone,
   ExternalLink
 } from 'lucide-react';
+import { AdminNotification } from '../types';
 
 interface AdminDashboardProps {
   currentUser: User;
@@ -41,7 +48,11 @@ interface AdminDashboardProps {
   users?: User[];
   workers?: Worker[];
   workerRequests?: WorkerServiceRequest[];
+  adminNotifications?: AdminNotification[];
   onUpdateWorkerVerification?: (workerId: string, status: 'Pending Verification' | 'Verified' | 'Rejected' | 'Suspended') => void;
+  onDispatchWorker?: (complaintId: string, workerId: string, instructions?: string) => Promise<{ success: boolean; message: string }>;
+  onMarkNotificationRead?: (notificationId: string) => void;
+  onClearNotifications?: () => void;
   onProcessNextFIFO: () => { success: boolean; complaint?: Complaint; message: string };
   onUpdateStatus: (complaintId: string, newStatus: ComplaintStatus) => void;
   onSelectComplaint: (complaint: Complaint) => void;
@@ -56,7 +67,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   users = [],
   workers = [],
   workerRequests = [],
+  adminNotifications = [],
   onUpdateWorkerVerification,
+  onDispatchWorker,
+  onMarkNotificationRead,
+  onClearNotifications,
   onProcessNextFIFO,
   onUpdateStatus,
   onSelectComplaint,
@@ -75,6 +90,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [sortKey, setSortKey] = useState<keyof Complaint>('createdAt');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [actionNotice, setActionNotice] = useState<string | null>(null);
+
+  // Real-time Notification Panel & Dispatch State
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [selectedComplaintForDispatch, setSelectedComplaintForDispatch] = useState<Complaint | null>(null);
+  const [selectedWorkerIdForDispatch, setSelectedWorkerIdForDispatch] = useState<string>('');
+  const [dispatchInstructions, setDispatchInstructions] = useState<string>('');
+  const [isDispatching, setIsDispatching] = useState(false);
 
   // 1. Calculate overall summary
   const summary = useMemo(() => countByStatus(complaints), [complaints]);
@@ -209,7 +231,142 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5 relative">
+          {/* Real-time Officer Notification Bell */}
+          <div className="relative">
+            <button
+              onClick={() => setShowNotifications((prev) => !prev)}
+              className="p-3 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl shadow-xs transition relative cursor-pointer flex items-center gap-2"
+              title="View Real-Time Officer Notifications"
+            >
+              <Bell className="w-4 h-4 text-amber-600" />
+              <span className="text-xs font-bold hidden sm:inline">Alerts</span>
+              {adminNotifications.filter((n) => !n.read).length > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-black animate-pulse">
+                  {adminNotifications.filter((n) => !n.read).length}
+                </span>
+              )}
+            </button>
+
+            {/* Notification Dropdown Popover */}
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-slate-200 z-50 overflow-hidden">
+                <div className="p-3.5 bg-yellow-50 border-b border-yellow-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-amber-700" />
+                    <span className="text-xs font-extrabold text-slate-900">Officer Notifications</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 font-bold">
+                      {adminNotifications.length}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[10px]">
+                    {onClearNotifications && adminNotifications.length > 0 && (
+                      <button
+                        onClick={onClearNotifications}
+                        className="text-slate-500 hover:text-red-600 font-semibold cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setShowNotifications(false)}
+                      className="text-slate-400 hover:text-slate-700 cursor-pointer p-0.5"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
+                  {adminNotifications.length === 0 ? (
+                    <div className="p-6 text-center text-xs text-slate-500">
+                      No notifications yet. New worker registrations and passenger grievances will show up here live.
+                    </div>
+                  ) : (
+                    adminNotifications.slice(0, 15).map((n) => (
+                      <div
+                        key={n.id}
+                        className={`p-3 text-xs transition ${
+                          n.read ? 'bg-white opacity-80' : 'bg-[#FFFDF5]'
+                        } hover:bg-yellow-50/60`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <span
+                            className={`px-1.5 py-0.5 text-[9px] font-black rounded uppercase tracking-wider ${
+                              n.type === 'worker_registration'
+                                ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                                : n.type === 'new_complaint'
+                                ? 'bg-red-100 text-red-800 border border-red-200'
+                                : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            }`}
+                          >
+                            {n.type === 'worker_registration'
+                              ? 'Worker Reg'
+                              : n.type === 'new_complaint'
+                              ? 'Grievance'
+                              : 'Duty Check-In'}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono">
+                            {n.timestamp ? n.timestamp.slice(11, 16) : 'Just now'}
+                          </span>
+                        </div>
+
+                        <div className="font-bold text-slate-900 mt-1 text-xs">{n.title}</div>
+                        <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">{n.message}</p>
+
+                        <div className="mt-2 flex items-center justify-between pt-1 border-t border-slate-100">
+                          {n.type === 'worker_registration' && (
+                            <button
+                              onClick={() => {
+                                setAdminTab('gig-workers');
+                                setWorkerStatusFilter('Pending Verification');
+                                if (n.workerName) setWorkerSearch(n.workerName);
+                                setShowNotifications(false);
+                                onMarkNotificationRead?.(n.id);
+                              }}
+                              className="text-[10px] font-extrabold text-amber-800 hover:text-amber-950 flex items-center gap-1 cursor-pointer bg-amber-100 px-2 py-0.5 rounded"
+                            >
+                              <UserCheck className="w-3 h-3" />
+                              <span>Review &amp; Approve</span>
+                            </button>
+                          )}
+
+                          {n.type === 'new_complaint' && (
+                            <button
+                              onClick={() => {
+                                const target = complaints.find((c) => c.complaintId === n.complaintId);
+                                if (target) {
+                                  setSelectedComplaintForDispatch(target);
+                                } else {
+                                  setAdminTab('complaints');
+                                }
+                                setShowNotifications(false);
+                                onMarkNotificationRead?.(n.id);
+                              }}
+                              className="text-[10px] font-extrabold text-[#007D99] hover:text-[#005A6E] flex items-center gap-1 cursor-pointer bg-[#D7F7FC] px-2 py-0.5 rounded"
+                            >
+                              <Send className="w-3 h-3" />
+                              <span>Dispatch Specialist</span>
+                            </button>
+                          )}
+
+                          {!n.read && onMarkNotificationRead && (
+                            <button
+                              onClick={() => onMarkNotificationRead(n.id)}
+                              className="text-[10px] text-slate-400 hover:text-slate-600 cursor-pointer ml-auto"
+                            >
+                              Mark read
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* 1-Click FIFO Dispatch Button */}
           <button
             onClick={handleProcessFIFO}
@@ -468,39 +625,67 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
                         <tr className="bg-[#FFFDF5] text-slate-600 font-bold border-b border-slate-200">
-                          <th className="py-3 px-4">ID</th>
-                          <th className="py-3 px-4">Passenger</th>
-                          <th className="py-3 px-4">Category</th>
-                          <th className="py-3 px-4">Subject / Issue</th>
-                          <th className="py-3 px-4">Date</th>
-                          <th className="py-3 px-4">Status</th>
-                          <th className="py-3 px-4 text-right">Details</th>
+                          <th className="py-3 px-3">ID</th>
+                          <th className="py-3 px-3">Passenger</th>
+                          <th className="py-3 px-3">Category</th>
+                          <th className="py-3 px-3">Subject / Issue</th>
+                          <th className="py-3 px-3">Assigned Worker</th>
+                          <th className="py-3 px-3">Date</th>
+                          <th className="py-3 px-3">Status</th>
+                          <th className="py-3 px-3 text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200">
                         {sortResult.sortedList.map((c) => (
                           <tr key={c.complaintId} className="hover:bg-amber-50/40 transition">
-                            <td className="py-3 px-4 font-mono font-bold text-amber-700">
+                            <td className="py-3 px-3 font-mono font-bold text-amber-700">
                               {c.complaintId}
                             </td>
-                            <td className="py-3 px-4">
+                            <td className="py-3 px-3">
                               <div className="font-bold text-slate-900">{c.passengerName}</div>
                               <div className="text-[10px] text-slate-500">{c.trainNumber}</div>
                             </td>
-                            <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap">
-                              {c.category}
+                            <td className="py-3 px-3 font-medium text-slate-800 whitespace-nowrap">
+                              <div className="flex items-center gap-1.5">
+                                <span>{c.category}</span>
+                                {c.severity === 'Urgent' && (
+                                  <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-800 font-black text-[9px]">
+                                    Urgent
+                                  </span>
+                                )}
+                              </div>
                             </td>
-                            <td className="py-3 px-4 max-w-[220px]">
+                            <td className="py-3 px-3 max-w-[200px]">
                               <div className="truncate font-medium text-slate-800" title={c.subject}>
                                 {c.subject}
                               </div>
                             </td>
-                            <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
+
+                            {/* Assigned Worker / Officer Dispatch Column */}
+                            <td className="py-3 px-3 whitespace-nowrap">
+                              {c.assignedWorkerName ? (
+                                <div className="inline-flex items-center gap-1.5 bg-[#D7F7FC] text-[#007D99] px-2.5 py-1 rounded-lg border border-[#00B8D9]/30 text-xs font-bold">
+                                  <Briefcase className="w-3.5 h-3.5 text-[#007D99]" />
+                                  <span className="truncate max-w-[120px]">{c.assignedWorkerName}</span>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => setSelectedComplaintForDispatch(c)}
+                                  className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg text-[11px] flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+                                  title="Assign and dispatch an approved railway worker"
+                                >
+                                  <Send className="w-3 h-3" />
+                                  <span>Send Worker</span>
+                                </button>
+                              )}
+                            </td>
+
+                            <td className="py-3 px-3 text-slate-500 whitespace-nowrap">
                               {(c.createdAt || '').slice(0, 10) || 'Recent'}
                             </td>
                             
                             {/* 1-Click Inline Status Dropdown */}
-                            <td className="py-2.5 px-4 whitespace-nowrap">
+                            <td className="py-2.5 px-3 whitespace-nowrap">
                               <select
                                 value={c.status}
                                 onChange={(e) =>
@@ -523,17 +708,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               </select>
                             </td>
 
-                            <td className="py-3 px-4 text-right whitespace-nowrap">
-                              <button
-                                onClick={() => {
-                                  onSelectComplaint(c);
-                                  onNavigate('complaint-details');
-                                }}
-                                className="p-1.5 bg-[#FFFDF5] hover:bg-yellow-50 text-slate-900 border border-slate-200 rounded-lg transition inline-flex items-center gap-1 cursor-pointer"
-                                title="View Full Details"
-                              >
-                                <Eye className="w-3.5 h-3.5 text-amber-600" />
-                              </button>
+                            <td className="py-3 px-3 text-right whitespace-nowrap">
+                              <div className="flex items-center justify-end gap-1.5">
+                                {!c.assignedWorkerName && (
+                                  <button
+                                    onClick={() => setSelectedComplaintForDispatch(c)}
+                                    className="p-1.5 bg-amber-100 hover:bg-amber-200 text-amber-950 rounded-lg transition"
+                                    title="Dispatch Worker"
+                                  >
+                                    <Send className="w-3.5 h-3.5 text-amber-800" />
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => {
+                                    onSelectComplaint(c);
+                                    onNavigate('complaint-details');
+                                  }}
+                                  className="p-1.5 bg-[#FFFDF5] hover:bg-yellow-50 text-slate-900 border border-slate-200 rounded-lg transition inline-flex items-center gap-1 cursor-pointer"
+                                  title="View Full Details"
+                                >
+                                  <Eye className="w-3.5 h-3.5 text-amber-600" />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -1215,6 +1411,246 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <span>Approve &amp; Verify Worker</span>
                 </button>
               )}
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* DISPATCH GIG WORKER TO COMPLAINT MODAL */}
+      {selectedComplaintForDispatch && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl border border-slate-200 max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative space-y-5 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => {
+                setSelectedComplaintForDispatch(null);
+                setSelectedWorkerIdForDispatch('');
+                setDispatchInstructions('');
+              }}
+              className="absolute top-5 right-5 p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Header */}
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="px-2.5 py-0.5 bg-[#D7F7FC] text-[#007D99] text-[10px] font-black uppercase rounded border border-[#00B8D9]/30">
+                  OFFICIAL WORK ORDER DISPATCH
+                </span>
+                <span className="text-xs font-mono text-amber-700 font-bold">
+                  {selectedComplaintForDispatch.complaintId}
+                </span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">
+                Dispatch Station Specialist
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Assign an approved railway gig worker to attend to the passenger's reported issue.
+              </p>
+            </div>
+
+            {/* Grievance Summary Box */}
+            <div className="p-4 rounded-2xl bg-[#FFFDF5] border border-amber-200/80 space-y-2.5 text-xs text-slate-800">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="font-bold text-slate-900 text-sm">
+                  {selectedComplaintForDispatch.subject}
+                </span>
+                <span className="px-2 py-0.5 rounded bg-yellow-100 text-amber-950 font-bold text-[11px] border border-yellow-300">
+                  {selectedComplaintForDispatch.category}
+                </span>
+              </div>
+
+              <p className="text-slate-600 text-[11px] leading-relaxed line-clamp-2">
+                {selectedComplaintForDispatch.description}
+              </p>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-amber-200/60 text-[11px]">
+                <div>
+                  <span className="text-slate-400 block text-[10px]">Passenger</span>
+                  <span className="font-bold text-slate-900">{selectedComplaintForDispatch.passengerName}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px]">Train</span>
+                  <span className="font-bold text-slate-900">{selectedComplaintForDispatch.trainNumber}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px]">Coach/Location</span>
+                  <span className="font-bold text-slate-900">{selectedComplaintForDispatch.location || 'Running Train'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px]">Severity</span>
+                  <span className={`font-bold ${
+                    selectedComplaintForDispatch.severity === 'Urgent'
+                      ? 'text-red-700'
+                      : 'text-amber-800'
+                  }`}>
+                    {selectedComplaintForDispatch.severity || 'Standard'}
+                  </span>
+                </div>
+              </div>
+
+              {/* AI Recommendation highlight */}
+              {(selectedComplaintForDispatch.aiAnalysis?.recommendedSpecialist || selectedComplaintForDispatch.aiAnalysis?.recommendedRole) && (
+                <div className="mt-2 p-2.5 rounded-xl bg-purple-50 border border-purple-200 flex items-center gap-2 text-purple-900 text-[11px]">
+                  <Sparkles className="w-4 h-4 text-purple-600 shrink-0" />
+                  <div>
+                    <strong>AI Recommended Specialist:</strong>{' '}
+                    <span>{selectedComplaintForDispatch.aiAnalysis.recommendedSpecialist || selectedComplaintForDispatch.aiAnalysis.recommendedRole}</span>
+                    {selectedComplaintForDispatch.aiAnalysis.confidence && (
+                      <span className="ml-1 text-[10px] text-purple-600 font-mono">
+                        ({selectedComplaintForDispatch.aiAnalysis.confidence} match)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Select Approved Worker */}
+            <div className="space-y-2">
+              <label className="block text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                Select Approved Railway Specialist <span className="text-red-500">*</span>
+              </label>
+
+              <div className="max-h-56 overflow-y-auto space-y-2 pr-1 divide-y divide-slate-100 border border-slate-200 rounded-2xl p-2 bg-slate-50/50">
+                {workers.filter((w) => w.verificationStatus === 'Verified').length === 0 ? (
+                  <div className="p-6 text-center text-xs text-slate-500">
+                    No verified workers available yet. Please approve a pending worker registration first.
+                  </div>
+                ) : (
+                  workers
+                    .filter((w) => w.verificationStatus === 'Verified')
+                    .map((w) => {
+                      const isSelected = selectedWorkerIdForDispatch === String(w.id) || selectedWorkerIdForDispatch === w.workerId;
+                      const recommendedText = (selectedComplaintForDispatch.aiAnalysis?.recommendedSpecialist || selectedComplaintForDispatch.aiAnalysis?.recommendedRole || '').toLowerCase();
+                      const isSkillMatch =
+                        w.skillCategory.toLowerCase().includes((selectedComplaintForDispatch.category || '').toLowerCase()) ||
+                        (recommendedText && w.skillCategory.toLowerCase().includes(recommendedText));
+
+                      return (
+                        <div
+                          key={w.id}
+                          onClick={() => setSelectedWorkerIdForDispatch(String(w.id))}
+                          className={`p-3 rounded-xl border transition cursor-pointer flex items-center justify-between gap-3 ${
+                            isSelected
+                              ? 'bg-[#DDF8EF] border-[#65D6B0] shadow-xs'
+                              : 'bg-white border-slate-200 hover:border-amber-300'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="radio"
+                              name="selectedWorker"
+                              checked={isSelected}
+                              onChange={() => setSelectedWorkerIdForDispatch(String(w.id))}
+                              className="accent-amber-600"
+                            />
+                            <div className="w-9 h-9 rounded-xl bg-slate-100 overflow-hidden border border-slate-200 shrink-0">
+                              {w.verificationPhoto || w.profileImage ? (
+                                <img src={w.verificationPhoto || w.profileImage} alt={w.fullName} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center font-bold text-xs text-slate-700 bg-amber-100">
+                                  {w.fullName.charAt(0)}
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-900 text-xs">{w.fullName}</span>
+                                {isSkillMatch && (
+                                  <span className="px-1.5 py-0.2 rounded bg-purple-100 text-purple-800 font-extrabold text-[9px] border border-purple-200">
+                                    Best Match
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[11px] text-slate-500">
+                                {w.skillCategory} · {w.stationCode} · {w.experienceYears || 2}y exp
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="text-right shrink-0">
+                            <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                              w.availability === 'Available'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-amber-100 text-amber-800'
+                            }`}>
+                              {w.availability}
+                            </span>
+                            <div className="text-[10px] text-slate-400 mt-0.5 font-mono">
+                              ★ {w.rating || '5.0'}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                )}
+              </div>
+            </div>
+
+            {/* Officer Instructions */}
+            <div>
+              <label className="block text-xs font-bold text-slate-800 mb-1">
+                Officer Dispatch Instructions / Work Order Notes (Optional)
+              </label>
+              <textarea
+                value={dispatchInstructions}
+                onChange={(e) => setDispatchInstructions(e.target.value)}
+                placeholder="e.g., Carry 110V DC replacement fuse and contact passenger immediately on coach arrival."
+                rows={2}
+                className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-800 placeholder-slate-400"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedComplaintForDispatch(null);
+                  setSelectedWorkerIdForDispatch('');
+                  setDispatchInstructions('');
+                }}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 rounded-xl hover:bg-slate-100 cursor-pointer"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                disabled={!selectedWorkerIdForDispatch || isDispatching}
+                onClick={async () => {
+                  if (!onDispatchWorker || !selectedWorkerIdForDispatch) return;
+                  setIsDispatching(true);
+                  try {
+                    const res = await onDispatchWorker(
+                      selectedComplaintForDispatch.complaintId,
+                      selectedWorkerIdForDispatch,
+                      dispatchInstructions
+                    );
+                    if (res?.success) {
+                      setActionNotice(res.message);
+                      setTimeout(() => setActionNotice(null), 5000);
+                      setSelectedComplaintForDispatch(null);
+                      setSelectedWorkerIdForDispatch('');
+                      setDispatchInstructions('');
+                    } else {
+                      alert(res?.message || 'Failed to dispatch worker.');
+                    }
+                  } catch (err: any) {
+                    alert(err?.message || 'Error occurred while dispatching.');
+                  } finally {
+                    setIsDispatching(false);
+                  }
+                }}
+                className={`px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black rounded-xl shadow-sm flex items-center gap-2 cursor-pointer transition ${
+                  !selectedWorkerIdForDispatch || isDispatching ? 'opacity-60 cursor-not-allowed' : ''
+                }`}
+              >
+                <Send className="w-4 h-4" />
+                <span>{isDispatching ? 'Dispatching...' : 'Dispatch Worker to Grievance'}</span>
+              </button>
             </div>
 
           </div>

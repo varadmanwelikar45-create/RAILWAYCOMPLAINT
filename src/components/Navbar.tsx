@@ -81,7 +81,18 @@ export const Navbar: React.FC<NavbarProps> = ({
               Home
             </button>
 
-            {currentUser && (
+            {currentUser?.isAdmin ? (
+              <button
+                onClick={() => onNavigate('admin-dashboard')}
+                className={`transition-colors whitespace-nowrap cursor-pointer pb-1 ${
+                  currentView === 'admin-dashboard'
+                    ? 'text-[#202A2B] border-b-2 border-amber-500 font-black'
+                    : 'text-[#526365] hover:text-[#202A2B]'
+                }`}
+              >
+                Officer Control Center
+              </button>
+            ) : currentUser ? (
               <button
                 onClick={() => onNavigate('user-dashboard')}
                 className={`transition-colors whitespace-nowrap cursor-pointer pb-1 ${
@@ -92,7 +103,18 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 Passenger Dashboard
               </button>
-            )}
+            ) : null}
+
+            <button
+              onClick={() => onNavigate('portal-selection')}
+              className={`transition-colors whitespace-nowrap cursor-pointer pb-1 ${
+                currentView === 'portal-selection'
+                  ? 'text-[#202A2B] border-b-2 border-[#B94A3A]'
+                  : 'text-[#526365] hover:text-[#202A2B]'
+              }`}
+            >
+              Portals
+            </button>
 
             {currentWorker && (
               <button
@@ -141,19 +163,29 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
 
-            {/* Passenger Session Active */}
+            {/* Passenger / Admin Session Active */}
             {currentUser && (
-              <div className="flex items-center gap-2 bg-[#DDF8EF] border border-[#65D6B0]/40 rounded-xl px-3 py-1.5 shadow-xs">
+              <div className={`flex items-center gap-2 rounded-xl px-3 py-1.5 shadow-xs border ${
+                currentUser.isAdmin
+                  ? 'bg-yellow-50 border-amber-300'
+                  : 'bg-[#DDF8EF] border-[#65D6B0]/40'
+              }`}>
                 <button
-                  onClick={() => onNavigate('user-dashboard')}
+                  onClick={() => onNavigate(currentUser.isAdmin ? 'admin-dashboard' : 'user-dashboard')}
                   className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg transition cursor-pointer whitespace-nowrap ${
-                    currentView === 'user-dashboard'
+                    currentUser.isAdmin
+                      ? currentView === 'admin-dashboard'
+                        ? 'bg-amber-500 text-slate-950 font-black shadow-xs'
+                        : 'text-amber-900 hover:bg-white/50'
+                      : currentView === 'user-dashboard'
                       ? 'bg-[#202A2B] text-white font-extrabold shadow-xs'
                       : 'text-[#1E6B52] hover:bg-white/50'
                   }`}
                 >
-                  <UserIcon className="w-3.5 h-3.5 text-[#65D6B0]" />
-                  <span className="font-bold max-w-[120px] truncate">{currentUser.fullName}</span>
+                  <UserIcon className={`w-3.5 h-3.5 ${currentUser.isAdmin ? 'text-amber-800' : 'text-[#65D6B0]'}`} />
+                  <span className="font-bold max-w-[120px] truncate">
+                    {currentUser.isAdmin ? 'Officer ' + currentUser.fullName.split(' ')[0] : currentUser.fullName}
+                  </span>
                 </button>
 
                 <button
@@ -202,7 +234,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               Home
             </button>
-            {currentUser && (
+            {currentUser?.isAdmin && (
+              <button
+                onClick={() => {
+                  onNavigate('admin-dashboard');
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full text-left py-2.5 px-3 rounded-lg hover:bg-yellow-100 text-amber-900 font-bold flex items-center justify-between"
+              >
+                <span>Officer Control Center</span>
+                <span className="px-1.5 py-0.5 rounded bg-yellow-200 text-amber-900 text-[10px]">Admin</span>
+              </button>
+            )}
+            {currentUser && !currentUser.isAdmin && (
               <button
                 onClick={() => {
                   onNavigate('user-dashboard');
@@ -213,6 +257,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                 Passenger Dashboard
               </button>
             )}
+            <button
+              onClick={() => {
+                onNavigate('portal-selection');
+                setMobileMenuOpen(false);
+              }}
+              className="w-full text-left py-2.5 px-3 rounded-lg hover:bg-[#F0F4F6] text-[#202A2B]"
+            >
+              Portals (Passenger / Worker / Officer)
+            </button>
             {currentWorker && (
               <button
                 onClick={() => {

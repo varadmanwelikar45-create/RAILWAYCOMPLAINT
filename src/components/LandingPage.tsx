@@ -167,6 +167,45 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
         </div>
+
+        {/* ADDITIONAL GOVERNMENT OFFICER & AI GRIEVANCE STRIP */}
+        <div className="mt-8 pt-8 border-t border-[#DDE4E6] grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-5xl mx-auto">
+          <div className="bg-[#DDF8EF]/60 border border-[#65D6B0]/40 rounded-2xl p-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#202A2B] text-[#65D6B0] flex items-center justify-center shrink-0">
+                <Sparkles className="w-5 h-5 text-[#65D6B0]" />
+              </div>
+              <div>
+                <h4 className="text-xs font-black text-[#202A2B]">AI Voice &amp; Photo Grievance</h4>
+                <p className="text-[11px] text-[#526365]">Upload photo or voice complaint; AI routes to specialist</p>
+              </div>
+            </div>
+            <button
+              onClick={() => onNavigate(currentUser ? 'register-complaint' : 'login')}
+              className="px-3 py-2 bg-[#202A2B] hover:bg-[#202A2B]/90 text-white text-xs font-bold rounded-xl shrink-0 cursor-pointer"
+            >
+              Report Issue
+            </button>
+          </div>
+
+          <div className="bg-yellow-50/80 border border-amber-300/80 rounded-2xl p-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-yellow-100 text-amber-900 border border-yellow-300 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-5 h-5 text-amber-700" />
+              </div>
+              <div>
+                <h4 className="text-xs font-black text-slate-900">Officer Control Center</h4>
+                <p className="text-[11px] text-slate-600">Review worker registrations &amp; dispatch specialists</p>
+              </div>
+            </div>
+            <button
+              onClick={() => onNavigate(currentUser?.isAdmin ? 'admin-dashboard' : 'admin-login')}
+              className="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black rounded-xl shrink-0 cursor-pointer shadow-2xs"
+            >
+              Officer Login
+            </button>
+          </div>
+        </div>
       </section>
 
       {/* SECTION 2: MUTUAL LIVE LOCATION & ON-SPOT RESOLUTION */}

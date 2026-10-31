@@ -20,6 +20,19 @@ export interface User {
   role?: 'passenger' | 'worker' | 'admin';
 }
 
+export interface AIComplaintAnalysis {
+  category: ComplaintCategory;
+  subject: string;
+  description: string;
+  severity: 'Urgent' | 'High' | 'Medium' | 'Low';
+  recommendedRole: string;
+  recommendedSpecialist?: string;
+  locationHint?: string;
+  confidence?: string;
+  detectedIssues?: string[];
+  transcribedText?: string;
+}
+
 export interface Complaint {
   id: number;
   complaintId: string;
@@ -37,6 +50,29 @@ export interface Complaint {
   status: ComplaintStatus;
   createdAt: string;
   updatedAt: string;
+  assignedWorkerId?: number | null;
+  assignedWorkerName?: string | null;
+  assignedWorkerMobile?: string | null;
+  assignedWorkerSkill?: string | null;
+  imageUrl?: string;
+  voiceUrl?: string;
+  severity?: 'Urgent' | 'High' | 'Medium' | 'Low';
+  aiAnalysis?: AIComplaintAnalysis;
+}
+
+export interface AdminNotification {
+  id: string;
+  type: 'worker_registration' | 'worker_checkin' | 'new_complaint' | 'worker_assigned';
+  title: string;
+  message: string;
+  workerId?: string | number;
+  workerName?: string;
+  stationCode?: string;
+  stationName?: string;
+  skillCategory?: string;
+  complaintId?: string;
+  timestamp: string;
+  read: boolean;
 }
 
 // ---------------------------------------------------------------------------

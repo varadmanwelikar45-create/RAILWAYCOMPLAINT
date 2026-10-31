@@ -9,7 +9,8 @@ import {
   WorkerServiceRequest,
   WorkerSkillCategory,
   WorkerAvailabilityStatus,
-  WorkerRequestStatus
+  WorkerRequestStatus,
+  AdminNotification
 } from './types';
 import { INITIAL_USERS, INITIAL_COMPLAINTS, ALLOWED_CATEGORIES, INITIAL_WORKERS } from './data/mockData';
 import { FIFOQueue } from './algorithms/queue';
@@ -24,6 +25,10 @@ import { WorkerLoginPage } from './components/WorkerLoginPage';
 import { WorkerRegisterPage } from './components/WorkerRegisterPage';
 import { WorkerDashboard } from './components/WorkerDashboard';
 import { BookWorkerSection } from './components/BookWorkerSection';
+import { RegisterComplaint } from './components/RegisterComplaint';
+import { ComplaintDetails } from './components/ComplaintDetails';
+import { AdminDashboard } from './components/AdminDashboard';
+import { AdminLoginPage } from './components/AdminLoginPage';
 import { AlertCircle, CheckCircle, Info } from 'lucide-react';
 import { db, collection, doc, setDoc, onSnapshot } from './lib/firebase';
 
@@ -161,8 +166,8 @@ export default function App() {
   const [complaints, setComplaints] = useState<Complaint[]>(loadStoredComplaints);
   const [currentView, setCurrentView] = useState<ViewMode>(() => {
     const savedUser = loadStoredCurrentUser();
-    if (savedUser && !savedUser.isAdmin) {
-      return 'user-dashboard';
+    if (savedUser) {
+      return savedUser.isAdmin ? 'admin-dashboard' : 'user-dashboard';
     }
     const savedWorker = loadStoredCurrentWorker();
     if (savedWorker) {
@@ -171,8 +176,8 @@ export default function App() {
     return 'landing';
   });
   const [viewHistory, setViewHistory] = useState<ViewMode[]>([
-    loadStoredCurrentUser() && !loadStoredCurrentUser()?.isAdmin
-      ? 'user-dashboard'
+    loadStoredCurrentUser()
+      ? loadStoredCurrentUser()?.isAdmin ? 'admin-dashboard' : 'user-dashboard'
       : loadStoredCurrentWorker()
       ? 'worker-dashboard'
       : 'landing',
@@ -180,13 +185,10 @@ export default function App() {
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [selectedWorkerForBooking, setSelectedWorkerForBooking] = useState<Worker | null>(null);
   const [selectedCategoryForBooking, setSelectedCategoryForBooking] = useState<WorkerSkillCategory | null>(null);
+  const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>([]);
 
   const navigateTo = (view: ViewMode, pushToHistory = true) => {
-    // Senior Divisional Railway Officer portal removed without disturbing database
-    let targetView = view;
-    if (targetView === 'admin-dashboard' || targetView === 'admin-login') {
-      targetView = 'landing';
-    }
+    const targetView = view;
     if (pushToHistory && targetView !== currentView) {
       try {
         window.history.pushState({ view: targetView }, '', `#${targetView}`);
@@ -229,12 +231,9 @@ export default function App() {
     } catch (e) {}
 
     const handlePopState = (event: PopStateEvent) => {
-      let targetView: ViewMode =
+      const targetView: ViewMode =
         (event.state && event.state.view) ||
         (window.location.hash ? (window.location.hash.replace('#', '') as ViewMode) : 'landing');
-      if (targetView === 'admin-dashboard' || targetView === 'admin-login') {
-        targetView = 'landing';
-      }
       setCurrentView(targetView);
       setViewHistory((prev) => {
         if (prev.length > 1) {
@@ -349,15 +348,30 @@ export default function App() {
     } catch (err) {}
   };
 
+  // Fetch admin notifications from central backend
+  const fetchAdminNotifications = async () => {
+    try {
+      const res = await fetch('/api/admin/notifications');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.success && Array.isArray(data.notifications)) {
+          setAdminNotifications(data.notifications);
+        }
+      }
+    } catch (err) {}
+  };
+
   // On mount: fetch initial data, hook real-time Firestore listeners, and run periodic heartbeat
   useEffect(() => {
     fetchComplaintsFromServer();
     fetchUsersFromServer();
     fetchWorkersFromServer();
     fetchWorkerRequestsFromServer();
+    fetchAdminNotifications();
 
     let unsubscribeWorkers: (() => void) | undefined;
     let unsubscribeRequests: (() => void) | undefined;
+    let unsubscribeNotifications: (() => void) | undefined;
 
     // Real-Time Cross-Device Synchronization via Cloud Firestore
     if (db) {
@@ -438,6 +452,24 @@ export default function App() {
           console.warn('Realtime requests listener warning:', err);
         });
       } catch (err) {}
+
+      try {
+        unsubscribeNotifications = onSnapshot(collection(db, 'admin_notifications'), (snapshot) => {
+          if (!snapshot.empty) {
+            const list: AdminNotification[] = [];
+            snapshot.forEach((docSnap) => {
+              const data = docSnap.data() as AdminNotification;
+              if (data && data.id) {
+                list.push(data);
+              }
+            });
+            list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+            setAdminNotifications(list);
+          }
+        }, (err) => {
+          console.warn('Realtime notifications listener warning:', err);
+        });
+      } catch (err) {}
     }
 
     // 3-second heartbeat backup for REST endpoints
@@ -446,12 +478,14 @@ export default function App() {
       fetchUsersFromServer();
       fetchWorkersFromServer();
       fetchWorkerRequestsFromServer();
+      fetchAdminNotifications();
     }, 3000);
 
     return () => {
       clearInterval(interval);
       if (unsubscribeWorkers) unsubscribeWorkers();
       if (unsubscribeRequests) unsubscribeRequests();
+      if (unsubscribeNotifications) unsubscribeNotifications();
     };
   }, []);
 
@@ -1506,6 +1540,44 @@ export default function App() {
     fetchWorkersFromServer();
   };
 
+  const handleDispatchWorker = async (complaintId: string, workerId: string, instructions?: string) => {
+    try {
+      const res = await fetch('/api/admin/dispatch-worker', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ complaintId, workerId, instructions }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setToast({ message: data.message, type: 'success' });
+        fetchComplaintsFromServer();
+        fetchWorkersFromServer();
+        fetchWorkerRequestsFromServer();
+        fetchAdminNotifications();
+        return { success: true, message: data.message };
+      }
+      return { success: false, message: data.message || 'Dispatch failed' };
+    } catch (err: any) {
+      return { success: false, message: 'Network error dispatching worker' };
+    }
+  };
+
+  const handleMarkNotificationRead = async (notificationId: string) => {
+    setAdminNotifications((prev) =>
+      prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
+    );
+    try {
+      await fetch(`/api/admin/notifications/${notificationId}/read`, { method: 'PUT' });
+    } catch (e) {}
+  };
+
+  const handleClearNotifications = async () => {
+    setAdminNotifications([]);
+    try {
+      await fetch('/api/admin/notifications/clear', { method: 'POST' });
+    } catch (e) {}
+  };
+
   return (
     <div className="relative min-h-screen bg-[#F8FAFB] text-[#202A2B] font-sans selection:bg-[#DDF8EF] overflow-x-hidden">
       {/* Moving Realistic Indian Passenger Train Background */}
@@ -1693,12 +1765,71 @@ export default function App() {
           )
         )}
 
-        {/* Fallback for removed admin routes redirecting safely to landing */}
-        {(currentView === 'admin-dashboard' || currentView === 'admin-login') && (
-          <LandingPage
-            currentUser={currentUser}
-            workerRequests={workerRequests}
+        {currentView === 'register-complaint' && (
+          currentUser ? (
+            <RegisterComplaint
+              currentUser={currentUser}
+              onSubmitComplaint={handleSubmitComplaint}
+              onNavigate={navigateTo}
+              onSelectComplaint={(c) => {
+                setSelectedComplaint(c);
+                navigateTo('complaint-details');
+              }}
+            />
+          ) : (
+            <LoginPage
+              initialEmail={registeredEmail}
+              onLogin={handleLogin}
+              onNavigate={navigateTo}
+              onBack={handleBack}
+            />
+          )
+        )}
+
+        {currentView === 'complaint-details' && (
+          selectedComplaint ? (
+            <ComplaintDetails
+              complaint={selectedComplaint}
+              currentUser={currentUser}
+              onUpdateStatus={handleUpdateStatus}
+              onNavigate={navigateTo}
+            />
+          ) : (
+            <LandingPage
+              currentUser={currentUser}
+              workerRequests={workerRequests}
+              workers={workers}
+              onNavigate={navigateTo}
+            />
+          )
+        )}
+
+        {currentView === 'admin-login' && (
+          <AdminLoginPage
+            onAdminLogin={handleAdminLogin}
+            onNavigate={navigateTo}
+          />
+        )}
+
+        {currentView === 'admin-dashboard' && (
+          <AdminDashboard
+            currentUser={currentUser || INITIAL_USERS[0]}
+            complaints={complaints}
+            queue={queue}
+            users={users}
             workers={workers}
+            workerRequests={workerRequests}
+            adminNotifications={adminNotifications}
+            onUpdateWorkerVerification={handleUpdateWorkerVerification}
+            onDispatchWorker={handleDispatchWorker}
+            onMarkNotificationRead={handleMarkNotificationRead}
+            onClearNotifications={handleClearNotifications}
+            onProcessNextFIFO={handleProcessNextFIFO}
+            onUpdateStatus={handleUpdateStatus}
+            onSelectComplaint={(c) => {
+              setSelectedComplaint(c);
+              navigateTo('complaint-details');
+            }}
             onNavigate={navigateTo}
           />
         )}

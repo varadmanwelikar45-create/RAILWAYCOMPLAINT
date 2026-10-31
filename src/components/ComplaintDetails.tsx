@@ -198,6 +198,71 @@ export const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({
 
         </div>
 
+        {/* Assigned Specialist (Gig Worker connection) */}
+        {complaint.assignedWorkerName && (
+          <div className="p-4 rounded-2xl bg-[#DDF8EF] border border-[#65D6B0] space-y-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#1E6B52] animate-ping" />
+                <span className="text-xs font-black uppercase tracking-wider text-[#1E6B52]">
+                  Station Specialist Assigned by Government Officer
+                </span>
+              </div>
+              {complaint.assignedWorkerMobile && (
+                <a
+                  href={`tel:${complaint.assignedWorkerMobile}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#1E6B52] hover:bg-[#1E6B52]/90 text-white rounded-lg text-xs font-bold transition shadow-2xs"
+                >
+                  <span>Call {complaint.assignedWorkerName}</span>
+                </a>
+              )}
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-[#202A2B]">
+              <div>
+                Specialist: <strong className="font-bold">{complaint.assignedWorkerName}</strong>
+                {complaint.assignedWorkerSkill && (
+                  <span className="text-[#526365] ml-1">({complaint.assignedWorkerSkill})</span>
+                )}
+              </div>
+              <div className="text-[11px] text-[#526365]">
+                Dispatched to resolve grievance at your coach &amp; berth.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Uploaded Evidence: Photo & Voice Note */}
+        {(complaint.imageUrl || complaint.voiceUrl) && (
+          <div className="space-y-3 p-4 rounded-2xl bg-[#F8FAFB] border border-[#DDE4E6]">
+            <div className="text-xs font-bold text-[#202A2B] uppercase tracking-wider">
+              Incident Evidence Submitted by Passenger
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {complaint.imageUrl && (
+                <div className="space-y-1.5">
+                  <span className="text-[11px] font-bold text-[#526365] block">Photo Evidence</span>
+                  <img
+                    src={complaint.imageUrl}
+                    alt="Uploaded incident evidence"
+                    className="w-full h-44 object-cover rounded-xl border border-[#DDE4E6]"
+                  />
+                </div>
+              )}
+              {complaint.voiceUrl && (
+                <div className="space-y-1.5 flex flex-col justify-center">
+                  <span className="text-[11px] font-bold text-[#526365] block">Voice Complaint Note</span>
+                  <audio src={complaint.voiceUrl} controls className="w-full h-10" />
+                  {complaint.aiAnalysis?.transcribedText && (
+                    <p className="text-[11px] text-[#526365] italic bg-white p-2 rounded-lg border border-[#DDE4E6]">
+                      "{complaint.aiAnalysis.transcribedText}"
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Subject & Description */}
         <div className="space-y-2">
           <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -216,6 +281,16 @@ export const ComplaintDetails: React.FC<ComplaintDetailsProps> = ({
             {complaint.description || 'No additional description provided.'}
           </div>
         </div>
+
+        {/* AI Analysis Findings Tag Box */}
+        {complaint.aiAnalysis && (
+          <div className="p-3.5 rounded-xl bg-[#F0FAFD] border border-[#00B8D9]/40 text-xs text-[#007D99] space-y-1">
+            <span className="font-bold block">Railway AI Inspection Assessment:</span>
+            <p className="text-[11px] text-[#526365]">
+              Severity: <strong>{complaint.aiAnalysis.severity}</strong> · Recommended Specialist: <strong>{complaint.aiAnalysis.recommendedRole}</strong>
+            </p>
+          </div>
+        )}
 
         {/* Admin Action Section */}
         {isAdmin && (

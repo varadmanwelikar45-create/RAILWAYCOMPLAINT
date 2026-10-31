@@ -1,7 +1,34 @@
-import React, { useState } from 'react';
-import { Complaint, ComplaintCategory, User, ViewMode } from '../types';
+import React, { useState, useRef, useEffect } from 'react';
+import { Complaint, ComplaintCategory, User, ViewMode, AIComplaintAnalysis } from '../types';
 import { ALLOWED_CATEGORIES } from '../data/mockData';
-import { ArrowLeft, Send, AlertCircle, Sparkles, Check, CheckCircle2, Copy, ExternalLink, RefreshCw, Train, Calendar, Tag, MapPin, Hash } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Send, 
+  AlertCircle, 
+  Sparkles, 
+  Check, 
+  CheckCircle2, 
+  Copy, 
+  ExternalLink, 
+  RefreshCw, 
+  Train, 
+  Calendar, 
+  Tag, 
+  MapPin, 
+  Hash,
+  Mic,
+  MicOff,
+  Image as ImageIcon,
+  Camera,
+  UploadCloud,
+  Volume2,
+  Bot,
+  Wand2,
+  Trash2,
+  ShieldCheck,
+  Zap,
+  Flame
+} from 'lucide-react';
 
 interface RegisterComplaintProps {
   currentUser: User;
@@ -64,11 +91,244 @@ export const RegisterComplaint: React.FC<RegisterComplaintProps> = ({
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+  const [severity, setSeverity] = useState<'Urgent' | 'High' | 'Medium' | 'Low'>('Medium');
   const [error, setError] = useState<string | null>(null);
   const [presetNotice, setPresetNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submittedComplaint, setSubmittedComplaint] = useState<Complaint | null>(null);
   const [copiedId, setCopiedId] = useState(false);
+
+  // AI Multimodal Evidence States (Image + Voice)
+  const [uploadedImageBase64, setUploadedImageBase64] = useState<string | null>(null);
+  const [imageMimeType, setImageMimeType] = useState<string>('image/jpeg');
+  const [imageFileName, setImageFileName] = useState<string | null>(null);
+
+  // Voice recording states
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [voiceAudioBase64, setVoiceAudioBase64] = useState<string | null>(null);
+  const [voiceMimeType, setVoiceMimeType] = useState<string>('audio/webm');
+  const [voiceAudioUrl, setVoiceAudioUrl] = useState<string | null>(null);
+  const [liveTranscript, setLiveTranscript] = useState<string>('');
+
+  // AI Analysis states
+  const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<AIComplaintAnalysis | null>(null);
+  const [aiSuccessBadge, setAiSuccessBadge] = useState<string | null>(null);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const timerIntervalRef = useRef<any>(null);
+  const speechRecognitionRef = useRef<any>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      if (speechRecognitionRef.current) {
+        try { speechRecognitionRef.current.stop(); } catch (e) {}
+      }
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        try { mediaRecorderRef.current.stop(); } catch (e) {}
+      }
+    };
+  }, []);
+
+  // Handle Photo File Upload
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file (JPEG, PNG, WEBP).');
+      return;
+    }
+
+    setImageFileName(file.name);
+    setImageMimeType(file.type || 'image/jpeg');
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      setUploadedImageBase64(result);
+      setError(null);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = () => {
+    setUploadedImageBase64(null);
+    setImageFileName(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // Handle Voice Recording
+  const startVoiceRecording = async () => {
+    setError(null);
+    audioChunksRef.current = [];
+    setRecordingSeconds(0);
+    setLiveTranscript('');
+
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setError('Voice microphone access is not supported by your browser.');
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = MediaRecorder.isTypeSupported('audio/webm')
+        ? 'audio/webm'
+        : MediaRecorder.isTypeSupported('audio/mp4')
+        ? 'audio/mp4'
+        : 'audio/ogg';
+      setVoiceMimeType(mime);
+
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: mime });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        setVoiceAudioUrl(audioUrl);
+
+        // Convert blob to base64
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setVoiceAudioBase64(reader.result as string);
+        };
+        reader.readAsDataURL(audioBlob);
+
+        // Stop all audio tracks
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      recorder.start();
+      setIsRecording(true);
+
+      // Start timer
+      timerIntervalRef.current = setInterval(() => {
+        setRecordingSeconds((prev) => prev + 1);
+      }, 1000);
+
+      // Web Speech API for immediate live transcription preview
+      const SpeechRecognition =
+        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        try {
+          const recognition = new SpeechRecognition();
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          recognition.lang = 'en-IN';
+
+          recognition.onresult = (event: any) => {
+            let current = '';
+            for (let i = 0; i < event.results.length; i++) {
+              current += event.results[i][0].transcript;
+            }
+            setLiveTranscript(current);
+          };
+
+          recognition.start();
+          speechRecognitionRef.current = recognition;
+        } catch (e) {
+          // Fall back gracefully to audio transmission only
+        }
+      }
+    } catch (err: any) {
+      console.error('Microphone error:', err);
+      setError('Could not access microphone. Please grant permission or type your grievance.');
+      setIsRecording(false);
+    }
+  };
+
+  const stopVoiceRecording = () => {
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+    if (speechRecognitionRef.current) {
+      try { speechRecognitionRef.current.stop(); } catch (e) {}
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+  };
+
+  const handleRemoveVoice = () => {
+    setVoiceAudioBase64(null);
+    setVoiceAudioUrl(null);
+    setLiveTranscript('');
+    setRecordingSeconds(0);
+  };
+
+  // Multimodal Gemini AI Analysis
+  const handleAnalyzeWithAI = async () => {
+    if (!uploadedImageBase64 && !voiceAudioBase64 && !liveTranscript && !description) {
+      setError('Please upload a photo, record a voice complaint, or type brief notes first for the AI to analyze.');
+      return;
+    }
+
+    setError(null);
+    setIsAnalyzingAI(true);
+    setAiSuccessBadge(null);
+
+    try {
+      const res = await fetch('/api/analyze-complaint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageBase64: uploadedImageBase64,
+          mimeType: imageMimeType,
+          voiceBase64: voiceAudioBase64,
+          voiceMimeType: voiceMimeType,
+          voiceText: liveTranscript,
+          notes: description || subject,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.analysis) {
+        const result: AIComplaintAnalysis = data.analysis;
+        setAiAnalysis(result);
+
+        // Autofill the form fields
+        if (result.category && ALLOWED_CATEGORIES.includes(result.category)) {
+          setCategory(result.category);
+        }
+        if (result.subject) {
+          setSubject(result.subject);
+        }
+        if (result.description) {
+          setDescription(result.description);
+        }
+        if (result.severity) {
+          setSeverity(result.severity);
+        }
+        if (result.locationHint && !location) {
+          setLocation(result.locationHint);
+        }
+
+        setAiSuccessBadge(
+          `AI Analysis Complete: Classified as "${result.category}" · Recommended Specialist: ${result.recommendedRole}`
+        );
+      } else {
+        setError(data.message || 'AI analysis could not complete. You can still fill the details manually.');
+      }
+    } catch (err: any) {
+      console.error('AI analysis error:', err);
+      setError('AI service temporarily unreachable. You can continue filling details manually.');
+    } finally {
+      setIsAnalyzingAI(false);
+    }
+  };
 
   const applyPreset = (template: typeof PRESET_TEMPLATES[0]) => {
     setTrainNumber(template.train);
@@ -145,6 +405,10 @@ export const RegisterComplaint: React.FC<RegisterComplaintProps> = ({
           description: description.trim(),
           location: location.trim() || undefined,
           status: 'Pending',
+          imageUrl: uploadedImageBase64 || undefined,
+          voiceUrl: voiceAudioUrl || undefined,
+          severity,
+          aiAnalysis: aiAnalysis || undefined,
         })
       );
 
@@ -407,6 +671,235 @@ export const RegisterComplaint: React.FC<RegisterComplaintProps> = ({
             </div>
           </div>
 
+          {/* AI SMART ASSISTANT: MULTIMODAL IMAGE & VOICE COMPLAINT */}
+          <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-[#F0FBF7] via-[#F8FAFB] to-[#F0FAFD] border-2 border-[#65D6B0]/60 space-y-4 shadow-2xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#DDE4E6] pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-[#202A2B] text-[#65D6B0] flex items-center justify-center shadow-xs">
+                  <Bot className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-black text-[#202A2B]">AI Smart Grievance Assistant</h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-[#65D6B0]/20 text-[#1E6B52] border border-[#65D6B0]/40 flex items-center gap-1">
+                      <Sparkles className="w-2.5 h-2.5 text-[#1E6B52]" /> Gemini Vision &amp; Voice
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#526365]">
+                    Upload an incident photo or speak your grievance. Railway AI will analyze the evidence and auto-fill the complaint.
+                  </p>
+                </div>
+              </div>
+
+              {/* AI Trigger Button */}
+              <button
+                type="button"
+                onClick={handleAnalyzeWithAI}
+                disabled={isAnalyzingAI || (!uploadedImageBase64 && !voiceAudioBase64 && !description)}
+                className={`px-4 py-2 bg-[#202A2B] hover:bg-[#202A2B]/90 text-white rounded-xl text-xs font-black transition flex items-center justify-center gap-2 cursor-pointer shadow-xs border border-[#202A2B] shrink-0 ${
+                  isAnalyzingAI || (!uploadedImageBase64 && !voiceAudioBase64 && !description)
+                    ? 'opacity-60 cursor-not-allowed'
+                    : 'hover:scale-[1.02]'
+                }`}
+              >
+                {isAnalyzingAI ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#65D6B0]" />
+                    <span>Analyzing with Gemini AI...</span>
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="w-3.5 h-3.5 text-[#65D6B0]" />
+                    <span>Auto-Fill with AI</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Evidence Inputs Grid: Image Upload & Voice Recorder */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              
+              {/* Box 1: Image Upload */}
+              <div className="p-4 bg-white rounded-xl border border-[#DDE4E6] space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#202A2B] flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5 text-[#007D99]" />
+                    Incident Photo Evidence
+                  </span>
+                  <span className="text-[10px] text-[#526365]">PNG, JPG, WebP</span>
+                </div>
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageFileChange}
+                  accept="image/*"
+                  className="hidden"
+                  id="incident-photo-upload"
+                />
+
+                {uploadedImageBase64 ? (
+                  <div className="relative rounded-xl overflow-hidden border border-[#DDE4E6] bg-[#F8FAFB]">
+                    <img
+                      src={uploadedImageBase64}
+                      alt="Incident Evidence"
+                      className="w-full h-32 object-cover"
+                    />
+                    <div className="absolute inset-x-0 bottom-0 bg-[#202A2B]/80 text-white p-2 text-[10px] flex items-center justify-between backdrop-blur-xs">
+                      <span className="truncate max-w-[180px] font-medium">{imageFileName || 'Uploaded Photo'}</span>
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="text-red-300 hover:text-red-100 p-1 cursor-pointer"
+                        title="Remove image"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full py-6 border-2 border-dashed border-[#DDE4E6] hover:border-[#007D99] rounded-xl flex flex-col items-center justify-center gap-1.5 transition text-center hover:bg-[#F8FAFB] cursor-pointer"
+                  >
+                    <UploadCloud className="w-6 h-6 text-[#7E9092]" />
+                    <span className="text-xs font-bold text-[#202A2B]">Upload or Snap Photo</span>
+                    <span className="text-[10px] text-[#526365]">Unclean coach, leaking tap, broken AC, food</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Box 2: Voice Complaint Recorder */}
+              <div className="p-4 bg-white rounded-xl border border-[#DDE4E6] space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#202A2B] flex items-center gap-1.5">
+                    <Mic className="w-3.5 h-3.5 text-[#B94A3A]" />
+                    Voice Complaint Note
+                  </span>
+                  {isRecording && (
+                    <span className="flex items-center gap-1 text-[10px] font-black text-red-600 animate-pulse">
+                      <span className="w-2 h-2 rounded-full bg-red-600" />
+                      REC 00:{recordingSeconds < 10 ? `0${recordingSeconds}` : recordingSeconds}s
+                    </span>
+                  )}
+                </div>
+
+                {isRecording ? (
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-center space-y-2">
+                    <div className="w-12 h-12 mx-auto rounded-full bg-red-600 text-white flex items-center justify-center animate-pulse shadow-md">
+                      <Mic className="w-6 h-6" />
+                    </div>
+                    <p className="text-xs font-bold text-red-900">
+                      Listening... Speak your complaint clearly
+                    </p>
+                    {liveTranscript && (
+                      <p className="text-[11px] text-[#526365] italic max-h-12 overflow-y-auto bg-white p-2 rounded-lg border border-red-200">
+                        "{liveTranscript}"
+                      </p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={stopVoiceRecording}
+                      className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-black transition cursor-pointer shadow-xs inline-flex items-center gap-1.5"
+                    >
+                      <MicOff className="w-3.5 h-3.5" />
+                      <span>Stop &amp; Save Recording</span>
+                    </button>
+                  </div>
+                ) : voiceAudioUrl ? (
+                  <div className="space-y-2 p-2 rounded-xl bg-[#F8FAFB] border border-[#DDE4E6]">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-[#202A2B] flex items-center gap-1">
+                        <Volume2 className="w-3.5 h-3.5 text-[#1E6B52]" /> Voice Note Recorded
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleRemoveVoice}
+                        className="text-red-500 hover:text-red-700 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                      >
+                        <Trash2 className="w-3 h-3" /> Remove
+                      </button>
+                    </div>
+                    <audio src={voiceAudioUrl} controls className="w-full h-8" />
+                    {liveTranscript && (
+                      <p className="text-[10px] text-[#526365] bg-white p-1.5 rounded border border-[#DDE4E6] italic">
+                        <strong>Transcript:</strong> "{liveTranscript}"
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-5 space-y-2">
+                    <button
+                      type="button"
+                      onClick={startVoiceRecording}
+                      className="w-12 h-12 mx-auto rounded-full bg-[#B94A3A] hover:bg-[#B94A3A]/90 text-white flex items-center justify-center transition shadow-xs hover:scale-105 cursor-pointer"
+                      title="Start voice recording"
+                    >
+                      <Mic className="w-6 h-6" />
+                    </button>
+                    <div>
+                      <span className="text-xs font-bold text-[#202A2B] block">Tap Mic to Record</span>
+                      <span className="text-[10px] text-[#526365]">Explain issue in Hindi, English, or regional language</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+            {/* AI Analysis Result Showcase */}
+            {aiAnalysis && (
+              <div className="p-4 rounded-xl bg-white border border-[#65D6B0] space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#DDE4E6] pb-2">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-[#1E6B52]" />
+                    <span className="text-xs font-black text-[#202A2B]">Gemini AI Analysis &amp; Routing Recommendation</span>
+                  </div>
+                  {aiAnalysis.confidence && (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#DDF8EF] text-[#1E6B52] border border-[#65D6B0]/40">
+                      Confidence: {aiAnalysis.confidence}
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1">
+                  <div className="p-2 rounded-lg bg-[#F8FAFB] border border-[#DDE4E6]">
+                    <span className="text-[10px] text-[#526365] block">Detected Category</span>
+                    <strong className="text-[#202A2B] font-bold">{aiAnalysis.category}</strong>
+                  </div>
+                  <div className="p-2 rounded-lg bg-[#F8FAFB] border border-[#DDE4E6]">
+                    <span className="text-[10px] text-[#526365] block">Assessed Severity</span>
+                    <strong className={`font-bold ${
+                      aiAnalysis.severity === 'Urgent' ? 'text-red-600' : aiAnalysis.severity === 'High' ? 'text-amber-600' : 'text-[#202A2B]'
+                    }`}>
+                      {aiAnalysis.severity}
+                    </strong>
+                  </div>
+                  <div className="p-2 rounded-lg bg-[#DDF8EF] border border-[#65D6B0]/40">
+                    <span className="text-[10px] text-[#1E6B52] block font-semibold">Recommended Specialist</span>
+                    <strong className="text-[#1E6B52] font-black">{aiAnalysis.recommendedRole}</strong>
+                  </div>
+                </div>
+
+                {Array.isArray(aiAnalysis.detectedIssues) && aiAnalysis.detectedIssues.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[11px]">
+                    <span className="text-[#526365] font-semibold">Detected Issues:</span>
+                    {aiAnalysis.detectedIssues.map((issue, idx) => (
+                      <span key={idx} className="px-2 py-0.5 rounded-md bg-[#FFFDF5] border border-[#FFD68A] text-[#915900] text-[10px] font-bold">
+                        {issue}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <p className="text-[11px] text-[#1E6B52] font-semibold pt-1">
+                  ✓ Form fields below have been automatically populated! You can review or edit before submitting.
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* Train Number & PNR */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -460,9 +953,16 @@ export const RegisterComplaint: React.FC<RegisterComplaintProps> = ({
             </div>
 
             <div>
-              <label htmlFor="complaint-category" className="block text-xs font-bold text-[#202A2B] mb-1.5">
-                Grievance Category <span className="text-[#D72645]">*</span>
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label htmlFor="complaint-category" className="block text-xs font-bold text-[#202A2B]">
+                  Grievance Category <span className="text-[#D72645]">*</span>
+                </label>
+                {aiAnalysis?.recommendedRole && (
+                  <span className="text-[10px] font-bold text-[#1E6B52] bg-[#DDF8EF] px-1.5 py-0.5 rounded border border-[#65D6B0]/40">
+                    Routing: {aiAnalysis.recommendedRole}
+                  </span>
+                )}
+              </div>
               <select
                 id="complaint-category"
                 disabled={submitting}
@@ -480,20 +980,40 @@ export const RegisterComplaint: React.FC<RegisterComplaintProps> = ({
             </div>
           </div>
 
-          {/* Coach / Location */}
-          <div>
-            <label htmlFor="complaint-coach-location" className="block text-xs font-bold text-[#202A2B] mb-1.5">
-              Coach &amp; Berth or Station Location <span className="text-[#526365] font-normal">(Optional)</span>
-            </label>
-            <input
-              id="complaint-coach-location"
-              type="text"
-              disabled={submitting}
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="e.g. Coach B3, Berth 24 or Platform 2"
-              className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#DDE4E6] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#007D99] transition text-[#202A2B] disabled:opacity-60"
-            />
+          {/* Severity & Coach / Location */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="complaint-severity" className="block text-xs font-bold text-[#202A2B] mb-1.5">
+                Priority / Severity Level
+              </label>
+              <select
+                id="complaint-severity"
+                disabled={submitting}
+                value={severity}
+                onChange={(e) => setSeverity(e.target.value as any)}
+                className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#DDE4E6] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#007D99] transition text-[#202A2B] disabled:opacity-60 font-semibold"
+              >
+                <option value="Urgent">🚨 Urgent - Safety / Medical / High Impact</option>
+                <option value="High">⚡ High - AC Breakdown / Washroom Leak</option>
+                <option value="Medium">⚖️ Medium - Standard Coach Defect</option>
+                <option value="Low">ℹ️ Low - Minor Feedback / Suggestion</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="complaint-coach-location" className="block text-xs font-bold text-[#202A2B] mb-1.5">
+                Coach &amp; Berth or Station Location <span className="text-[#526365] font-normal">(Optional)</span>
+              </label>
+              <input
+                id="complaint-coach-location"
+                type="text"
+                disabled={submitting}
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g. Coach B3, Berth 24 or Platform 2"
+                className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#DDE4E6] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#007D99] transition text-[#202A2B] disabled:opacity-60"
+              />
+            </div>
           </div>
 
           {/* Subject */}

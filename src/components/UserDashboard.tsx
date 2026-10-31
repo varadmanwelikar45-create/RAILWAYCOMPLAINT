@@ -277,11 +277,20 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
           </div>
         </div>
 
-        {/* Action Button */}
-        <div className="flex items-center gap-3 shrink-0 w-full sm:w-auto">
+        {/* Action Buttons */}
+        <div className="flex flex-wrap items-center gap-3 shrink-0 w-full sm:w-auto">
+          <button
+            onClick={() => onNavigate('register-complaint')}
+            className="w-full sm:w-auto px-4 py-3.5 bg-[#65D6B0] hover:bg-[#3EA684] text-[#202A2B] text-xs font-black rounded-2xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer hover:shadow-md"
+            title="File a grievance using Gemini AI Voice & Photo analysis"
+          >
+            <Sparkles className="w-4 h-4 text-[#202A2B]" />
+            <span>AI Voice &amp; Photo Grievance</span>
+          </button>
+
           <button
             onClick={() => onNavigate('book-worker')}
-            className="w-full sm:w-auto px-6 py-3.5 bg-[#202A2B] hover:bg-[#202A2B]/90 text-white text-xs font-black rounded-2xl shadow-xs transition-all border border-[#202A2B] flex items-center justify-center gap-2 cursor-pointer hover:shadow-md"
+            className="w-full sm:w-auto px-5 py-3.5 bg-[#202A2B] hover:bg-[#202A2B]/90 text-white text-xs font-black rounded-2xl shadow-xs transition-all border border-[#202A2B] flex items-center justify-center gap-2 cursor-pointer hover:shadow-md"
           >
             <PlusCircle className="w-4 h-4 text-[#65D6B0]" />
             <span>Book Station Worker</span>
