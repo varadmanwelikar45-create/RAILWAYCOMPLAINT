@@ -29,14 +29,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="bg-white/95 backdrop-blur-md border-b border-[#DDE4E6] sticky top-0 z-40 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 gap-6">
+        <div className="flex items-center justify-between h-16 gap-6">
           
           {/* Zone 1: Back Button & VYOM RATH Brand Wordmark */}
           <div className="flex items-center gap-3">
             {canGoBack && onBack && (
               <button
                 onClick={onBack}
-                className="p-2 -ml-2 rounded-xl text-[#202A2B] hover:bg-[#F0F4F6] transition cursor-pointer flex items-center gap-1.5 text-xs font-bold shrink-0 border border-[#DDE4E6] shadow-xs"
+                className="p-1.5 -ml-1 rounded-xl text-[#202A2B] hover:bg-[#F0F4F6] transition cursor-pointer flex items-center gap-1.5 text-xs font-bold shrink-0 border border-[#DDE4E6] shadow-xs"
                 title="Go Back to Previous Page"
               >
                 <ArrowLeft className="w-4 h-4 text-[#B94A3A]" />
@@ -49,21 +49,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onNavigate('landing');
                 setMobileMenuOpen(false);
               }}
-              className="flex items-center gap-3 text-left group cursor-pointer focus:outline-none shrink-0"
+              className="flex items-center gap-2.5 text-left group cursor-pointer focus:outline-none shrink-0"
             >
-              <div className="w-10 h-10 rounded-xl bg-[#202A2B] flex items-center justify-center text-[#65D6B0] shadow-xs border border-[#202A2B] group-hover:scale-105 transition-transform">
-                <Train className="w-5 h-5 font-bold" />
+              <div className="w-9 h-9 rounded-xl bg-[#202A2B] flex items-center justify-center text-[#65D6B0] shadow-xs border border-[#202A2B]">
+                <Train className="w-4 h-4 font-bold" />
               </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-black text-xl sm:text-2xl tracking-tight text-[#202A2B] whitespace-nowrap">
-                    VYOM RATH
-                  </span>
-                  <span className="w-2 h-2 rounded-full bg-[#65D6B0] shrink-0"></span>
-                </div>
-                <p className="text-[10px] font-medium text-[#526365] tracking-wide whitespace-nowrap hidden sm:block">
-                  On-Demand Railway Passenger &amp; Gig Workforce Network
-                </p>
+              <div className="flex items-center gap-1.5">
+                <span className="font-black text-xl tracking-tight text-[#202A2B] whitespace-nowrap">
+                  VYOMRATH
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#65D6B0] shrink-0"></span>
               </div>
             </button>
           </div>

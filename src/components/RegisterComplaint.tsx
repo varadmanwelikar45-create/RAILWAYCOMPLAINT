@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Complaint, ComplaintCategory, User, ViewMode, AIComplaintAnalysis } from '../types';
 import { ALLOWED_CATEGORIES } from '../data/mockData';
+import { AIVoiceAssistantModal } from './AIVoiceAssistantModal';
 import { 
   ArrowLeft, 
   Send, 
@@ -97,6 +98,7 @@ export const RegisterComplaint: React.FC<RegisterComplaintProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [submittedComplaint, setSubmittedComplaint] = useState<Complaint | null>(null);
   const [copiedId, setCopiedId] = useState(false);
+  const [isVoiceAssistantOpen, setIsVoiceAssistantOpen] = useState(false);
 
   // AI Multimodal Evidence States (Image + Voice)
   const [uploadedImageBase64, setUploadedImageBase64] = useState<string | null>(null);
@@ -391,6 +393,9 @@ export const RegisterComplaint: React.FC<RegisterComplaintProps> = ({
 
     setSubmitting(true);
     try {
+      const generatedRef = `RM-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+      const resolvedPriority = severity === 'Urgent' ? 'Emergency' : (severity === 'High' ? 'High' : (severity === 'Low' ? 'Low' : 'Medium'));
+
       const created = await Promise.resolve(
         onSubmitComplaint({
           userId: currentUser.id,
@@ -408,6 +413,9 @@ export const RegisterComplaint: React.FC<RegisterComplaintProps> = ({
           imageUrl: uploadedImageBase64 || undefined,
           voiceUrl: voiceAudioUrl || undefined,
           severity,
+          priority: resolvedPriority,
+          railMadadRef: generatedRef,
+          slaMinutesRemaining: 120,
           aiAnalysis: aiAnalysis || undefined,
         })
       );
@@ -457,8 +465,15 @@ export const RegisterComplaint: React.FC<RegisterComplaintProps> = ({
                   {submittedComplaint.status}
                 </span>
               </div>
+              {submittedComplaint.railMadadRef && (
+                <div className="mt-1">
+                  <span className="font-mono text-xs font-bold text-[#007D99] bg-[#D7F7FC] px-2 py-0.5 rounded border border-[#00B8D9]/40 inline-block">
+                    Linked RailMadad Ref: {submittedComplaint.railMadadRef}
+                  </span>
+                </div>
+              )}
               <p className="text-[11px] text-[#526365] mt-1">
-                Save this tracking ID to follow live platform investigation and resolution.
+                Save this tracking ID and RailMadad reference to follow live platform coordination and resolution.
               </p>
             </div>
 
@@ -606,6 +621,31 @@ export const RegisterComplaint: React.FC<RegisterComplaintProps> = ({
           <p className="text-xs text-[#526365] mt-1 font-normal">
             Tell us about the issue you experienced during your railway journey.
           </p>
+        </div>
+
+        {/* AI Voice Assistant Trigger Banner */}
+        <div className="bg-[#202A2B] text-white p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-[#65D6B0]/40 shadow-xs">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#65D6B0]/20 text-[#65D6B0] text-[10px] font-black uppercase tracking-wider border border-[#65D6B0]/40">
+              <Sparkles className="w-3 h-3 text-[#65D6B0]" />
+              <span>Recommended Fast Path</span>
+            </div>
+            <h3 className="text-base font-black text-white flex items-center gap-2">
+              <span>🎙️ Speak Directly to AI Railway Sahayak</span>
+            </h3>
+            <p className="text-xs text-slate-300 max-w-md">
+              Talk naturally into your microphone. AI will classify the grievance, assess severity, and transmit it immediately to the Officer Control Room.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsVoiceAssistantOpen(true)}
+            className="w-full sm:w-auto px-5 py-2.5 bg-[#65D6B0] hover:bg-[#3EA684] text-[#202A2B] rounded-xl text-xs font-black shadow-xs transition flex items-center justify-center gap-2 cursor-pointer shrink-0"
+          >
+            <Mic className="w-4 h-4 text-[#202A2B] animate-pulse" />
+            <span>Start Voice Conversation</span>
+          </button>
         </div>
 
         {/* Quick Presets Bar */}
@@ -1084,6 +1124,20 @@ export const RegisterComplaint: React.FC<RegisterComplaintProps> = ({
         </form>
 
       </div>
+
+      {/* AI Voice Assistant Modal */}
+      {isVoiceAssistantOpen && (
+        <AIVoiceAssistantModal
+          currentUser={currentUser}
+          isOpen={isVoiceAssistantOpen}
+          onClose={() => setIsVoiceAssistantOpen(false)}
+          onSubmitGrievance={onSubmitComplaint}
+          onComplaintCreated={(created) => {
+            setSubmittedComplaint(created);
+            setIsVoiceAssistantOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 };

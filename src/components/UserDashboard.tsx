@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { User, ViewMode, WorkerServiceRequest, Worker, WorkerSkillCategory } from '../types';
-import { RAILWAY_STATIONS } from '../data/mockData';
+import { User, ViewMode, WorkerServiceRequest, Worker, WorkerSkillCategory, Complaint } from '../types';
 import { ServiceDiscoveryMarketplace } from './ServiceDiscoveryMarketplace';
+import { MutualGoogleMap } from './MutualGoogleMap';
+import { AIVoiceAssistantModal } from './AIVoiceAssistantModal';
 import { 
   CheckCircle2, 
   MapPin, 
@@ -11,24 +12,32 @@ import {
   PlusCircle, 
   ArrowLeft, 
   Compass, 
-  RefreshCw, 
-  Radio,
+  Clock, 
+  Briefcase, 
+  Train, 
+  ShieldCheck, 
+  Sparkles, 
+  AlertTriangle, 
+  Camera, 
+  ShieldAlert, 
+  Eye, 
+  ChevronRight,
   LocateFixed,
-  Clock,
-  Briefcase,
-  Search,
-  Train,
-  Check,
-  ShieldCheck,
-  Sparkles,
-  AlertTriangle,
-  Satellite
+  FileCheck,
+  Mic,
+  Radio,
+  Navigation,
+  Bot
 } from 'lucide-react';
 
 interface UserDashboardProps {
   currentUser: User;
+  complaints?: Complaint[];
   workerRequests?: WorkerServiceRequest[];
   workers?: Worker[];
+  onSubmitComplaint?: (
+    newComplaint: Omit<Complaint, 'id' | 'complaintId' | 'createdAt' | 'updatedAt'>
+  ) => Promise<Complaint> | Complaint;
   onCancelWorkerRequest?: (requestId: string) => void;
   onSubmitWorkerFeedback?: (
     requestId: string,
@@ -46,17 +55,18 @@ interface UserDashboardProps {
 const QUICK_FEEDBACK_TAGS = [
   '⚡ Rapid Arrival',
   '🤝 Courteous & Humble',
-  '🧳 Handled Luggage Safely',
-  '🔧 Quick & Skilled Fix',
-  '⏰ Reached Coach on Time',
-  '🧼 Clean & Professional',
+  '🔧 Clean & Skilled Fix',
+  '⏰ Reached Berth on Time',
+  '📸 Verified Photo Proof',
   '👍 Highly Recommended'
 ];
 
 export const UserDashboard: React.FC<UserDashboardProps> = ({
   currentUser,
+  complaints = [],
   workerRequests = [],
   workers = [],
+  onSubmitComplaint,
   onCancelWorkerRequest,
   onSubmitWorkerFeedback,
   onSelectWorkerForBooking,
@@ -65,6 +75,10 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
   onRefreshWorkers,
   onBack,
 }) => {
+  // Voice Modal State
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [expandedMapId, setExpandedMapId] = useState<string | null>(null);
+
   // Filter bookings belonging strictly to current passenger
   const userBookings = (workerRequests || []).filter((r) => {
     if (!r) return false;
@@ -76,157 +90,66 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
     return matchesId || matchesEmail;
   });
 
-  // Selected request for live location viewing
-  const activeRequest = userBookings.find((r) =>
-    ['Requested', 'Awaiting Worker Confirmation', 'Finding Worker', 'Worker Assigned', 'On the Way', 'Arrived at Station', 'Service In Progress'].includes(r.status)
-  ) || null;
-
-  // Navigation Tabs: 'marketplace' | 'radar'
-  const [activeTab, setActiveTab] = useState<'marketplace' | 'radar'>(() =>
-    activeRequest ? 'radar' : 'marketplace'
-  );
-
-  // Filter Bookings Status
-  const [filterWorkerStatus, setFilterWorkerStatus] = useState<'All' | 'Active' | 'Completed' | 'Cancelled'>('All');
-
-  const [selectedLocationReqId, setSelectedLocationReqId] = useState<string | null>(
-    activeRequest ? activeRequest.requestId : (userBookings[0]?.requestId || null)
-  );
-
-  // Live Location Sharing & Diagnostic States
-  const [isLocating, setIsLocating] = useState(false);
-  const [locationSuccessMsg, setLocationSuccessMsg] = useState<string | null>(null);
-  const [selectedCoach, setSelectedCoach] = useState('Coach B3');
-  const [selectedSeat, setSelectedSeat] = useState('Berth 24');
-  const [selectedPlatform, setSelectedPlatform] = useState('Platform 2');
-  const [locationDiagnostic, setLocationDiagnostic] = useState<{
-    status: 'idle' | 'locating' | 'precision_success' | 'permission_denied' | 'gps_off' | 'timeout' | 'fallback_beacon';
-    title?: string;
-    detail?: string;
-    mode: 'Precision GPS' | 'Coach & Berth Beacon';
-  }>({
-    status: 'idle',
-    mode: 'Coach & Berth Beacon',
+  // Filter complaints belonging to current passenger
+  const userComplaints = (complaints || []).filter((c) => {
+    if (!c) return false;
+    const matchesId = currentUser?.id && c.userId === currentUser.id;
+    const matchesEmail =
+      currentUser?.email &&
+      c.passengerEmail &&
+      c.passengerEmail.toLowerCase().trim() === currentUser.email.toLowerCase().trim();
+    return matchesId || matchesEmail;
   });
+
+  // Active items
+  const activeBookings = userBookings.filter((r) =>
+    ['Requested', 'Awaiting Worker Confirmation', 'Finding Worker', 'Worker Assigned', 'On the Way', 'Arrived at Station', 'Service In Progress'].includes(r.status)
+  );
+  const activeComplaints = userComplaints.filter((c) => c.status !== 'Resolved');
+
+  const [activeTab, setActiveTab] = useState<'tracker' | 'marketplace' | 'history'>('tracker');
+  const [photoProofModal, setPhotoProofModal] = useState<{
+    title: string;
+    before?: string;
+    after?: string;
+    notes?: string;
+    workerName?: string;
+    resolvedAt?: string;
+  } | null>(null);
 
   // Feedback Modal State
   const [feedbackModalReq, setFeedbackModalReq] = useState<WorkerServiceRequest | null>(null);
   const [feedbackRating, setFeedbackRating] = useState<number>(5);
-  const [feedbackHoverRating, setFeedbackHoverRating] = useState<number>(0);
   const [feedbackComment, setFeedbackComment] = useState<string>('');
-  const [feedbackTags, setFeedbackTags] = useState<string[]>(['⚡ Rapid Arrival', '🤝 Courteous & Humble']);
+  const [feedbackTags, setFeedbackTags] = useState<string[]>(['⚡ Rapid Arrival', '📸 Verified Photo Proof']);
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
 
-  // Active targeted request for live location
-  const currentTrackedReq = userBookings.find((r) => r.requestId === selectedLocationReqId) || activeRequest;
-
-  // Sync selected request if none selected
-  useEffect(() => {
-    if (!selectedLocationReqId && activeRequest) {
-      setSelectedLocationReqId(activeRequest.requestId);
-    }
-  }, [activeRequest, selectedLocationReqId]);
-
-  // Periodic refresh for mutual live location
+  // Periodic refresh
   useEffect(() => {
     const interval = setInterval(() => {
       onRefreshData?.();
-    }, 5000);
+    }, 6000);
     return () => clearInterval(interval);
   }, [onRefreshData]);
 
-  // Handle passenger sharing their live location
-  const handleSharePassengerLocation = () => {
-    if (!currentTrackedReq) return;
-    setIsLocating(true);
-    setLocationSuccessMsg(null);
-
-    const updateLocationOnServer = async (
-      lat: number,
-      lng: number,
-      modeName: 'Precision GPS' | 'Coach & Berth Beacon'
-    ) => {
-      try {
-        await fetch(`/api/worker-requests/${currentTrackedReq.requestId}/location`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            role: 'passenger',
-            latitude: lat,
-            longitude: lng,
-            platform: selectedPlatform,
-            coach: selectedCoach,
-            seat: selectedSeat,
-            mode: modeName,
-          }),
-        });
-        setLocationSuccessMsg(
-          modeName === 'Precision GPS'
-            ? `Precision GPS coordinates shared! (${selectedCoach}, ${selectedSeat})`
-            : `Coach Beacon coordinates shared! (${selectedCoach}, ${selectedSeat}, ${selectedPlatform})`
-        );
-        onRefreshData?.();
-      } catch (e) {
-        setLocationSuccessMsg(`Broadcasted via station beacon (${selectedCoach}).`);
-      } finally {
-        setIsLocating(false);
-      }
-    };
-
-    if (typeof window !== 'undefined' && 'geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const acc = Math.round(pos.coords.accuracy || 8);
-          setLocationDiagnostic({
-            status: 'precision_success',
-            title: `Satellite GPS Fix Acquired (±${acc}m accuracy)`,
-            detail: `High-accuracy device position locked and synchronized with ${currentTrackedReq.assignedWorkerName || 'assigned specialist'}.`,
-            mode: 'Precision GPS',
-          });
-          updateLocationOnServer(pos.coords.latitude, pos.coords.longitude, 'Precision GPS');
-        },
-        (err) => {
-          let title = 'Switched to Coach & Berth Beacon Mode';
-          let detail = `Platform and coach berth beacon active for ${selectedCoach}.`;
-          let statusKey: typeof locationDiagnostic.status = 'fallback_beacon';
-
-          // Explicit mobile device error handling
-          if (err.code === 1) { // PERMISSION_DENIED
-            statusKey = 'permission_denied';
-            title = 'Location Permission Denied in Mobile Browser';
-            detail = `Location permission is blocked in your browser. Vyom Rath automatically switched to Coach & Berth Beacon Mode (${selectedCoach}, ${selectedSeat}) so your worker can still navigate right to your seat.`;
-          } else if (err.code === 2) { // POSITION_UNAVAILABLE
-            statusKey = 'gps_off';
-            title = 'GPS Offline / Carriage Metal Shielding Detected';
-            detail = `GPS signal unavailable inside train carriage or roof canopy. Station concourse beacon coordinates for ${selectedCoach} are active.`;
-          } else if (err.code === 3) { // TIMEOUT
-            statusKey = 'timeout';
-            title = 'GPS Signal Timed Out (Slow Cellular Connection)';
-            detail = `GPS fix timed out over mobile data. Switched instantly to Coach Beacon Mode (${selectedCoach}, ${selectedSeat}) to ensure zero delay.`;
-          }
-
-          setLocationDiagnostic({
-            status: statusKey,
-            title,
-            detail,
-            mode: 'Coach & Berth Beacon',
-          });
-          updateLocationOnServer(28.6143, 77.2185, 'Coach & Berth Beacon');
-        },
-        { enableHighAccuracy: true, timeout: 6000, maximumAge: 10000 }
-      );
-    } else {
-      setLocationDiagnostic({
-        status: 'fallback_beacon',
-        title: 'Browser Geolocation Not Supported',
-        detail: `Using platform concourse beacon coordinates for ${selectedCoach}.`,
-        mode: 'Coach & Berth Beacon',
-      });
-      updateLocationOnServer(28.6143, 77.2185, 'Coach & Berth Beacon');
+  // Helper for CAG SLA Countdown
+  const calculateSlaStatus = (item: Complaint | WorkerServiceRequest) => {
+    const createdTime = new Date((item.createdAt || '').replace(' ', 'T')).getTime();
+    if (isNaN(createdTime)) {
+      return { minsRemaining: 120, isBreached: false, text: '120m left · Within SLA' };
     }
+    const elapsedMins = Math.floor((Date.now() - createdTime) / 60000);
+    const minsRemaining = Math.max(0, 120 - elapsedMins);
+    const isBreached = minsRemaining <= 0;
+    return {
+      minsRemaining,
+      isBreached,
+      text: isBreached
+        ? 'SLA Breached (>2h) · Auto-Escalated to Station Superintendent'
+        : `${minsRemaining}m remaining (CAG 2h SLA)`,
+    };
   };
 
-  // Feedback Submission
   const handleSendFeedback = async () => {
     if (!feedbackModalReq || !onSubmitWorkerFeedback) return;
     setFeedbackSubmitting(true);
@@ -245,44 +168,50 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 sm:p-8 rounded-3xl border border-[#DDE4E6] shadow-sm">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-3xl border border-[#DDE4E6] shadow-xs">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2.5">
             {onBack && (
               <button
                 onClick={onBack}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#DDE4E6] text-xs font-bold text-[#202A2B] hover:bg-[#F0F4F6] transition cursor-pointer"
               >
-                <ArrowLeft className="w-4 h-4 text-[#B94A3A]" />
+                <ArrowLeft className="w-3.5 h-3.5 text-[#B94A3A]" />
                 <span>Back</span>
               </button>
             )}
-            <span className="text-xs font-bold text-[#1E6B52] bg-[#DDF8EF] px-2.5 py-0.5 rounded-full border border-[#65D6B0]/40 inline-flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#65D6B0] animate-pulse"></span>
-              Live Connected
+            <span className="text-[10px] font-black text-[#007D99] bg-[#D7F7FC] px-2.5 py-0.5 rounded-full border border-[#00B8D9]/40 uppercase tracking-wider">
+              PASSENGER PORTAL
+            </span>
+            <span className="text-xs text-[#526365]">
+              {currentUser.fullName} · {currentUser.mobile}
             </span>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-black text-[#202A2B] tracking-tight">
-            Passenger Dashboard · {currentUser.fullName}
+            Railway Grievance &amp; Station Assistance
           </h1>
-          
-          <div className="flex flex-wrap items-center gap-2 text-xs text-[#526365]">
-            <span>Email: <strong className="text-[#202A2B]">{currentUser.email}</strong></span>
-            <span>·</span>
-            <span>Mobile: <strong className="text-[#202A2B]">{currentUser.mobile}</strong></span>
-          </div>
+          <p className="text-xs text-[#526365]">
+            Track verified on-ground technician resolution, inspect before-and-after photo proof, and coordinate during platform halts.
+          </p>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-3 shrink-0 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+          <button
+            onClick={() => setIsVoiceModalOpen(true)}
+            className="flex-1 md:flex-none px-4 py-2.5 bg-[#202A2B] hover:bg-[#202A2B]/90 text-white text-xs font-black rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer border border-[#65D6B0]/40"
+          >
+            <Mic className="w-4 h-4 text-[#65D6B0] animate-pulse" />
+            <span>🎙️ Speak to AI Sahayak</span>
+          </button>
+
           <button
             onClick={() => onNavigate('register-complaint')}
-            className="w-full sm:w-auto px-4 py-3.5 bg-[#65D6B0] hover:bg-[#3EA684] text-[#202A2B] text-xs font-black rounded-2xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer hover:shadow-md"
-            title="File a grievance using Gemini AI Voice & Photo analysis"
+            className="flex-1 md:flex-none px-4 py-2.5 bg-[#65D6B0] hover:bg-[#3EA684] text-[#202A2B] text-xs font-black rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
           >
             <Sparkles className="w-4 h-4 text-[#202A2B]" />
             <span>AI Voice &amp; Photo Grievance</span>
@@ -290,409 +219,351 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
 
           <button
             onClick={() => onNavigate('book-worker')}
-            className="w-full sm:w-auto px-5 py-3.5 bg-[#202A2B] hover:bg-[#202A2B]/90 text-white text-xs font-black rounded-2xl shadow-xs transition-all border border-[#202A2B] flex items-center justify-center gap-2 cursor-pointer hover:shadow-md"
+            className="flex-1 md:flex-none px-4 py-2.5 bg-[#F0F4F6] hover:bg-slate-200 text-[#202A2B] text-xs font-black rounded-xl transition flex items-center justify-center gap-2 cursor-pointer border border-[#DDE4E6]"
           >
-            <PlusCircle className="w-4 h-4 text-[#65D6B0]" />
-            <span>Book Station Worker</span>
+            <PlusCircle className="w-4 h-4 text-[#007D99]" />
+            <span>Book Station Sahayak</span>
           </button>
         </div>
       </div>
 
-      {/* Main Tabs Navigation */}
-      <div className="flex items-center gap-3 border-b border-[#DDE4E6] pb-2">
+      {/* Primary Navigation Tabs */}
+      <div className="flex items-center gap-2 border-b border-[#DDE4E6] pb-2 text-xs font-bold">
         <button
-          onClick={() => setActiveTab('marketplace')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition cursor-pointer ${
-            activeTab === 'marketplace'
+          onClick={() => setActiveTab('tracker')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl transition cursor-pointer ${
+            activeTab === 'tracker'
               ? 'bg-[#202A2B] text-white shadow-xs'
               : 'text-[#526365] hover:bg-[#F0F4F6] hover:text-[#202A2B]'
           }`}
         >
-          <Sparkles className="w-4 h-4 text-[#65D6B0]" />
-          <span>Find Assistance Near Your Station</span>
+          <Clock className="w-3.5 h-3.5 text-[#65D6B0]" />
+          <span>Active Grievances &amp; Resolution ({activeComplaints.length + activeBookings.length})</span>
         </button>
 
         <button
-          onClick={() => setActiveTab('radar')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition cursor-pointer ${
-            activeTab === 'radar'
+          onClick={() => setActiveTab('marketplace')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl transition cursor-pointer ${
+            activeTab === 'marketplace'
               ? 'bg-[#007D99] text-white shadow-xs'
               : 'text-[#526365] hover:bg-[#F0F4F6] hover:text-[#202A2B]'
           }`}
         >
-          <Compass className="w-4 h-4 text-[#D7F7FC]" />
-          <span>Live Radar &amp; My Bookings ({userBookings.length})</span>
+          <Briefcase className="w-3.5 h-3.5 text-[#D7F7FC]" />
+          <span>Book Sahayak / Station Services</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('history')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl transition cursor-pointer ${
+            activeTab === 'history'
+              ? 'bg-[#202A2B] text-white shadow-xs'
+              : 'text-[#526365] hover:bg-[#F0F4F6] hover:text-[#202A2B]'
+          }`}
+        >
+          <FileCheck className="w-3.5 h-3.5 text-[#65D6B0]" />
+          <span>Resolved History &amp; Evidence ({userComplaints.filter(c => c.status === 'Resolved').length + userBookings.filter(b => b.status === 'Completed').length})</span>
         </button>
       </div>
 
       {/* ========================================================================= */}
-      {/* TAB 1: RADAR & MY BOOKINGS                                                */}
+      {/* TAB 1: ACTIVE GRIEVANCES & LIVE RESOLUTION TRACKER                        */}
       {/* ========================================================================= */}
-      {activeTab === 'radar' && (
-        <div className="space-y-8 animate-fadeIn">
+      {activeTab === 'tracker' && (
+        <div className="space-y-6">
           
-          {/* Mutual Live Location Radar Container */}
-          <div className="bg-white rounded-3xl border border-[#DDE4E6] p-6 sm:p-8 shadow-sm space-y-6">
-            
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#DDE4E6]">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-[#202A2B] text-[#65D6B0] flex items-center justify-center shadow-xs">
-                  <Compass className="w-6 h-6 font-bold" />
-                </div>
-                <div>
-                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#DDF8EF] text-[#1E6B52] text-[10px] font-black uppercase tracking-wider mb-0.5 border border-[#65D6B0]/40">
-                    MUTUAL LIVE RADAR
-                  </div>
-                  <h2 className="text-xl font-black text-[#202A2B] tracking-tight">
-                    Passenger &amp; Worker Live Location Tracking
-                  </h2>
-                </div>
-              </div>
-
-              {currentTrackedReq && (
-                <div className="flex items-center gap-2">
-                  <label htmlFor="tracking-req-select" className="text-xs font-semibold text-[#526365]">
-                    Tracking:
-                  </label>
-                  <select
-                    id="tracking-req-select"
-                    value={selectedLocationReqId || ''}
-                    onChange={(e) => setSelectedLocationReqId(e.target.value)}
-                    className="text-xs font-bold px-3 py-1.5 rounded-xl border border-[#DDE4E6] bg-white text-[#202A2B] focus:outline-none focus:ring-2 focus:ring-[#65D6B0]"
-                  >
-                    {userBookings.map((b) => (
-                      <option key={b.requestId} value={b.requestId}>
-                        #{b.requestId} · {b.serviceCategory} ({b.status})
-                      </option>
-                    ))}
-                  </select>
-                  {onRefreshData && (
-                    <button
-                      onClick={onRefreshData}
-                      className="p-1.5 border border-[#DDE4E6] rounded-xl hover:bg-[#F0F4F6] text-[#526365] transition cursor-pointer"
-                      title="Refresh Radar"
-                      aria-label="Refresh Radar Tracking"
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              )}
+          {/* Active Grievances List */}
+          {activeComplaints.length === 0 && activeBookings.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-[#DDE4E6] p-10 text-center space-y-3">
+              <CheckCircle2 className="w-10 h-10 text-[#3EA684] mx-auto" />
+              <h3 className="text-base font-bold text-[#202A2B]">No Pending Grievances</h3>
+              <p className="text-xs text-[#526365] max-w-md mx-auto">
+                You have no active unresolved grievances or pending bookings. Use "AI Voice &amp; Photo Grievance" or "Book Station Sahayak" if you require assistance during your journey.
+              </p>
             </div>
+          ) : (
+            <div className="space-y-4">
+              
+              {/* COMPLAINTS (AI GRIEVANCES) */}
+              {activeComplaints.map((c) => {
+                const sla = calculateSlaStatus(c);
+                const isEmergency = c.priority === 'Emergency' || c.severity === 'Urgent';
 
-            {currentTrackedReq ? (
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-                
-                {/* Left: Passenger Details & Location Broadcast */}
-                <div className="lg:col-span-6 rounded-2xl border border-[#DDE4E6] bg-[#F8FAFB] p-5 sm:p-6 space-y-4 flex flex-col justify-between shadow-2xs">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-5 h-5 text-[#B94A3A]" />
-                        <h3 className="text-sm font-bold text-[#202A2B]">Your Coach Location</h3>
+                return (
+                  <div
+                    key={c.complaintId}
+                    className="bg-white rounded-2xl border border-[#DDE4E6] p-5 shadow-xs space-y-4 hover:border-[#65D6B0] transition"
+                  >
+                    {/* Header Row */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#DDE4E6]">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-[#B94A3A]">
+                          #{c.complaintId}
+                        </span>
+                        {c.railMadadRef && (
+                          <span className="font-mono text-[10px] font-black bg-[#F0F4F6] text-[#202A2B] px-2 py-0.5 rounded border border-[#DDE4E6]" title="Linked RailMadad Grievance ID">
+                            RailMadad: {c.railMadadRef}
+                          </span>
+                        )}
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                          isEmergency ? 'bg-[#FBE0E6] text-[#92182D] border border-[#D72645]/40 animate-pulse' :
+                          c.priority === 'High' ? 'bg-orange-100 text-orange-900 border border-orange-200' :
+                          'bg-[#D7F7FC] text-[#007D99] border border-[#00B8D9]/40'
+                        }`}>
+                          Priority: {c.priority || c.severity || 'Medium'}
+                        </span>
                       </div>
-                      <span className="text-[10px] font-bold text-[#1E6B52] bg-[#DDF8EF] px-2 py-0.5 rounded-md border border-[#65D6B0]/40">
-                        {currentTrackedReq.stationCode} Halting Station
-                      </span>
-                    </div>
 
-                    <p className="text-xs text-[#526365] leading-relaxed">
-                      Share your exact train coach and berth coordinate with <strong>{currentTrackedReq.assignedWorkerName || 'the assigned technician'}</strong> so they can walk directly to your window/berth.
-                    </p>
-
-                    <div className="grid grid-cols-3 gap-2 pt-1">
-                      <div>
-                        <label htmlFor="passenger-platform-select" className="block text-[10px] font-bold text-[#526365] uppercase mb-1">Platform</label>
-                        <select
-                          id="passenger-platform-select"
-                          value={selectedPlatform}
-                          onChange={(e) => setSelectedPlatform(e.target.value)}
-                          className="w-full text-xs font-bold p-2 bg-white rounded-lg border border-[#DDE4E6] text-[#202A2B]"
-                        >
-                          {['Platform 1', 'Platform 2', 'Platform 3', 'Platform 4', 'Platform 5', 'Platform 6'].map((p) => (
-                            <option key={p} value={p}>{p}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label htmlFor="passenger-coach-input" className="block text-[10px] font-bold text-[#526365] uppercase mb-1">Coach</label>
-                        <input
-                          id="passenger-coach-input"
-                          type="text"
-                          value={selectedCoach}
-                          onChange={(e) => setSelectedCoach(e.target.value)}
-                          className="w-full text-xs font-bold p-2 bg-white rounded-lg border border-[#DDE4E6] text-[#202A2B]"
-                          placeholder="e.g. B3"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="passenger-berth-input" className="block text-[10px] font-bold text-[#526365] uppercase mb-1">Berth</label>
-                        <input
-                          id="passenger-berth-input"
-                          type="text"
-                          value={selectedSeat}
-                          onChange={(e) => setSelectedSeat(e.target.value)}
-                          className="w-full text-xs font-bold p-2 bg-white rounded-lg border border-[#DDE4E6] text-[#202A2B]"
-                          placeholder="e.g. 24"
-                        />
+                      {/* CAG 2-Hour SLA Timer */}
+                      <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold ${
+                        sla.isBreached
+                          ? 'bg-[#FBE0E6] text-[#92182D] border border-[#D72645]/40'
+                          : sla.minsRemaining <= 30
+                          ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                          : 'bg-[#DDF8EF] text-[#1E6B52] border border-[#65D6B0]/40'
+                      }`}>
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>{sla.text}</span>
                       </div>
                     </div>
 
-                    {/* Geolocation Diagnostic Alert for Real Phones */}
-                    {locationDiagnostic.status !== 'idle' && (
-                      <div
-                        className={`p-3.5 rounded-xl border text-xs space-y-1.5 ${
-                          locationDiagnostic.status === 'precision_success'
-                            ? 'bg-[#DDF8EF] border-[#65D6B0]/50 text-[#1E6B52]'
-                            : locationDiagnostic.status === 'permission_denied'
-                            ? 'bg-[#FFFDF5] border-[#FFD68A] text-[#915900]'
-                            : 'bg-[#F0FAFD] border-[#00B8D9]/40 text-[#007D99]'
-                        }`}
-                      >
-                        <div className="flex items-start gap-2">
-                          {locationDiagnostic.status === 'precision_success' ? (
-                            <Satellite className="w-4 h-4 mt-0.5 text-[#1E6B52] shrink-0" />
-                          ) : (
-                            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                    {/* Safety Alert for Emergency Cases */}
+                    {isEmergency && (
+                      <div className="p-3 bg-[#FBE0E6] border border-[#D72645]/40 rounded-xl text-xs text-[#92182D] flex items-center gap-2 font-medium">
+                        <ShieldAlert className="w-4 h-4 text-[#D72645] shrink-0" />
+                        <span>
+                          <strong>RPF Emergency Escalation Active:</strong> This priority grievance has been forwarded directly to the Railway Protection Force (Helpline 139) &amp; Station Superintendent for immediate intervention.
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Problem Description & Train Location */}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 text-xs">
+                      <div className="md:col-span-8 space-y-1.5">
+                        <h4 className="text-sm font-black text-[#202A2B]">{c.subject}</h4>
+                        <p className="text-[#526365] leading-relaxed">{c.description}</p>
+                        <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#7E9092] pt-1">
+                          <span>Train: <strong className="text-[#202A2B]">{c.trainNumber}</strong></span>
+                          <span>·</span>
+                          <span>Category: <strong className="text-[#202A2B]">{c.category}</strong></span>
+                          {c.location && (
+                            <>
+                              <span>·</span>
+                              <span>Coach/Berth: <strong className="text-[#202A2B]">{c.location}</strong></span>
+                            </>
                           )}
-                          <div className="min-w-0 flex-1">
-                            <strong className="block font-bold">{locationDiagnostic.title}</strong>
-                            <p className="text-[11px] mt-0.5 opacity-90 leading-relaxed">{locationDiagnostic.detail}</p>
-                          </div>
                         </div>
                       </div>
-                    )}
 
-                    {locationSuccessMsg && (
-                      <div className="p-3 bg-[#DDF8EF] border border-[#65D6B0]/40 text-[#1E6B52] rounded-xl text-xs flex items-center gap-2">
-                        <Check className="w-4 h-4 text-[#3EA684] shrink-0" />
-                        <span className="font-semibold">{locationSuccessMsg}</span>
+                      {/* Specialist Assignment Status */}
+                      <div className="md:col-span-4 bg-[#F8FAFB] p-3.5 rounded-xl border border-[#DDE4E6] flex flex-col justify-between space-y-2.5">
+                        <div>
+                          <span className="text-[10px] text-[#526365] font-bold block uppercase tracking-wider">
+                            On-Ground Specialist
+                          </span>
+                          {c.assignedWorkerName ? (
+                            <div className="mt-1 space-y-1">
+                              <span className="text-xs font-black text-[#202A2B] block">
+                                {c.assignedWorkerName}
+                              </span>
+                              <span className="text-[11px] text-[#007D99] block font-semibold">
+                                {c.assignedWorkerSkill || 'Station Duty Technician'}
+                              </span>
+                              {c.assignedWorkerMobile && (
+                                <a
+                                  href={`tel:${c.assignedWorkerMobile}`}
+                                  className="inline-flex items-center gap-1 text-[11px] font-bold text-[#1E6B52] hover:underline"
+                                >
+                                  <Phone className="w-3 h-3" />
+                                  <span>Call: {c.assignedWorkerMobile}</span>
+                                </a>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="mt-1 space-y-1">
+                              <div className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded border border-amber-300">
+                                <Clock className="w-3 h-3 animate-spin" />
+                                <span>Awaiting Officer Dispatch</span>
+                              </div>
+                              <p className="text-[11px] text-[#526365]">
+                                Control Room officer is verifying complaint &amp; selecting authorized specialist.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="pt-2 border-t border-[#DDE4E6] flex items-center justify-between">
+                          <span className="text-[10px] text-[#526365]">Stage:</span>
+                          <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${
+                            c.status === 'In Progress'
+                              ? 'bg-[#DDF8EF] text-[#1E6B52] border border-[#65D6B0]/40'
+                              : 'bg-amber-100 text-amber-900 border border-amber-300'
+                          }`}>
+                            {c.status === 'Pending' ? 'Transmitted to Officer' : c.status}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Google Maps Mutual Tracking View for Complaint */}
+                    {c.assignedWorkerName && (
+                      <div className="pt-2 border-t border-[#DDE4E6]">
+                        <button
+                          onClick={() => setExpandedMapId(expandedMapId === c.complaintId ? null : c.complaintId)}
+                          className="w-full py-2 px-3 bg-[#007D99] hover:bg-[#007D99]/90 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                        >
+                          <Navigation className="w-3.5 h-3.5 text-[#65D6B0]" />
+                          <span>
+                            {expandedMapId === c.complaintId
+                              ? 'Hide Live Google Map'
+                              : `🗺️ Live Google Maps: Track ${c.assignedWorkerName} Approaching Coach`}
+                          </span>
+                        </button>
+
+                        {expandedMapId === c.complaintId && (
+                          <div className="mt-3">
+                            <MutualGoogleMap
+                              userRole="passenger"
+                              requestId={c.complaintId}
+                              trainNumber={c.trainNumber}
+                              coachNumber={c.location?.split(',')[0]?.trim() || 'Coach B3'}
+                              seatNumber={c.location?.split(',')[1]?.trim() || 'Berth 24'}
+                              stationName="New Delhi Junction"
+                              stationCode="NDLS"
+                              passengerName={c.passengerName}
+                              workerName={c.assignedWorkerName}
+                              workerSkill={c.assignedWorkerSkill || 'Station Duty Technician'}
+                              workerStatusText="En route along Platform 2 to Coach"
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
+                );
+              })}
 
-                  <div className="pt-4 border-t border-[#DDE4E6] flex flex-col sm:flex-row gap-2">
-                    <button
-                      onClick={handleSharePassengerLocation}
-                      disabled={isLocating}
-                      className="flex-1 py-3 bg-[#202A2B] hover:bg-[#202A2B]/90 text-white rounded-xl text-xs font-black transition flex items-center justify-center gap-2 cursor-pointer shadow-xs border border-[#202A2B]"
-                    >
-                      <LocateFixed className="w-4 h-4 text-[#65D6B0]" />
-                      <span>{isLocating ? 'Acquiring GPS / Syncing...' : 'Broadcast Coach Coordinates to Worker'}</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Right: Worker Status & Proximity Radar */}
-                <div className="lg:col-span-6 rounded-2xl border border-[#DDE4E6] bg-[#202A2B] text-white p-5 sm:p-6 space-y-4 flex flex-col justify-between shadow-md">
-                  <div>
-                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              {/* BOOKINGS (SAHAYAK DIRECT CALLS) */}
+              {activeBookings.map((b) => {
+                const sla = calculateSlaStatus(b);
+                return (
+                  <div
+                    key={b.requestId}
+                    className="bg-white rounded-2xl border border-[#DDE4E6] p-5 shadow-xs space-y-4 hover:border-[#007D99] transition"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#DDE4E6]">
                       <div className="flex items-center gap-2">
-                        <Radio className="w-5 h-5 text-[#65D6B0] animate-pulse" />
-                        <h3 className="text-sm font-bold text-white">Technician Radar View</h3>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-white/15 text-[#D7F7FC]">
-                          Mode: {locationDiagnostic.mode}
+                        <span className="font-mono text-xs font-bold text-[#007D99]">
+                          #{b.requestId}
                         </span>
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-[#007D99] text-white">
-                          {currentTrackedReq.status}
+                        <span className="font-bold text-xs text-[#202A2B]">
+                          {b.serviceCategory}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#D7F7FC] text-[#007D99] border border-[#00B8D9]/40">
+                          Stage: {b.status}
+                        </span>
+                        <span className="text-xs text-[#526365] font-mono">
+                          {sla.text}
                         </span>
                       </div>
                     </div>
 
-                    {currentTrackedReq.assignedWorkerName ? (
-                      <div className="space-y-4 pt-3">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <span className="text-[10px] text-white/60 block">Assigned Specialist:</span>
-                            <span className="text-base font-black text-white">{currentTrackedReq.assignedWorkerName}</span>
-                            <span className="text-xs text-[#65D6B0] block">{currentTrackedReq.serviceCategory}</span>
-                          </div>
-                          {currentTrackedReq.assignedWorkerMobile && (
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 text-xs">
+                      <div className="md:col-span-8 space-y-1.5">
+                        <p className="text-[#202A2B] leading-relaxed">"{b.description}"</p>
+                        <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#7E9092]">
+                          <span>Train: <strong className="text-[#202A2B]">{b.trainNumber}</strong></span>
+                          <span>·</span>
+                          <span>Coach: <strong className="text-[#202A2B]">{b.coachNumber || 'B3'}</strong> (Berth {b.seatNumber || '24'})</span>
+                          <span>·</span>
+                          <span>Halt Station: <strong className="text-[#202A2B]">{b.stationName}</strong></span>
+                        </div>
+                      </div>
+
+                      <div className="md:col-span-4 bg-[#F8FAFB] p-3 rounded-xl border border-[#DDE4E6] flex flex-col justify-between space-y-2">
+                        <div>
+                          <span className="text-[10px] text-[#526365] font-bold block uppercase tracking-wider">
+                            Sahayak on Duty
+                          </span>
+                          <span className="text-xs font-black text-[#202A2B] block mt-0.5">
+                            {b.assignedWorkerName || 'Broadcasting to Station Hub'}
+                          </span>
+                          {b.assignedWorkerMobile && (
                             <a
-                              href={`tel:${currentTrackedReq.assignedWorkerMobile}`}
-                              className="px-3 py-1.5 bg-[#007D99] hover:bg-[#00B8D9] text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition"
+                              href={`tel:${b.assignedWorkerMobile}`}
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-[#1E6B52] hover:underline mt-1"
                             >
-                              <Phone className="w-3.5 h-3.5" />
-                              <span>Call Sahayak</span>
+                              <Phone className="w-3 h-3" />
+                              <span>{b.assignedWorkerMobile}</span>
                             </a>
                           )}
                         </div>
 
-                        <div className="p-3 bg-white/10 rounded-xl space-y-2">
-                          <div className="flex justify-between text-xs">
-                            <span className="text-white/70">Current Station Position:</span>
-                            <span className="font-bold text-[#D7F7FC]">
-                              {currentTrackedReq.workerLocation?.currentStatusText || 'Platform Concourse · En Route'}
-                            </span>
-                          </div>
-                          <div className="flex justify-between text-xs">
-                            <span className="text-white/70">Estimated Distance:</span>
-                            <span className="font-mono font-bold text-[#C6F000]">
-                              {currentTrackedReq.status === 'Service In Progress' ? '0m (At Berth)' : '~60 meters'}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Coach Indicator Diagram */}
-                        <div className="pt-2 border-t border-white/10 text-[10px]">
-                          <div className="flex justify-between text-white/70 mb-1">
-                            <span>Coach Train Layout Radar</span>
-                            <span className="text-[#65D6B0] font-bold">Approaching Coach {currentTrackedReq.coachNumber || selectedCoach}</span>
-                          </div>
-                          <div className="flex items-center gap-1 overflow-x-auto py-1">
-                            {['ENG', 'H1', 'A1', 'A2', 'B1', 'B2', 'B3', 'B4', 'S1', 'S2'].map((c) => {
-                              const isTarget = c === 'B3' || currentTrackedReq.coachNumber?.includes(c);
-                              return (
-                                <div
-                                  key={c}
-                                  className={`px-2 py-1 rounded text-center font-mono text-[9px] shrink-0 font-bold ${
-                                    isTarget
-                                      ? 'bg-[#65D6B0] text-[#202A2B] ring-2 ring-white animate-pulse'
-                                      : 'bg-white/10 text-white/80'
-                                  }`}
-                                >
-                                  {c}
-                                  {isTarget && ' 📍'}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
+                        {onCancelWorkerRequest && (
+                          <button
+                            onClick={() => onCancelWorkerRequest(b.requestId)}
+                            className="text-[11px] text-[#D72645] hover:underline self-start cursor-pointer font-semibold pt-1"
+                          >
+                            Cancel Request
+                          </button>
+                        )}
                       </div>
-                    ) : (
-                      <div className="py-8 text-center space-y-2">
-                        <Clock className="w-8 h-8 text-[#00B8D9] mx-auto animate-pulse" />
-                        <h4 className="text-sm font-bold text-white">Broadcasting Request to Station Hub</h4>
-                        <p className="text-xs text-white/70 max-w-sm mx-auto">
-                          Looking for available verified specialists at {currentTrackedReq.stationName}. As soon as a worker accepts, their live coordinates and direct call link will connect here.
-                        </p>
+                    </div>
+
+                    {/* Google Maps Mutual Tracking for Booking */}
+                    {b.assignedWorkerName && (
+                      <div className="pt-2 border-t border-[#DDE4E6]">
+                        <button
+                          onClick={() => setExpandedMapId(expandedMapId === b.requestId ? null : b.requestId)}
+                          className="w-full py-2 px-3 bg-[#007D99] hover:bg-[#007D99]/90 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                        >
+                          <Navigation className="w-3.5 h-3.5 text-[#65D6B0]" />
+                          <span>
+                            {expandedMapId === b.requestId
+                              ? 'Hide Live Google Map'
+                              : `🗺️ Live Google Maps: Track Sahayak ${b.assignedWorkerName} on Platform`}
+                          </span>
+                        </button>
+
+                        {expandedMapId === b.requestId && (
+                          <div className="mt-3">
+                            <MutualGoogleMap
+                              userRole="passenger"
+                              requestId={b.requestId}
+                              trainNumber={b.trainNumber}
+                              coachNumber={b.coachNumber || 'B3'}
+                              seatNumber={b.seatNumber || 'Berth 24'}
+                              stationName={b.stationName || 'New Delhi Junction'}
+                              stationCode={b.stationCode || 'NDLS'}
+                              passengerName={b.passengerName}
+                              workerName={b.assignedWorkerName}
+                              workerSkill={b.serviceCategory}
+                              workerStatusText={b.status}
+                              passengerLocation={b.passengerLocation}
+                              workerLocation={b.workerLocation}
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
+                );
+              })}
 
-                  <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs text-white/70">
-                    <span>Train: <strong className="text-white">{currentTrackedReq.trainNumber}</strong></span>
-                    <span>Ref: <strong className="text-white font-mono">#{currentTrackedReq.requestId}</strong></span>
-                  </div>
-                </div>
-
-              </div>
-            ) : (
-              <div className="bg-[#F8FAFB] rounded-2xl border border-[#DDE4E6] p-10 text-center space-y-3">
-                <Compass className="w-10 h-10 text-[#7E9092] mx-auto opacity-50" />
-                <h3 className="text-base font-bold text-[#202A2B]">No Active Station Bookings</h3>
-                <p className="text-xs text-[#526365] max-w-md mx-auto">
-                  Book a verified station worker for electrical, plumbing, sanitation, or luggage assistance to activate coach radar.
-                </p>
-                <button
-                  onClick={() => onNavigate('book-worker')}
-                  className="px-5 py-2.5 bg-[#202A2B] hover:bg-[#202A2B]/90 text-white text-xs font-black rounded-xl transition cursor-pointer shadow-xs border border-[#202A2B]"
-                >
-                  Book Station Worker Now &rarr;
-                </button>
-              </div>
-            )}
-
-          </div>
-
-          {/* Bookings List Section */}
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#DDE4E6]">
-              <div className="flex items-center gap-1.5 p-1 bg-[#F8FAFB] rounded-xl border border-[#DDE4E6]">
-                {(['All', 'Active', 'Completed', 'Cancelled'] as const).map((st) => (
-                  <button
-                    key={st}
-                    onClick={() => setFilterWorkerStatus(st)}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
-                      filterWorkerStatus === st
-                        ? 'bg-[#202A2B] text-white shadow-xs'
-                        : 'text-[#526365] hover:text-[#202A2B]'
-                    }`}
-                  >
-                    {st}
-                  </button>
-                ))}
-              </div>
-
-              <div className="text-xs text-[#526365] font-semibold">
-                Showing {userBookings.length} booking record(s)
-              </div>
             </div>
-
-            {userBookings.length === 0 ? (
-              <div className="p-10 bg-white rounded-3xl border border-[#DDE4E6] text-center space-y-2">
-                <Briefcase className="w-8 h-8 text-[#7E9092] mx-auto" />
-                <h4 className="text-sm font-bold text-[#202A2B]">No Assistance Requests on Record</h4>
-                <p className="text-xs text-[#526365]">You have not booked any station gig assistance yet.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {userBookings.map((b) => (
-                  <div key={b.requestId} className="bg-white rounded-2xl border border-[#DDE4E6] p-5 shadow-xs space-y-4 hover:border-[#65D6B0] transition-colors">
-                    <div className="flex items-center justify-between border-b border-[#DDE4E6] pb-3">
-                      <div>
-                        <span className="text-xs font-mono font-bold text-[#B94A3A]">#{b.requestId}</span>
-                        <h4 className="text-sm font-black text-[#202A2B]">{b.serviceCategory}</h4>
-                      </div>
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                        b.status === 'Completed' ? 'bg-[#DDF8EF] text-[#1E6B52] border border-[#65D6B0]/40' :
-                        b.status === 'Cancelled' ? 'bg-[#FBE0E6] text-[#92182D] border border-[#D72645]/40' :
-                        'bg-[#D7F7FC] text-[#007D99] border border-[#00B8D9]/40'
-                      }`}>
-                        {b.status}
-                      </span>
-                    </div>
-
-                    <div className="space-y-1 text-xs text-[#526365]">
-                      <div>Station: <strong className="text-[#202A2B]">{b.stationName} ({b.stationCode})</strong></div>
-                      <div>Train: <strong className="text-[#202A2B]">{b.trainNumber}</strong> · Coach: <strong className="text-[#202A2B]">{b.coachNumber || 'B3'}</strong></div>
-                      <div>Specialist: <strong className="text-[#202A2B]">{b.assignedWorkerName || 'Awaiting Worker'}</strong></div>
-                      <div className="italic text-[11px] text-[#7E9092] mt-1">"{b.description}"</div>
-                    </div>
-
-                    <div className="pt-3 border-t border-[#DDE4E6] flex items-center justify-between gap-2">
-                      {['Requested', 'Awaiting Worker Confirmation', 'Finding Worker', 'Worker Assigned'].includes(b.status) && onCancelWorkerRequest && (
-                        <button
-                          onClick={() => onCancelWorkerRequest(b.requestId)}
-                          className="px-3 py-1 text-xs font-bold text-[#D72645] hover:bg-[#FBE0E6] rounded-lg transition cursor-pointer"
-                        >
-                          Cancel Booking
-                        </button>
-                      )}
-
-                      {b.status === 'Completed' && (
-                        b.feedback ? (
-                          <div className="text-[11px] text-[#1E6B52] font-semibold flex items-center gap-1">
-                            <Star className="w-3.5 h-3.5 text-[#EAB308] fill-current" />
-                            <span>Rated {b.feedback.rating}/5</span>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => setFeedbackModalReq(b)}
-                            className="px-3 py-1 bg-[#202A2B] hover:bg-[#202A2B]/90 text-white rounded-lg text-xs font-bold transition cursor-pointer"
-                          >
-                            Rate Specialist &rarr;
-                          </button>
-                        )
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-          </div>
+          )}
 
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* TAB: FIND ASSISTANCE NEAR YOUR STATION (SERVICE-FIRST MARKETPLACE)        */}
+      {/* TAB 2: FIND SAHAYAK / STATION SERVICES MARKETPLACE                        */}
       {/* ========================================================================= */}
       {activeTab === 'marketplace' && (
-        <div className="space-y-6 animate-fadeIn">
+        <div className="space-y-4">
           <ServiceDiscoveryMarketplace
             workers={workers}
             onSelectWorkerForBooking={
@@ -701,97 +572,282 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
                 onNavigate('book-worker');
               })
             }
-            onNavigate={onNavigate}
-            currentUser={currentUser}
           />
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* FEEDBACK MODAL                                                            */}
+      {/* TAB 3: RESOLVED HISTORY & BEFORE-AND-AFTER PHOTO PROOF                     */}
       {/* ========================================================================= */}
-      {feedbackModalReq && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-5 shadow-2xl border border-[#DDE4E6]">
-            <div className="flex items-center justify-between border-b border-[#DDE4E6] pb-3">
-              <h3 className="text-base font-black text-[#202A2B]">
-                Rate Worker Service · #{feedbackModalReq.requestId}
-              </h3>
+      {activeTab === 'history' && (
+        <div className="space-y-4">
+          <div className="bg-[#DDF8EF]/40 border border-[#65D6B0]/40 rounded-2xl p-4 flex items-center justify-between text-xs text-[#1E6B52]">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-[#3EA684]" />
+              <span>
+                <strong>Audit Resolution Redressal:</strong> Every resolved task requires verified proof so passenger satisfaction is guaranteed (resolving CAG finding).
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Resolved Complaints */}
+            {userComplaints.filter(c => c.status === 'Resolved').map((c) => (
+              <div key={c.complaintId} className="bg-white rounded-2xl border border-[#DDE4E6] p-5 shadow-xs space-y-3">
+                <div className="flex items-center justify-between border-b border-[#DDE4E6] pb-2.5">
+                  <span className="font-mono text-xs font-bold text-[#1E6B52]">#{c.complaintId}</span>
+                  <span className="text-[10px] font-bold bg-[#DDF8EF] text-[#1E6B52] px-2 py-0.5 rounded">
+                    Verified Resolved
+                  </span>
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-black text-[#202A2B]">{c.subject}</h4>
+                  <p className="text-[11px] text-[#526365] mt-0.5">{c.description}</p>
+                </div>
+
+                {/* Photo Proof Action */}
+                <div className="pt-2 border-t border-[#DDE4E6] flex items-center justify-between">
+                  <span className="text-[11px] text-[#7E9092]">
+                    By: {c.assignedWorkerName || 'Station Technician'}
+                  </span>
+                  {(c.resolutionProofUrl || c.beforeProofUrl) && (
+                    <button
+                      onClick={() => setPhotoProofModal({
+                        title: c.subject,
+                        before: c.beforeProofUrl || c.imageUrl,
+                        after: c.resolutionProofUrl,
+                        notes: c.resolutionNotes,
+                        workerName: c.assignedWorkerName || undefined,
+                        resolvedAt: c.resolvedAt,
+                      })}
+                      className="px-2.5 py-1 bg-[#202A2B] text-white text-[11px] font-bold rounded-lg flex items-center gap-1.5 cursor-pointer hover:bg-[#202A2B]/90 transition"
+                    >
+                      <Camera className="w-3 h-3 text-[#65D6B0]" />
+                      <span>Inspect Photo Proof</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {/* Completed Bookings */}
+            {userBookings.filter(b => b.status === 'Completed').map((b) => (
+              <div key={b.requestId} className="bg-white rounded-2xl border border-[#DDE4E6] p-5 shadow-xs space-y-3">
+                <div className="flex items-center justify-between border-b border-[#DDE4E6] pb-2.5">
+                  <span className="font-mono text-xs font-bold text-[#1E6B52]">#{b.requestId}</span>
+                  <span className="text-[10px] font-bold bg-[#DDF8EF] text-[#1E6B52] px-2 py-0.5 rounded">
+                    Completed
+                  </span>
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-black text-[#202A2B]">{b.serviceCategory}</h4>
+                  <p className="text-[11px] text-[#526365] mt-0.5">"{b.description}"</p>
+                </div>
+
+                <div className="pt-2 border-t border-[#DDE4E6] flex items-center justify-between">
+                  {b.feedback ? (
+                    <div className="text-[11px] text-[#1E6B52] font-semibold flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 text-[#EAB308] fill-current" />
+                      <span>Rated {b.feedback.rating}/5</span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setFeedbackModalReq(b)}
+                      className="px-2.5 py-1 bg-[#007D99] text-white text-[11px] font-bold rounded-lg cursor-pointer hover:bg-[#007D99]/90 transition"
+                    >
+                      Rate Specialist &rarr;
+                    </button>
+                  )}
+
+                  {(b.resolutionProofUrl || b.afterPhotoUrl || b.beforePhotoUrl) && (
+                    <button
+                      onClick={() => setPhotoProofModal({
+                        title: b.serviceCategory,
+                        before: b.beforePhotoUrl,
+                        after: b.resolutionProofUrl || b.afterPhotoUrl,
+                        notes: b.resolutionSummary || b.completionNotes,
+                        workerName: b.assignedWorkerName || undefined,
+                        resolvedAt: b.completedAt,
+                      })}
+                      className="px-2.5 py-1 bg-[#202A2B] text-white text-[11px] font-bold rounded-lg flex items-center gap-1.5 cursor-pointer hover:bg-[#202A2B]/90 transition"
+                    >
+                      <Camera className="w-3 h-3 text-[#65D6B0]" />
+                      <span>View Proof</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: BEFORE-AND-AFTER PHOTO PROOF VIEWER                                */}
+      {/* ========================================================================= */}
+      {photoProofModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-xl border border-[#DDE4E6] animate-scaleUp">
+            <div className="flex items-center justify-between pb-3 border-b border-[#DDE4E6]">
+              <div className="flex items-center gap-2">
+                <Camera className="w-5 h-5 text-[#007D99]" />
+                <h3 className="text-base font-black text-[#202A2B]">Verified Photo Proof of Resolution</h3>
+              </div>
               <button
-                onClick={() => setFeedbackModalReq(null)}
-                className="p-1 rounded-lg text-[#7E9092] hover:text-[#202A2B] hover:bg-[#F0F4F6] cursor-pointer"
+                onClick={() => setPhotoProofModal(null)}
+                className="text-slate-400 hover:text-slate-700 cursor-pointer p-1"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-xs text-[#526365]">
-              How was your service experience with <strong>{feedbackModalReq.assignedWorkerName || 'the specialist'}</strong>?
-            </p>
+            <div className="text-xs text-[#526365]">
+              Task: <strong className="text-[#202A2B]">{photoProofModal.title}</strong>
+              {photoProofModal.workerName && (
+                <span> · Resolved by: <strong className="text-[#202A2B]">{photoProofModal.workerName}</strong></span>
+              )}
+            </div>
 
-            {/* Star Rating */}
-            <div className="flex items-center justify-center gap-2 py-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  onMouseEnter={() => setFeedbackHoverRating(star)}
-                  onMouseLeave={() => setFeedbackHoverRating(0)}
-                  onClick={() => setFeedbackRating(star)}
-                  className="p-1 cursor-pointer transition-transform hover:scale-110"
-                >
-                  <Star
-                    className={`w-7 h-7 ${
-                      (feedbackHoverRating || feedbackRating) >= star
-                        ? 'text-[#C6F000] fill-current drop-shadow-xs'
-                        : 'text-[#DDE4E6]'
-                    }`}
+            {/* Before vs After Photos */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-bold text-[#526365] block uppercase">Before Maintenance</span>
+                {photoProofModal.before ? (
+                  <img
+                    src={photoProofModal.before}
+                    alt="Before Maintenance"
+                    className="w-full h-48 object-cover rounded-2xl border border-[#DDE4E6] bg-slate-100"
                   />
-                </button>
-              ))}
+                ) : (
+                  <div className="w-full h-48 rounded-2xl border border-dashed border-[#DDE4E6] flex items-center justify-center text-xs text-[#7E9092] bg-[#F8FAFB]">
+                    Initial passenger report image
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-bold text-[#1E6B52] block uppercase">After Resolution (Sahayak Proof)</span>
+                {photoProofModal.after ? (
+                  <img
+                    src={photoProofModal.after}
+                    alt="After Resolution"
+                    className="w-full h-48 object-cover rounded-2xl border-2 border-[#65D6B0] bg-slate-100"
+                  />
+                ) : (
+                  <div className="w-full h-48 rounded-2xl border border-dashed border-[#DDE4E6] flex items-center justify-center text-xs text-[#7E9092] bg-[#F8FAFB]">
+                    No after photo attached
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {photoProofModal.notes && (
+              <div className="p-3 bg-[#F8FAFB] rounded-xl border border-[#DDE4E6] text-xs text-[#202A2B]">
+                <span className="font-bold text-[#526365] block mb-0.5">Technician Resolution Summary:</span>
+                "{photoProofModal.notes}"
+              </div>
+            )}
+
+            <button
+              onClick={() => setPhotoProofModal(null)}
+              className="w-full py-2.5 bg-[#202A2B] text-white text-xs font-bold rounded-xl cursor-pointer hover:bg-[#202A2B]/90 transition"
+            >
+              Close Proof Viewer
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: PASSENGER RATING & REVIEW                                          */}
+      {/* ========================================================================= */}
+      {feedbackModalReq && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-xl border border-[#DDE4E6] animate-scaleUp">
+            <div className="flex items-center justify-between pb-3 border-b border-[#DDE4E6]">
+              <h3 className="text-base font-black text-[#202A2B]">Rate Station Sahayak</h3>
+              <button
+                onClick={() => setFeedbackModalReq(null)}
+                className="text-slate-400 hover:text-slate-700 cursor-pointer p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="text-center py-2 space-y-1">
+              <span className="text-xs text-[#526365]">Specialist:</span>
+              <div className="text-sm font-black text-[#202A2B]">{feedbackModalReq.assignedWorkerName}</div>
+              <span className="text-[11px] text-[#007D99] block font-semibold">{feedbackModalReq.serviceCategory}</span>
+
+              {/* Star Rating Selection */}
+              <div className="flex items-center justify-center gap-2 pt-3">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setFeedbackRating(star)}
+                    className="p-1 cursor-pointer transition transform hover:scale-110"
+                  >
+                    <Star
+                      className={`w-7 h-7 ${
+                        star <= feedbackRating
+                          ? 'text-[#EAB308] fill-current'
+                          : 'text-slate-200'
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Quick Feedback Tags */}
-            <div className="flex flex-wrap gap-1.5">
-              {QUICK_FEEDBACK_TAGS.map((tag) => {
-                const isSelected = feedbackTags.includes(tag);
-                return (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => {
-                      setFeedbackTags((prev) =>
-                        isSelected ? prev.filter((t) => t !== tag) : [...prev, tag]
-                      );
-                    }}
-                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer border ${
-                      isSelected
-                        ? 'bg-[#202A2B] text-white border-[#202A2B]'
-                        : 'bg-[#F8FAFB] text-[#526365] border-[#DDE4E6] hover:bg-white'
-                    }`}
-                  >
-                    {tag}
-                  </button>
-                );
-              })}
+            <div className="space-y-1.5">
+              <span className="text-xs font-bold text-[#526365]">Select Feedback Tags:</span>
+              <div className="flex flex-wrap gap-1.5">
+                {QUICK_FEEDBACK_TAGS.map((tag) => {
+                  const isSelected = feedbackTags.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => {
+                        setFeedbackTags((prev) =>
+                          isSelected ? prev.filter((t) => t !== tag) : [...prev, tag]
+                        );
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition cursor-pointer ${
+                        isSelected
+                          ? 'bg-[#DDF8EF] border-[#65D6B0] text-[#1E6B52]'
+                          : 'bg-[#F8FAFB] border-[#DDE4E6] text-[#526365] hover:bg-slate-100'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Comment */}
             <div>
+              <label className="block text-xs font-bold text-[#526365] mb-1">
+                Comments (Optional)
+              </label>
               <textarea
+                rows={2}
                 value={feedbackComment}
                 onChange={(e) => setFeedbackComment(e.target.value)}
-                placeholder="Share any additional feedback for the railway sahayak..."
-                rows={3}
-                className="w-full p-3 rounded-xl border border-[#DDE4E6] text-xs text-[#202A2B] bg-[#F8FAFB] focus:outline-none focus:ring-2 focus:ring-[#65D6B0]"
+                placeholder="How was the resolution quality at your coach?"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-[#DDE4E6] focus:outline-none focus:ring-2 focus:ring-[#007D99] text-[#202A2B]"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2">
+            <div className="flex items-center gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setFeedbackModalReq(null)}
-                className="px-4 py-2 text-xs font-bold text-[#526365] hover:text-[#202A2B] cursor-pointer"
+                className="flex-1 py-2.5 border border-[#DDE4E6] text-[#526365] text-xs font-bold rounded-xl hover:bg-slate-50 transition cursor-pointer"
               >
                 Cancel
               </button>
@@ -799,13 +855,41 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
                 type="button"
                 disabled={feedbackSubmitting}
                 onClick={handleSendFeedback}
-                className="px-5 py-2.5 bg-[#202A2B] hover:bg-[#202A2B]/90 text-white rounded-xl text-xs font-black transition cursor-pointer shadow-xs border border-[#202A2B]"
+                className="flex-1 py-2.5 bg-[#202A2B] hover:bg-[#202A2B]/90 text-white text-xs font-black rounded-xl transition cursor-pointer disabled:opacity-60"
               >
                 {feedbackSubmitting ? 'Submitting...' : 'Submit Rating'}
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* AI Voice Assistant Modal */}
+      {isVoiceModalOpen && (
+        <AIVoiceAssistantModal
+          currentUser={currentUser}
+          isOpen={isVoiceModalOpen}
+          onClose={() => {
+            setIsVoiceModalOpen(false);
+            onRefreshData?.();
+          }}
+          onSubmitGrievance={async (newComplaint) => {
+            if (onSubmitComplaint) {
+              return await Promise.resolve(onSubmitComplaint(newComplaint));
+            }
+            const res = await fetch('/api/complaints', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(newComplaint),
+            });
+            const data = await res.json();
+            onRefreshData?.();
+            return data.complaint;
+          }}
+          onComplaintCreated={() => {
+            onRefreshData?.();
+          }}
+        />
       )}
 
     </div>

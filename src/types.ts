@@ -57,7 +57,17 @@ export interface Complaint {
   imageUrl?: string;
   voiceUrl?: string;
   severity?: 'Urgent' | 'High' | 'Medium' | 'Low';
+  priority?: 'Low' | 'Medium' | 'High' | 'Emergency';
   aiAnalysis?: AIComplaintAnalysis;
+  // RailMadad Integration & SLA Resolution Tracking
+  railMadadRef?: string;
+  slaMinutesRemaining?: number;
+  isEscalated?: boolean;
+  escalatedTo?: string;
+  beforeProofUrl?: string;
+  resolutionProofUrl?: string;
+  resolutionNotes?: string;
+  resolvedAt?: string;
 }
 
 export interface AdminNotification {
@@ -189,6 +199,13 @@ export interface WorkerServiceRequest {
     currentStatusText?: string;
     lastUpdated: string;
   };
+  beforePhotoUrl?: string;
+  afterPhotoUrl?: string;
+  resolutionProofUrl?: string;
+  resolutionSummary?: string;
+  priority?: 'Low' | 'Medium' | 'High' | 'Emergency';
+  isEscalated?: boolean;
+  slaMinutesRemaining?: number;
   createdAt: string;
   updatedAt: string;
   completedAt?: string;

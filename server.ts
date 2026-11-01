@@ -59,6 +59,15 @@ interface Complaint {
   imageUrl?: string;
   voiceUrl?: string;
   severity?: 'Urgent' | 'High' | 'Medium' | 'Low';
+  priority?: 'Low' | 'Medium' | 'High' | 'Emergency';
+  railMadadRef?: string;
+  slaMinutesRemaining?: number;
+  isEscalated?: boolean;
+  escalatedTo?: string;
+  beforeProofUrl?: string;
+  resolutionProofUrl?: string;
+  resolutionNotes?: string;
+  resolvedAt?: string;
   aiAnalysis?: any;
 }
 
@@ -152,6 +161,13 @@ interface WorkerServiceRequest {
     currentStatusText?: string;
     lastUpdated: string;
   };
+  beforePhotoUrl?: string;
+  afterPhotoUrl?: string;
+  resolutionProofUrl?: string;
+  resolutionSummary?: string;
+  priority?: 'Low' | 'Medium' | 'High' | 'Emergency';
+  isEscalated?: boolean;
+  slaMinutesRemaining?: number;
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
@@ -766,6 +782,13 @@ async function startServer() {
       const complaintId = `RC${store.counter}`;
       const nowIso = new Date().toISOString().replace('T', ' ').slice(0, 19);
 
+      const railMadadRef = body.railMadadRef || `RM-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+      const resolvedPriority = body.priority || (
+        body.severity === 'Urgent' ? 'Emergency' :
+        body.severity === 'High' ? 'High' :
+        body.severity === 'Low' ? 'Low' : 'Medium'
+      );
+
       const newComplaint: Complaint = {
         id: Date.now(),
         complaintId,
@@ -776,7 +799,7 @@ async function startServer() {
         trainNumber: String(body.trainNumber || 'N/A').trim(),
         pnrNumber: body.pnrNumber ? String(body.pnrNumber).trim() : '',
         journeyDate: String(body.journeyDate || nowIso.slice(0, 10)),
-        category: String(body.category || 'Other'),
+        category: String(body.category || 'Other') as any,
         subject: String(body.subject || 'Railway Grievance').trim(),
         description: String(body.description || '').trim(),
         location: body.location ? String(body.location).trim() : '',
@@ -784,7 +807,13 @@ async function startServer() {
         imageUrl: body.imageUrl || undefined,
         voiceUrl: body.voiceUrl || undefined,
         severity: body.severity || 'Medium',
+        priority: resolvedPriority,
         aiAnalysis: body.aiAnalysis || undefined,
+        railMadadRef,
+        slaMinutesRemaining: typeof body.slaMinutesRemaining === 'number' ? body.slaMinutesRemaining : 120,
+        isEscalated: resolvedPriority === 'Emergency',
+        escalatedTo: resolvedPriority === 'Emergency' ? 'RPF Command / Station Superintendent' : undefined,
+        beforeProofUrl: body.imageUrl || undefined,
         createdAt: nowIso,
         updatedAt: nowIso,
       };
@@ -795,8 +824,8 @@ async function startServer() {
       const notif: AdminNotification = {
         id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         type: 'new_complaint',
-        title: 'New Passenger Grievance Registered',
-        message: `#${complaintId} (${newComplaint.category}) on Train ${newComplaint.trainNumber} by ${newComplaint.passengerName}. Ready for station specialist dispatch.`,
+        title: resolvedPriority === 'Emergency' ? 'CRITICAL: Priority Emergency Grievance Logged' : 'New Passenger Grievance Registered',
+        message: `#${complaintId} [${railMadadRef}] (${newComplaint.category}) on Train ${newComplaint.trainNumber} by ${newComplaint.passengerName}. Priority: ${resolvedPriority}. Ready for specialist dispatch.`,
         complaintId,
         stationCode: newComplaint.location || 'NDLS',
         timestamp: nowIso,
@@ -2271,7 +2300,14 @@ Respond ONLY with a valid JSON object (no markdown, no backticks, just raw JSON)
   app.put('/api/worker-requests/:id/status', (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const { status, completionNotes } = req.body;
+      const {
+        status,
+        completionNotes,
+        beforePhotoUrl,
+        afterPhotoUrl,
+        resolutionProofUrl,
+        resolutionSummary,
+      } = req.body;
       const store = readStore();
       const nowIso = new Date().toISOString().replace('T', ' ').slice(0, 19);
 
@@ -2300,9 +2336,11 @@ Respond ONLY with a valid JSON object (no markdown, no backticks, just raw JSON)
       targetReq.status = status;
       targetReq.updatedAt = nowIso;
 
-      if (completionNotes) {
-        targetReq.completionNotes = String(completionNotes).trim();
-      }
+      if (completionNotes) targetReq.completionNotes = String(completionNotes).trim();
+      if (beforePhotoUrl) targetReq.beforePhotoUrl = beforePhotoUrl;
+      if (afterPhotoUrl) targetReq.afterPhotoUrl = afterPhotoUrl;
+      if (resolutionProofUrl) targetReq.resolutionProofUrl = resolutionProofUrl;
+      if (resolutionSummary) targetReq.resolutionSummary = String(resolutionSummary).trim();
 
       if (status === 'Completed') {
         targetReq.completedAt = nowIso;
@@ -2314,6 +2352,27 @@ Respond ONLY with a valid JSON object (no markdown, no backticks, just raw JSON)
             w.activeJobId = null;
             w.totalJobsCompleted = (w.totalJobsCompleted || 0) + 1;
             w.updatedAt = nowIso;
+          }
+        }
+
+        // Synchronize linked complaint status & resolution evidence
+        if (targetReq.relatedComplaintId) {
+          const comp = (store.complaints || []).find(
+            (c) => c.complaintId === targetReq.relatedComplaintId || String(c.id) === targetReq.relatedComplaintId
+          );
+          if (comp) {
+            comp.status = 'Resolved';
+            comp.resolvedAt = nowIso;
+            comp.updatedAt = nowIso;
+            if (beforePhotoUrl || targetReq.beforePhotoUrl) {
+              comp.beforeProofUrl = beforePhotoUrl || targetReq.beforePhotoUrl;
+            }
+            if (resolutionProofUrl || afterPhotoUrl || targetReq.afterPhotoUrl) {
+              comp.resolutionProofUrl = resolutionProofUrl || afterPhotoUrl || targetReq.afterPhotoUrl;
+            }
+            if (resolutionSummary || completionNotes || targetReq.completionNotes) {
+              comp.resolutionNotes = resolutionSummary || completionNotes || targetReq.completionNotes;
+            }
           }
         }
       } else if (status === 'Cancelled' || status === 'Declined') {

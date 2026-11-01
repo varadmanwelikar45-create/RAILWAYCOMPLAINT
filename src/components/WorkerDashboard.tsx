@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Worker, ViewMode, WorkerServiceRequest, WorkerAvailabilityStatus } from '../types';
+import { MutualGoogleMap } from './MutualGoogleMap';
 import { 
   Briefcase, 
   Clock, 
@@ -8,15 +9,17 @@ import {
   Phone, 
   Mail, 
   Star, 
-  AlertCircle, 
   Compass, 
   ArrowRight, 
-  RefreshCw,
   Navigation,
   LocateFixed,
   Play,
   ArrowLeft,
-  X
+  X,
+  Camera,
+  Upload,
+  ShieldCheck,
+  AlertCircle
 } from 'lucide-react';
 
 interface WorkerDashboardProps {
@@ -28,15 +31,21 @@ interface WorkerDashboardProps {
   onUpdateRequestStatus?: (
     requestId: string, 
     status: WorkerServiceRequest['status'], 
-    notes?: string
+    notes?: string,
+    proofData?: {
+      beforePhotoUrl?: string;
+      afterPhotoUrl?: string;
+      resolutionProofUrl?: string;
+      resolutionSummary?: string;
+    }
   ) => Promise<{ success: boolean; message: string }> | any;
   onUpdateStatus?: (
     requestId: string, 
     status: WorkerServiceRequest['status'], 
-    notes?: string
+    notes?: string,
+    proofData?: any
   ) => Promise<{ success: boolean; message: string }> | any;
   onUpdateAvailability?: (availability: WorkerAvailabilityStatus) => Promise<any> | any;
-  onToggleAvailability?: (workerId: string | number, isAvailable: boolean) => Promise<{ success: boolean; message: string }> | any;
   onNavigate: (view: ViewMode) => void;
   onRefreshData?: () => void;
   onWorkerLogout?: () => void;
@@ -52,7 +61,6 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
   onUpdateRequestStatus,
   onUpdateStatus,
   onUpdateAvailability,
-  onToggleAvailability,
   onRefreshData,
   onWorkerLogout,
   onBack,
@@ -61,30 +69,27 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
   const statusUpdateFn = onUpdateRequestStatus || onUpdateStatus;
   const [activeTab, setActiveTab] = useState<'current-job' | 'incoming-requests' | 'history' | 'feedback'>('current-job');
   const [completionNotes, setCompletionNotes] = useState('');
+  const [beforePhotoUrl, setBeforePhotoUrl] = useState<string>('');
+  const [afterPhotoUrl, setAfterPhotoUrl] = useState<string>('');
   const [actionLoading, setActionLoading] = useState(false);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
 
-  // Rejection modal state
+  // Rejection modal
   const [rejectModalReq, setRejectModalReq] = useState<WorkerServiceRequest | null>(null);
   const [rejectReason, setRejectReason] = useState('');
 
-  // Live Location & Movement status states for Worker
-  const [isUpdatingLocation, setIsUpdatingLocation] = useState(false);
-  const [workerStatusText, setWorkerStatusText] = useState('Walking along platform towards coach');
-
-  // Filter requests matching this worker
+  // Active Job
   const activeJob = workerRequests.find(
     (r) =>
       r.assignedWorkerId === currentWorker.id &&
       ['Worker Assigned', 'On the Way', 'Arrived at Station', 'Service In Progress'].includes(r.status)
   );
 
+  // Incoming Requests for this worker
   const incomingRequests = workerRequests.filter((r) => {
-    // Direct requests specifically for this worker awaiting confirmation
     if (r.assignedWorkerId === currentWorker.id && ['Requested', 'Awaiting Worker Confirmation', 'Finding Worker'].includes(r.status)) {
       return true;
     }
-    // General station requests matching worker's station and skill category
     const isUnassigned = !r.assignedWorkerId && ['Requested', 'Awaiting Worker Confirmation', 'Finding Worker'].includes(r.status);
     const stationMatches =
       r.stationCode === currentWorker.stationCode ||
@@ -100,22 +105,15 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
     (r) => r.assignedWorkerId === currentWorker.id && r.status === 'Completed'
   );
 
-  // Aggregate genuine passenger feedback
   const allReviews = workerRequests
     .filter((r) => r.assignedWorkerId === currentWorker.id && r.feedback)
-    .map((r) => ({
-      ...r.feedback!,
-      requestId: r.requestId,
-      passengerName: r.passengerName,
-      trainNumber: r.trainNumber,
-      serviceCategory: r.serviceCategory,
-    }));
+    .map((r) => r.feedback!);
 
   const averageRating = allReviews.length > 0
     ? (allReviews.reduce((acc, curr) => acc + (curr.rating || 5), 0) / allReviews.length).toFixed(1)
-    : (currentWorker.rating || 4.9).toFixed(1);
+    : (currentWorker.rating || 5.0).toFixed(1);
 
-  // Poll for live requests every 5 seconds
+  // Periodic polling
   useEffect(() => {
     const interval = setInterval(() => {
       onRefreshData?.();
@@ -123,12 +121,23 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
     return () => clearInterval(interval);
   }, [onRefreshData]);
 
-  // Handle switching tabs when there is no active job
   useEffect(() => {
     if (!activeJob && activeTab === 'current-job' && incomingRequests.length > 0) {
       setActiveTab('incoming-requests');
     }
   }, [activeJob, incomingRequests.length, activeTab]);
+
+  const handleToggleDuty = async () => {
+    if (!onUpdateAvailability) return;
+    const nextStatus = currentWorker.availability === 'Available' ? 'Unavailable' : 'Available';
+    try {
+      setActionLoading(true);
+      await onUpdateAvailability(nextStatus);
+    } finally {
+      setActionLoading(false);
+      onRefreshData?.();
+    }
+  };
 
   const handleAccept = async (requestId: string) => {
     if (!onAcceptRequest) return;
@@ -136,7 +145,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
       setActionLoading(true);
       const res = await onAcceptRequest(requestId);
       if (res.success) {
-        setActionNotice('Service assignment accepted! Proceed to passenger coach.');
+        setActionNotice('Task accepted! Proceed to passenger coach.');
         setActiveTab('current-job');
       } else {
         setActionNotice(res.message);
@@ -148,13 +157,13 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
     }
   };
 
-  const handleReject = async (requestId: string, reason?: string) => {
+  const handleReject = async (requestId: string) => {
     if (!onRejectRequest) return;
     try {
       setActionLoading(true);
-      const res = await onRejectRequest(requestId, reason || rejectReason);
+      const res = await onRejectRequest(requestId, rejectReason || 'Worker unavailable');
       if (res.success) {
-        setActionNotice(`Booking #${requestId} declined.`);
+        setActionNotice(`Request declined.`);
         setRejectModalReq(null);
         setRejectReason('');
       } else {
@@ -167,19 +176,26 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
     }
   };
 
-  const handleProgress = async (requestId: string, nextStatus: WorkerServiceRequest['status'], notes?: string) => {
-    if (!statusUpdateFn) return;
+  const handleProgress = async (nextStatus: WorkerServiceRequest['status']) => {
+    if (!activeJob || !statusUpdateFn) return;
     try {
       setActionLoading(true);
-      const res = await statusUpdateFn(requestId, nextStatus, notes);
+      const proofPayload = nextStatus === 'Completed' ? {
+        beforePhotoUrl: beforePhotoUrl || activeJob.beforePhotoUrl,
+        afterPhotoUrl: afterPhotoUrl || activeJob.afterPhotoUrl,
+        resolutionProofUrl: afterPhotoUrl || beforePhotoUrl,
+        resolutionSummary: completionNotes,
+      } : undefined;
+
+      const res = await statusUpdateFn(activeJob.requestId, nextStatus, completionNotes, proofPayload);
       if (res?.success) {
         setActionNotice(`Status updated to: ${nextStatus}`);
         if (nextStatus === 'Completed') {
           setCompletionNotes('');
+          setBeforePhotoUrl('');
+          setAfterPhotoUrl('');
           setActiveTab('history');
         }
-      } else if (res?.message) {
-        setActionNotice(res.message);
       }
       setTimeout(() => setActionNotice(null), 4000);
     } finally {
@@ -188,105 +204,41 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
     }
   };
 
-  const isWorkerAvailable = currentWorker.availability === 'Available';
-
-  const handleToggle = async () => {
-    try {
-      setActionLoading(true);
-      if (onUpdateAvailability) {
-        const nextStatus: WorkerAvailabilityStatus = isWorkerAvailable ? 'Unavailable' : 'Available';
-        await onUpdateAvailability(nextStatus);
-      } else if (onToggleAvailability) {
-        await onToggleAvailability(currentWorker.id, !isWorkerAvailable);
-      }
-      setActionNotice(isWorkerAvailable ? 'Status set to Unavailable' : 'Status set to Available on Platform');
-      setTimeout(() => setActionNotice(null), 3000);
-    } finally {
-      setActionLoading(false);
-      onRefreshData?.();
-    }
-  };
-
-  // Worker live location broadcaster
-  const handleShareWorkerLocation = async (presetStatus?: string) => {
-    setIsUpdatingLocation(true);
-    const chosenStatus = presetStatus || workerStatusText;
-
-    const sendCoords = async (latitude: number, longitude: number) => {
-      try {
-        const payload = {
-          requestId: activeJob?.requestId,
-          workerId: currentWorker.id,
-          workerName: currentWorker.fullName,
-          statusText: chosenStatus,
-          latitude,
-          longitude,
-          timestamp: new Date().toISOString(),
-          accuracyMeters: 5,
-        };
-
-        const res = await fetch('/api/workers/location', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-
-        if (res.ok) {
-          setActionNotice('Live position & status broadcasted to passenger!');
-        } else {
-          setActionNotice('Updated worker status broadcast.');
+  // Image Upload helper for before/after photos
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'before' | 'after') => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          if (type === 'before') setBeforePhotoUrl(reader.result);
+          else setAfterPhotoUrl(reader.result);
         }
-        setTimeout(() => setActionNotice(null), 3000);
-      } catch (e) {
-        setActionNotice('Worker status update cached.');
-        setTimeout(() => setActionNotice(null), 3000);
-      } finally {
-        setIsUpdatingLocation(false);
-      }
-    };
-
-    if (typeof window !== 'undefined' && 'geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => sendCoords(pos.coords.latitude, pos.coords.longitude),
-        (err) => {
-          let fallbackMsg = 'Platform broadcast active (Station Hub beacon).';
-          if (err.code === 1) {
-            fallbackMsg = 'Location permission blocked on mobile; station beacon coordinates broadcasted.';
-          } else if (err.code === 2) {
-            fallbackMsg = 'GPS fix offline inside platform; concourse beacon broadcasted.';
-          } else if (err.code === 3) {
-            fallbackMsg = 'GPS timed out on cellular link; station beacon broadcasted.';
-          }
-          setActionNotice(fallbackMsg);
-          sendCoords(28.6431, 77.2197);
-        },
-        { enableHighAccuracy: true, timeout: 6000 }
-      );
-    } else {
-      sendCoords(28.6431, 77.2197);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   const isVerified = currentWorker.verificationStatus === 'Verified';
 
   return (
-    <div className="space-y-8 py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="space-y-6 py-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       
-      {/* Top Header with Back Navigation */}
-      <div className="bg-white rounded-3xl border border-[#DDE4E6] p-6 sm:p-8 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
+      {/* Top Header */}
+      <div className="bg-white rounded-3xl border border-[#DDE4E6] p-6 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2.5">
             {onBack && (
               <button
                 onClick={onBack}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#DDE4E6] text-xs font-bold text-[#202A2B] hover:bg-[#F0F4F6] transition cursor-pointer"
               >
-                <ArrowLeft className="w-4 h-4 text-[#B94A3A]" />
+                <ArrowLeft className="w-3.5 h-3.5 text-[#B94A3A]" />
                 <span>Back</span>
               </button>
             )}
-            <span className="px-2.5 py-0.5 bg-[#D7F7FC] text-[#007D99] text-[10px] font-black rounded-md tracking-wider uppercase border border-[#00B8D9]/40">
-              VYOM RATH WORKFORCE
+            <span className="px-2.5 py-0.5 bg-[#D7F7FC] text-[#007D99] text-[10px] font-black rounded-full uppercase tracking-wider border border-[#00B8D9]/40">
+              VYOM RATH GIG WORKER
             </span>
             <span className="text-xs text-[#526365] font-mono">
               ID: {currentWorker.workerId}
@@ -300,37 +252,36 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
           <div className="flex flex-wrap items-center gap-2 text-xs text-[#526365]">
             <span className="font-semibold text-[#007D99]">{currentWorker.skillCategory}</span>
             <span>·</span>
-            <span>Station: <strong className="text-[#202A2B]">{currentWorker.stationName} ({currentWorker.stationCode})</strong></span>
+            <span>Platform: <strong className="text-[#202A2B]">{currentWorker.stationName} ({currentWorker.stationCode})</strong></span>
             <span>·</span>
-            <span className={`font-bold ${isVerified ? 'text-[#1E6B52]' : 'text-[#007D99]'}`}>
+            <span className={`font-bold ${isVerified ? 'text-[#1E6B52]' : 'text-[#B94A3A]'}`}>
               {currentWorker.verificationStatus}
             </span>
           </div>
         </div>
 
         {/* Status Switcher & Logout */}
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          {/* Availability Toggle */}
-          <div className="flex items-center gap-2 bg-[#F8FAFB] border border-[#DDE4E6] px-3.5 py-2 rounded-2xl">
-            <span className="text-xs font-bold text-[#526365]">On-Duty Status:</span>
+        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+          <div className="flex items-center gap-2 bg-[#F8FAFB] border border-[#DDE4E6] px-3 py-1.5 rounded-xl">
+            <span className="text-xs font-bold text-[#526365]">Duty:</span>
             <button
-              onClick={handleToggle}
+              onClick={handleToggleDuty}
               disabled={actionLoading}
-              className={`px-3 py-1 text-xs font-black rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
-                isWorkerAvailable
-                  ? 'bg-[#007D99] text-white shadow-xs'
-                  : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+              className={`px-3 py-1 text-xs font-black rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
+                currentWorker.availability === 'Available'
+                  ? 'bg-[#007D99] text-white'
+                  : 'bg-slate-200 text-slate-700'
               }`}
             >
-              <span className={`w-2 h-2 rounded-full ${isWorkerAvailable ? 'bg-[#D7F7FC] animate-pulse' : 'bg-slate-400'}`}></span>
-              <span>{isWorkerAvailable ? 'Available' : 'Unavailable'}</span>
+              <span className={`w-2 h-2 rounded-full ${currentWorker.availability === 'Available' ? 'bg-[#D7F7FC] animate-pulse' : 'bg-slate-400'}`}></span>
+              <span>{currentWorker.availability}</span>
             </button>
           </div>
 
           {onWorkerLogout && (
             <button
               onClick={onWorkerLogout}
-              className="px-4 py-2 border border-[#DDE4E6] hover:bg-[#FBE0E6] hover:text-[#92182D] hover:border-[#D72645]/40 text-xs font-bold text-[#526365] rounded-2xl transition cursor-pointer"
+              className="px-3.5 py-2 border border-[#DDE4E6] hover:bg-[#FBE0E6] hover:text-[#92182D] text-xs font-bold text-[#526365] rounded-xl transition cursor-pointer"
             >
               Sign Out
             </button>
@@ -339,9 +290,9 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
       </div>
 
       {actionNotice && (
-        <div className="p-4 bg-yellow-50 border border-yellow-200 text-amber-900 rounded-2xl text-xs flex items-center justify-between font-medium">
+        <div className="p-3.5 bg-[#DDF8EF] border border-[#65D6B0]/40 text-[#1E6B52] rounded-xl text-xs flex items-center justify-between font-medium">
           <div className="flex items-center gap-2">
-            <Check className="w-4 h-4 text-amber-700" />
+            <Check className="w-4 h-4 text-[#3EA684]" />
             <span>{actionNotice}</span>
           </div>
           <button onClick={() => setActionNotice(null)} className="text-slate-500 hover:text-slate-900 cursor-pointer">
@@ -350,459 +301,337 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
         </div>
       )}
 
-      {/* Verification Status Warning if not verified */}
-      {!isVerified && (
-        <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <h4 className="font-bold text-slate-900">Account Pending Station Verification</h4>
-            <p className="text-slate-600 leading-relaxed">
-              Your profile is currently under review by railway station administrators. You will be able to receive passenger calls once verified.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* High-Priority "New Service Booking Request" Notification Banner */}
-      {incomingRequests.length > 0 && !activeJob && (
-        <div className="bg-[#202A2B] text-white rounded-3xl p-6 sm:p-8 border-2 border-[#65D6B0] shadow-xl relative overflow-hidden animate-fadeIn">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-[#65D6B0]/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
-
-          <div className="relative z-10 space-y-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-3 w-3 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#65D6B0] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-[#65D6B0]"></span>
-                </span>
-                <span className="text-[11px] font-black uppercase tracking-widest text-[#65D6B0] bg-[#65D6B0]/20 px-3 py-1 rounded-lg border border-[#65D6B0]/30">
-                  NEW SERVICE BOOKING REQUEST ({incomingRequests.length} PENDING)
-                </span>
-              </div>
-              <span className="text-xs font-mono text-slate-400">
-                Ref #{incomingRequests[0].requestId} · Station {incomingRequests[0].stationCode}
-              </span>
+      {/* Immediate Officer Work Order Alert */}
+      {activeJob && activeJob.status === 'Worker Assigned' && (
+        <div className="p-4 bg-[#FFECC7] border-2 border-[#FFD68A] text-[#915900] rounded-2xl text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#915900] text-white flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-6 h-6 text-[#FFECC7]" />
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 bg-white/5 p-5 rounded-2xl border border-white/10 text-xs">
-              <div>
-                <span className="text-[11px] text-[#65D6B0] font-bold block">Passenger &amp; Contact</span>
-                <strong className="text-sm text-white block mt-0.5">{incomingRequests[0].passengerName}</strong>
-                <a href={`tel:${incomingRequests[0].passengerMobile}`} className="text-slate-300 hover:text-white underline mt-0.5 block font-mono">
-                  📞 {incomingRequests[0].passengerMobile}
-                </a>
+            <div>
+              <div className="font-black text-sm text-[#202A2B]">
+                🚨 Work Order Assigned by Railway Divisional Officer
               </div>
-
-              <div>
-                <span className="text-[11px] text-[#65D6B0] font-bold block">Train &amp; Coach Location</span>
-                <strong className="text-sm text-white block mt-0.5">
-                  Train {incomingRequests[0].trainNumber}
-                </strong>
-                <span className="text-slate-300 block">
-                  Coach <strong className="text-white">{incomingRequests[0].coachNumber || 'B3'}</strong> · Seat <strong className="text-white">{incomingRequests[0].seatNumber || 'Berth 24'}</strong>
-                </span>
-              </div>
-
-              <div>
-                <span className="text-[11px] text-[#65D6B0] font-bold block">Station &amp; Expected Arrival</span>
-                <strong className="text-sm text-white block mt-0.5">
-                  {incomingRequests[0].stationName} ({incomingRequests[0].stationCode})
-                </strong>
-                <span className="text-slate-300 block">
-                  ⏱️ {incomingRequests[0].expectedArrivalTime || 'Approaching Platform'}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-[11px] text-[#65D6B0] font-bold block">Meeting Point</span>
-                <strong className="text-sm text-white block mt-0.5">
-                  Platform Doorway
-                </strong>
-                <span className="text-slate-300 block">
-                  Coach {incomingRequests[0].coachNumber || 'B3'} Halt Position
-                </span>
-              </div>
-            </div>
-
-            <div className="bg-white/5 p-4 rounded-xl border border-white/10 text-xs text-slate-200">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Service Requirement &amp; Description:</span>
-              <p className="italic font-medium text-slate-100">"{incomingRequests[0].description}"</p>
-            </div>
-
-            {/* Accept / Reject Action Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
-              <p className="text-xs text-slate-400">
-                Please accept immediately to coordinate meeting point and start platform movement.
+              <p className="text-xs text-[#704500] mt-0.5">
+                Officer Control Room has dispatched you to <strong>Train {activeJob.trainNumber} (Coach {activeJob.coachNumber || 'B3'}, Berth {activeJob.seatNumber || '24'})</strong>. Please proceed to coach immediately.
               </p>
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  disabled={actionLoading}
-                  onClick={() => setRejectModalReq(incomingRequests[0])}
-                  className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-[#B94A3A] text-white hover:text-white border border-white/20 text-xs font-bold transition cursor-pointer flex items-center gap-2"
-                >
-                  <X className="w-4 h-4 text-[#D72645]" />
-                  <span>Reject Booking</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={actionLoading}
-                  onClick={() => handleAccept(incomingRequests[0].requestId)}
-                  className="px-7 py-2.5 rounded-xl bg-[#65D6B0] hover:bg-[#65D6B0]/90 text-[#202A2B] font-black text-xs transition cursor-pointer flex items-center gap-2 shadow-lg"
-                >
-                  <Check className="w-4 h-4 stroke-[3]" />
-                  <span>Accept Booking &amp; Proceed</span>
-                </button>
-              </div>
             </div>
           </div>
+          <button
+            onClick={() => handleProgress('On the Way')}
+            className="px-4 py-2 bg-[#202A2B] hover:bg-[#202A2B]/90 text-[#65D6B0] text-xs font-black rounded-xl transition flex items-center gap-2 cursor-pointer shrink-0 shadow-xs"
+          >
+            <ArrowRight className="w-3.5 h-3.5" />
+            <span>Acknowledge &amp; Start Walking</span>
+          </button>
         </div>
       )}
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold block">Assigned Platform</span>
-          <div className="text-xl font-extrabold text-slate-900 mt-1 font-mono">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="bg-white p-4 rounded-2xl border border-[#DDE4E6] shadow-xs">
+          <span className="text-[10px] text-[#526365] uppercase tracking-wider font-bold block">Assigned Station</span>
+          <div className="text-xl font-black text-[#202A2B] mt-1 font-mono">
             {currentWorker.stationCode}
           </div>
-          <span className="text-[11px] text-slate-500 truncate block mt-0.5">
+          <span className="text-[11px] text-[#526365] truncate block mt-0.5">
             {currentWorker.stationName}
           </span>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold block">Incoming Requests</span>
-          <div className="text-xl font-extrabold text-amber-600 mt-1 font-mono">
+        <div className="bg-white p-4 rounded-2xl border border-[#DDE4E6] shadow-xs">
+          <span className="text-[10px] text-[#526365] uppercase tracking-wider font-bold block">Pending Calls</span>
+          <div className="text-xl font-black text-[#007D99] mt-1 font-mono">
             {incomingRequests.length}
           </div>
-          <span className="text-[11px] text-slate-500 block mt-0.5">
-            At {currentWorker.stationCode}
+          <span className="text-[11px] text-[#526365] block mt-0.5">
+            Awaiting Confirmation
           </span>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold block">Jobs Completed</span>
-          <div className="text-xl font-extrabold text-slate-900 mt-1 font-mono">
+        <div className="bg-white p-4 rounded-2xl border border-[#DDE4E6] shadow-xs">
+          <span className="text-[10px] text-[#526365] uppercase tracking-wider font-bold block">Completed Jobs</span>
+          <div className="text-xl font-black text-[#1E6B52] mt-1 font-mono">
             {completedJobs.length}
           </div>
-          <span className="text-[11px] text-slate-500 block mt-0.5">
+          <span className="text-[11px] text-[#526365] block mt-0.5">
             Verified Resolution
           </span>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold block">Passenger Rating</span>
-          <div className="text-xl font-extrabold text-amber-600 mt-1 font-mono flex items-center gap-1">
-            <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+        <div className="bg-white p-4 rounded-2xl border border-[#DDE4E6] shadow-xs">
+          <span className="text-[10px] text-[#526365] uppercase tracking-wider font-bold block">Passenger Rating</span>
+          <div className="text-xl font-black text-[#202A2B] mt-1 font-mono flex items-center gap-1">
+            <Star className="w-5 h-5 text-[#EAB308] fill-current" />
             <span>{averageRating}</span>
           </div>
-          <span className="text-[11px] text-slate-500 block mt-0.5">
-            {allReviews.length} Passenger Reviews
+          <span className="text-[11px] text-[#526365] block mt-0.5">
+            {allReviews.length} Reviews
           </span>
         </div>
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto text-xs font-bold">
+      <div className="flex items-center gap-2 border-b border-[#DDE4E6] pb-2 text-xs font-bold">
         <button
           onClick={() => setActiveTab('current-job')}
-          className={`px-4 py-2 rounded-xl transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+          className={`px-4 py-2 rounded-xl transition cursor-pointer flex items-center gap-2 ${
             activeTab === 'current-job'
-              ? 'bg-amber-500 text-slate-950 shadow-sm font-extrabold'
-              : 'text-slate-700 hover:bg-amber-50'
+              ? 'bg-[#202A2B] text-white shadow-xs'
+              : 'text-[#526365] hover:bg-[#F0F4F6]'
           }`}
         >
-          <Compass className="w-4 h-4 text-slate-900" />
+          <Compass className="w-3.5 h-3.5 text-[#65D6B0]" />
           <span>Active Assignment {activeJob ? '(1)' : '(0)'}</span>
         </button>
 
         <button
           onClick={() => setActiveTab('incoming-requests')}
-          className={`px-4 py-2 rounded-xl transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+          className={`px-4 py-2 rounded-xl transition cursor-pointer flex items-center gap-2 ${
             activeTab === 'incoming-requests'
-              ? 'bg-amber-500 text-slate-950 shadow-sm font-extrabold'
-              : 'text-slate-700 hover:bg-amber-50'
+              ? 'bg-[#007D99] text-white shadow-xs'
+              : 'text-[#526365] hover:bg-[#F0F4F6]'
           }`}
         >
-          <Clock className="w-4 h-4 text-slate-900" />
+          <Clock className="w-3.5 h-3.5 text-[#D7F7FC]" />
           <span>Incoming Requests ({incomingRequests.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('history')}
-          className={`px-4 py-2 rounded-xl transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+          className={`px-4 py-2 rounded-xl transition cursor-pointer flex items-center gap-2 ${
             activeTab === 'history'
-              ? 'bg-amber-500 text-slate-950 shadow-sm font-extrabold'
-              : 'text-slate-700 hover:bg-amber-50'
+              ? 'bg-[#202A2B] text-white shadow-xs'
+              : 'text-[#526365] hover:bg-[#F0F4F6]'
           }`}
         >
-          <Check className="w-4 h-4 text-slate-900" />
+          <Check className="w-3.5 h-3.5 text-[#65D6B0]" />
           <span>Service History ({completedJobs.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('feedback')}
-          className={`px-4 py-2 rounded-xl transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+          className={`px-4 py-2 rounded-xl transition cursor-pointer flex items-center gap-2 ${
             activeTab === 'feedback'
-              ? 'bg-amber-500 text-slate-950 shadow-sm font-extrabold'
-              : 'text-slate-700 hover:bg-amber-50'
+              ? 'bg-[#202A2B] text-white shadow-xs'
+              : 'text-[#526365] hover:bg-[#F0F4F6]'
           }`}
         >
-          <Star className="w-4 h-4 text-slate-900" />
+          <Star className="w-3.5 h-3.5 text-[#EAB308]" />
           <span>Reviews ({allReviews.length})</span>
         </button>
       </div>
 
       {/* TAB 1: ACTIVE CURRENT JOB */}
       {activeTab === 'current-job' && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {activeJob ? (
-            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 space-y-6 shadow-sm">
+            <div className="bg-white rounded-3xl border border-[#DDE4E6] p-6 space-y-5 shadow-xs">
               
               {/* Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#DDE4E6]">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-mono text-xs font-bold text-amber-700">
+                    <span className="font-mono text-xs font-bold text-[#B94A3A]">
                       #{activeJob.requestId}
                     </span>
-                    <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">
+                    <span className="text-xs font-bold text-[#007D99] uppercase tracking-wider">
                       {activeJob.serviceCategory}
                     </span>
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">
-                    Train {activeJob.trainNumber} · Coach {activeJob.coachNumber || 'B3'} · Seat {activeJob.seatNumber || 'Berth 24'}
+                  <h2 className="text-xl sm:text-2xl font-black text-[#202A2B]">
+                    Train {activeJob.trainNumber} · Coach {activeJob.coachNumber || 'B3'} · Berth {activeJob.seatNumber || '24'}
                   </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Station: <strong>{activeJob.stationName} ({activeJob.stationCode})</strong>
-                    {activeJob.expectedArrivalTime && ` · Expected Arrival: ${activeJob.expectedArrivalTime}`}
+                  <p className="text-xs text-[#526365] mt-0.5">
+                    Halt Station: <strong>{activeJob.stationName} ({activeJob.stationCode})</strong>
                   </p>
                 </div>
 
-                <div className="px-3.5 py-1.5 rounded-xl bg-yellow-100 text-amber-900 border border-yellow-300 text-xs font-extrabold uppercase tracking-wide">
+                <div className="px-3 py-1.5 rounded-xl bg-[#D7F7FC] text-[#007D99] border border-[#00B8D9]/40 text-xs font-black uppercase">
                   Stage: {activeJob.status}
                 </div>
               </div>
 
-              {/* MUTUAL LOCATION ACCESS SECTION FOR WORKER */}
-              <div className="bg-[#FFFDF5] rounded-2xl border border-amber-200/80 p-5 sm:p-6 space-y-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-amber-200/60">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center">
-                      <Compass className="w-5 h-5 text-slate-950" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-extrabold text-slate-900">Passenger Location &amp; Coach Navigation</h3>
-                      <p className="text-[10px] text-slate-500">Live mutual tracking for meeting passenger at platform</p>
-                    </div>
-                  </div>
-                  <span className="px-2.5 py-1 bg-yellow-100 text-amber-900 text-[10px] font-bold rounded-lg border border-yellow-300 inline-flex items-center gap-1.5 self-start sm:self-auto">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse"></span>
-                    Mutual GPS Tracking Active
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                  {/* Left: Passenger Exact Coordinates & Coach Guide */}
-                  <div className="lg:col-span-7 bg-white p-4 rounded-xl border border-slate-200 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        <MapPin className="w-4 h-4 text-amber-600" />
-                        <span>Passenger Position:</span>
-                      </span>
-                      <span className="text-[11px] font-mono font-bold text-amber-800 bg-yellow-100 px-2 py-0.5 rounded border border-yellow-300">
-                        {activeJob.passengerLocation?.platform || 'Platform 2'} · {activeJob.coachNumber || 'Coach B3'}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                      <div className="p-2 bg-[#FFFDF5] rounded-lg border border-slate-200">
-                        <span className="text-[10px] text-slate-500 block font-semibold">Coach</span>
-                        <strong className="text-slate-900 text-sm">{activeJob.coachNumber || 'B3'}</strong>
-                      </div>
-                      <div className="p-2 bg-[#FFFDF5] rounded-lg border border-slate-200">
-                        <span className="text-[10px] text-slate-500 block font-semibold">Seat / Berth</span>
-                        <strong className="text-slate-900 text-sm">{activeJob.seatNumber || 'Berth 24'}</strong>
-                      </div>
-                      <div className="p-2 bg-[#FFFDF5] rounded-lg border border-slate-200">
-                        <span className="text-[10px] text-slate-500 block font-semibold">Platform</span>
-                        <strong className="text-slate-900 text-sm">{activeJob.passengerLocation?.platform || 'Platform 2'}</strong>
-                      </div>
-                    </div>
-
-                    {/* Interactive Coach Map */}
-                    <div className="pt-2">
-                      <span className="text-[10px] text-slate-500 font-bold block mb-1">
-                        Train Coach Guide (Head to highlighted coach):
-                      </span>
-                      <div className="flex items-center gap-1 overflow-x-auto py-1">
-                        {['ENG', 'H1', 'A1', 'A2', 'B1', 'B2', 'B3', 'B4', 'S1', 'S2'].map((c) => {
-                          const isTarget = c === 'B3' || activeJob.coachNumber?.includes(c);
-                          return (
-                            <div
-                              key={c}
-                              className={`px-2 py-1 rounded text-center font-mono text-[9px] shrink-0 font-bold ${
-                                isTarget
-                                  ? 'bg-amber-500 text-slate-950 ring-2 ring-amber-400 font-black animate-pulse'
-                                  : 'bg-slate-100 text-slate-700'
-                              }`}
-                            >
-                              {c}
-                              {isTarget && ' 🎯'}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right: Worker Share Location Panel */}
-                  <div className="lg:col-span-5 bg-white p-4 rounded-xl border border-slate-200 space-y-3 flex flex-col justify-between">
-                    <div>
-                      <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5 mb-2">
-                        <Navigation className="w-4 h-4 text-amber-600" />
-                        <span>Share Your Progress with Passenger:</span>
-                      </span>
-
-                      <div className="space-y-2">
-                        <select
-                          value={workerStatusText}
-                          onChange={(e) => setWorkerStatusText(e.target.value)}
-                          className="w-full text-xs p-2 bg-white border border-slate-200 rounded-lg text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
-                        >
-                          <option value="Walking along platform towards coach">Walking along platform towards coach</option>
-                          <option value="Reached train coach door">Reached train coach door</option>
-                          <option value="Boarded coach - entering cabin">Boarded coach - entering cabin</option>
-                          <option value="At passenger berth ready for service">At passenger berth ready for service</option>
-                        </select>
-
-                        <div className="grid grid-cols-2 gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handleShareWorkerLocation('At coach door')}
-                            className="p-1.5 bg-yellow-50 hover:bg-yellow-100 text-[10px] font-bold text-amber-900 rounded-lg border border-yellow-200 transition cursor-pointer"
-                          >
-                            At Coach Door
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleShareWorkerLocation('At passenger berth')}
-                            className="p-1.5 bg-yellow-50 hover:bg-yellow-100 text-[10px] font-bold text-amber-900 rounded-lg border border-yellow-200 transition cursor-pointer"
-                          >
-                            At Berth
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      disabled={isUpdatingLocation}
-                      onClick={() => handleShareWorkerLocation()}
-                      className="w-full py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-extrabold rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm mt-2 disabled:opacity-60"
-                    >
-                      <LocateFixed className={`w-3.5 h-3.5 text-slate-950 ${isUpdatingLocation ? 'animate-spin' : ''}`} />
-                      <span>{isUpdatingLocation ? 'Broadcasting...' : 'Update Live Location & Status'}</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
               {/* Passenger & Problem Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[#FFFDF5] p-5 rounded-2xl border border-amber-200/80">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#F8FAFB] p-4 rounded-2xl border border-[#DDE4E6] text-xs">
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
+                  <h4 className="font-bold text-[#202A2B] uppercase tracking-wider mb-1.5">
                     Passenger Contact
                   </h4>
-                  <div className="space-y-1.5 text-xs text-slate-800">
-                    <p>Name: <strong>{activeJob.passengerName}</strong></p>
+                  <div className="space-y-1 text-[#526365]">
+                    <p>Name: <strong className="text-[#202A2B]">{activeJob.passengerName}</strong></p>
                     <p className="flex items-center gap-1.5">
-                      <Phone className="w-3.5 h-3.5 text-amber-600" />
-                      <a href={`tel:${activeJob.passengerMobile}`} className="font-bold text-amber-700 hover:underline">
+                      <Phone className="w-3.5 h-3.5 text-[#007D99]" />
+                      <a href={`tel:${activeJob.passengerMobile}`} className="font-bold text-[#007D99] hover:underline">
                         {activeJob.passengerMobile}
                       </a>
                     </p>
-                    <p className="flex items-center gap-1.5">
-                      <Mail className="w-3.5 h-3.5 text-amber-600" />
-                      <span>{activeJob.passengerEmail}</span>
-                    </p>
                   </div>
                 </div>
 
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
-                    Service Description
+                  <h4 className="font-bold text-[#202A2B] uppercase tracking-wider mb-1.5">
+                    Issue Details
                   </h4>
-                  <p className="text-xs text-slate-800 leading-relaxed bg-white p-3 rounded-xl border border-slate-200">
+                  <p className="text-[#202A2B] leading-relaxed bg-white p-2.5 rounded-xl border border-[#DDE4E6]">
                     "{activeJob.description}"
                   </p>
                 </div>
               </div>
 
-              {/* Step-by-Step Execution Lifecycle */}
+              {/* Coach Guide */}
+              <div className="p-3 bg-white rounded-xl border border-[#DDE4E6] space-y-1.5">
+                <span className="text-[10px] font-bold text-[#526365] block uppercase">
+                  Train Coach Layout Beacon (Proceed to highlighted coach):
+                </span>
+                <div className="flex items-center gap-1 overflow-x-auto py-1">
+                  {['ENG', 'H1', 'A1', 'A2', 'B1', 'B2', 'B3', 'B4', 'S1', 'S2'].map((c) => {
+                    const isTarget = c === 'B3' || activeJob.coachNumber?.includes(c);
+                    return (
+                      <div
+                        key={c}
+                        className={`px-2.5 py-1 rounded text-center font-mono text-[10px] shrink-0 font-bold ${
+                          isTarget
+                            ? 'bg-[#65D6B0] text-[#202A2B] ring-2 ring-[#202A2B] font-black'
+                            : 'bg-[#F0F4F6] text-[#526365]'
+                        }`}
+                      >
+                        {c}
+                        {isTarget && ' 🎯'}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Mutual Google Maps Real-Time Navigation View */}
+              <div className="pt-2">
+                <MutualGoogleMap
+                  userRole="worker"
+                  requestId={activeJob.requestId}
+                  trainNumber={activeJob.trainNumber}
+                  coachNumber={activeJob.coachNumber || 'B3'}
+                  seatNumber={activeJob.seatNumber || 'Berth 24'}
+                  stationName={activeJob.stationName || currentWorker.stationName}
+                  stationCode={activeJob.stationCode || currentWorker.stationCode}
+                  passengerName={activeJob.passengerName}
+                  workerName={currentWorker.fullName}
+                  workerSkill={currentWorker.skillCategory}
+                  workerStatusText={activeJob.status}
+                  passengerLocation={activeJob.passengerLocation}
+                  workerLocation={activeJob.workerLocation}
+                />
+              </div>
+
+              {/* Progress Flow & Evidence Upload */}
               <div className="space-y-3 pt-2">
-                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                  Update Service Progression
+                <h4 className="text-xs font-bold text-[#202A2B] uppercase tracking-wider">
+                  Update Service Stage
                 </h4>
 
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2.5">
                   {activeJob.status === 'Worker Assigned' && (
                     <button
                       disabled={actionLoading}
-                      onClick={() => handleProgress(activeJob.requestId, 'On the Way')}
-                      className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-extrabold rounded-xl shadow-sm transition flex items-center gap-2 cursor-pointer border border-amber-500"
+                      onClick={() => handleProgress('On the Way')}
+                      className="px-4 py-2.5 bg-[#007D99] hover:bg-[#007D99]/90 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-2 cursor-pointer"
                     >
                       <ArrowRight className="w-3.5 h-3.5" />
-                      <span>Mark: On the Way to Station Platform</span>
+                      <span>Mark: On the Way to Coach</span>
                     </button>
                   )}
 
                   {activeJob.status === 'On the Way' && (
                     <button
                       disabled={actionLoading}
-                      onClick={() => handleProgress(activeJob.requestId, 'Arrived at Station')}
-                      className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-extrabold rounded-xl shadow-sm transition flex items-center gap-2 cursor-pointer border border-amber-500"
+                      onClick={() => handleProgress('Arrived at Station')}
+                      className="px-4 py-2.5 bg-[#007D99] hover:bg-[#007D99]/90 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-2 cursor-pointer"
                     >
                       <MapPin className="w-3.5 h-3.5" />
-                      <span>Mark: Arrived at Platform &amp; Train Coach</span>
+                      <span>Mark: Reached Passenger Coach Door</span>
                     </button>
                   )}
 
                   {activeJob.status === 'Arrived at Station' && (
                     <button
                       disabled={actionLoading}
-                      onClick={() => handleProgress(activeJob.requestId, 'Service In Progress')}
-                      className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-amber-400 text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-2 cursor-pointer"
+                      onClick={() => handleProgress('Service In Progress')}
+                      className="px-4 py-2.5 bg-[#202A2B] hover:bg-[#202A2B]/90 text-[#65D6B0] text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-2 cursor-pointer"
                     >
                       <Play className="w-3.5 h-3.5" />
                       <span>Mark: Commencing Passenger Assistance</span>
                     </button>
                   )}
 
+                  {/* Resolution & Photo Proof Section */}
                   {activeJob.status === 'Service In Progress' && (
-                    <div className="w-full space-y-3">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-800 mb-1">
-                          Resolution Summary Notes
-                        </label>
-                        <textarea
-                          rows={2}
-                          value={completionNotes}
-                          onChange={(e) => setCompletionNotes(e.target.value)}
-                          placeholder="e.g. Inspected berth electrical socket; reset coach breaker. Service completed successfully."
-                          className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-800"
-                        />
+                    <div className="w-full space-y-4 pt-2">
+                      <div className="p-4 bg-[#DDF8EF]/40 border border-[#65D6B0]/40 rounded-2xl space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Camera className="w-4 h-4 text-[#3EA684]" />
+                          <span className="text-xs font-black text-[#1E6B52]">
+                            CAG Quality Audit: Before &amp; After Photo Proof
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#526365]">
+                          Upload proof of completed repair/cleaning before closing the job. This directly satisfies railway audit accountability.
+                        </p>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {/* Before Photo */}
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-[#526365] block">
+                              1. Before Photo (Optional)
+                            </label>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handlePhotoUpload(e, 'before')}
+                              className="text-xs text-[#526365] file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-[#F0F4F6] file:text-[#202A2B] hover:file:bg-slate-200 cursor-pointer"
+                            />
+                            {beforePhotoUrl && (
+                              <img src={beforePhotoUrl} alt="Before" className="h-20 w-32 object-cover rounded-lg border mt-1" />
+                            )}
+                          </div>
+
+                          {/* After Photo */}
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-[#1E6B52] block">
+                              2. After Photo (Resolution Proof)
+                            </label>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handlePhotoUpload(e, 'after')}
+                              className="text-xs text-[#526365] file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-[#DDF8EF] file:text-[#1E6B52] hover:file:bg-[#65D6B0] cursor-pointer"
+                            />
+                            {afterPhotoUrl && (
+                              <img src={afterPhotoUrl} alt="After" className="h-20 w-32 object-cover rounded-lg border-2 border-[#65D6B0] mt-1" />
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-[#202A2B] mb-1">
+                            Resolution Action Taken
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={completionNotes}
+                            onChange={(e) => setCompletionNotes(e.target.value)}
+                            placeholder="e.g. Cleaned berth washroom basin / Replaced MCB socket / Sealed pantry packet."
+                            className="w-full px-3 py-2 text-xs rounded-xl border border-[#DDE4E6] bg-white focus:outline-none focus:ring-2 focus:ring-[#007D99] text-[#202A2B]"
+                          />
+                        </div>
                       </div>
+
                       <button
                         disabled={actionLoading}
-                        onClick={() => handleProgress(activeJob.requestId, 'Completed', completionNotes)}
-                        className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-2 cursor-pointer"
+                        onClick={() => handleProgress('Completed')}
+                        className="px-6 py-3 bg-[#1E6B52] hover:bg-[#1E6B52]/90 text-white text-xs font-black rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto"
                       >
                         <Check className="w-4 h-4" />
-                        <span>Complete Service Job &amp; Release Availability</span>
+                        <span>Complete Service Job &amp; Submit Proof</span>
                       </button>
                     </div>
                   )}
@@ -811,19 +640,19 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
 
             </div>
           ) : (
-            <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center shadow-sm">
-              <div className="w-14 h-14 rounded-2xl bg-yellow-100 text-amber-700 flex items-center justify-center mx-auto mb-4 border border-yellow-300">
-                <Briefcase className="w-7 h-7 text-amber-700" />
+            <div className="bg-white rounded-3xl border border-[#DDE4E6] p-10 text-center shadow-xs">
+              <div className="w-12 h-12 rounded-2xl bg-[#D7F7FC] text-[#007D99] flex items-center justify-center mx-auto mb-3">
+                <Briefcase className="w-6 h-6 text-[#007D99]" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900">No Active Service Job Assigned</h3>
-              <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 mb-6">
-                You are currently free. Check the "Incoming Requests" tab below to accept passenger assistance calls at {currentWorker.stationName}.
+              <h3 className="text-base font-bold text-[#202A2B]">No Active Job In Progress</h3>
+              <p className="text-xs text-[#526365] max-w-md mx-auto mt-1 mb-4">
+                You are currently free on platform at {currentWorker.stationName}. Check "Incoming Requests" to accept passenger calls.
               </p>
               <button
                 onClick={() => setActiveTab('incoming-requests')}
-                className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-extrabold rounded-xl shadow-sm transition cursor-pointer"
+                className="px-4 py-2 bg-[#007D99] text-white text-xs font-bold rounded-xl cursor-pointer"
               >
-                View Available Requests ({incomingRequests.length})
+                View Incoming Requests ({incomingRequests.length})
               </button>
             </div>
           )}
@@ -834,22 +663,20 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
       {activeTab === 'incoming-requests' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-              Service Requests at {currentWorker.stationName} ({currentWorker.stationCode})
+            <h3 className="text-xs font-bold text-[#202A2B] uppercase tracking-wider">
+              Pending Calls at {currentWorker.stationName} ({currentWorker.stationCode})
             </h3>
-            <span className="text-xs text-slate-500">
-              Skill: <strong className="text-amber-700">{currentWorker.skillCategory}</strong>
+            <span className="text-xs text-[#526365]">
+              Category: <strong className="text-[#007D99]">{currentWorker.skillCategory}</strong>
             </span>
           </div>
 
           {incomingRequests.length === 0 ? (
-            <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center shadow-sm">
-              <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center mx-auto mb-3">
-                <Clock className="w-6 h-6" />
-              </div>
-              <h4 className="font-bold text-sm text-slate-900">No Pending Requests at This Station</h4>
-              <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
-                New passenger calls at {currentWorker.stationName} will appear here automatically. Keep your status set to "Available".
+            <div className="bg-white rounded-3xl border border-[#DDE4E6] p-10 text-center shadow-xs">
+              <Clock className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+              <h4 className="font-bold text-sm text-[#202A2B]">No Pending Calls</h4>
+              <p className="text-xs text-[#526365] max-w-md mx-auto mt-1">
+                New passenger calls at {currentWorker.stationName} will appear here live.
               </p>
             </div>
           ) : (
@@ -857,54 +684,36 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
               {incomingRequests.map((req) => (
                 <div
                   key={req.requestId}
-                  className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 shadow-sm hover:border-amber-400 transition"
+                  className="bg-white rounded-2xl border border-[#DDE4E6] p-5 space-y-3 shadow-xs hover:border-[#65D6B0] transition"
                 >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <span className="font-mono text-xs font-bold text-amber-700 block">
-                        #{req.requestId}
-                      </span>
-                      <h4 className="text-base font-extrabold text-slate-900 mt-0.5">
-                        Train {req.trainNumber} · Coach {req.coachNumber || 'B3'}
-                      </h4>
-                      <p className="text-xs text-slate-500">
-                        Passenger: {req.passengerName}
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-yellow-100 text-amber-900 border border-yellow-300">
-                      Incoming
+                  <div className="flex items-center justify-between border-b border-[#DDE4E6] pb-2.5">
+                    <span className="font-mono text-xs font-bold text-[#B94A3A]">
+                      #{req.requestId}
+                    </span>
+                    <span className="text-[10px] font-bold bg-[#D7F7FC] text-[#007D99] px-2 py-0.5 rounded">
+                      {req.serviceCategory}
                     </span>
                   </div>
 
-                  <p className="text-xs text-slate-800 bg-[#FFFDF5] p-3 rounded-xl border border-amber-200/60">
-                    "{req.description}"
-                  </p>
+                  <div className="text-xs space-y-1">
+                    <div>Train: <strong className="text-[#202A2B]">{req.trainNumber}</strong> · Coach: <strong className="text-[#202A2B]">{req.coachNumber || 'B3'}</strong></div>
+                    <div>Passenger: <strong className="text-[#202A2B]">{req.passengerName}</strong></div>
+                    <p className="text-[#526365] italic pt-1">"{req.description}"</p>
+                  </div>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-200">
-                    <span className="text-[11px] text-slate-500">
-                      Berth: <strong>{req.seatNumber || 'N/A'}</strong>
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        disabled={actionLoading}
-                        onClick={() => setRejectModalReq(req)}
-                        className="px-3.5 py-1.5 bg-[#FBE0E6] hover:bg-[#B94A3A] hover:text-white text-[#B94A3A] text-xs font-bold rounded-xl transition cursor-pointer border border-[#B94A3A]/20 flex items-center gap-1"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                        <span>Reject</span>
-                      </button>
-
-                      <button
-                        disabled={actionLoading || Boolean(activeJob)}
-                        onClick={() => handleAccept(req.requestId)}
-                        className={`px-4 py-1.5 bg-[#007D99] hover:bg-[#00B8D9] text-white text-xs font-black rounded-xl transition cursor-pointer shadow-xs flex items-center gap-1.5 ${
-                          activeJob ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        <Check className="w-3.5 h-3.5 stroke-[3]" />
-                        <span>{activeJob ? 'Busy' : 'Accept Assignment'}</span>
-                      </button>
-                    </div>
+                  <div className="pt-2 border-t border-[#DDE4E6] flex items-center justify-between gap-2">
+                    <button
+                      onClick={() => setRejectModalReq(req)}
+                      className="px-3 py-1.5 border border-[#DDE4E6] text-[#D72645] hover:bg-[#FBE0E6] text-xs font-bold rounded-lg cursor-pointer"
+                    >
+                      Decline
+                    </button>
+                    <button
+                      onClick={() => handleAccept(req.requestId)}
+                      className="px-4 py-1.5 bg-[#202A2B] hover:bg-[#202A2B]/90 text-white text-xs font-black rounded-lg cursor-pointer"
+                    >
+                      Accept Task &rarr;
+                    </button>
                   </div>
                 </div>
               ))}
@@ -913,210 +722,85 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
         </div>
       )}
 
-      {/* TAB 3: PASSENGER REVIEWS */}
-      {activeTab === 'feedback' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-              Passenger Ratings &amp; Reviews
-            </h3>
-            <div className="flex items-center gap-1 text-sm font-extrabold text-slate-900 font-mono">
-              <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-              <span>{averageRating} Average Rating</span>
-            </div>
-          </div>
-
-          {allReviews.length === 0 ? (
-            <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center shadow-sm">
-              <Star className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-              <h4 className="font-bold text-sm text-slate-900">No Reviews Yet</h4>
-              <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
-                Complete passenger service requests to receive 5-star ratings and feedback.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {allReviews.map((rev, idx) => (
-                <div
-                  key={`${rev.requestId}-${idx}`}
-                  className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3 shadow-sm"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map((st) => (
-                        <Star
-                          key={st}
-                          className={`w-4 h-4 ${
-                            Number(rev.rating) >= st
-                              ? 'text-amber-500 fill-amber-500'
-                              : 'text-gray-300'
-                          }`}
-                        />
-                      ))}
-                      <span className="text-xs font-bold text-slate-900 ml-1 font-mono">
-                        {rev.rating}/5
-                      </span>
-                    </div>
-                    <span className="text-[10px] text-slate-500 font-mono">
-                      {rev.createdAt ? rev.createdAt.slice(0, 10) : 'Recent'}
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-slate-800 italic">
-                    "{rev.comment || 'Quick and professional passenger assistance.'}"
-                  </p>
-
-                  <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500">
-                    <span>By: <strong className="text-slate-900">{rev.passengerName}</strong></span>
-                    <span>Ref: #{rev.requestId}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* TAB 4: SERVICE HISTORY */}
+      {/* TAB 3: SERVICE HISTORY */}
       {activeTab === 'history' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-              Completed Service History
-            </h3>
-            <span className="text-xs font-bold text-slate-800 bg-yellow-100 px-2.5 py-0.5 rounded-full border border-yellow-300">
-              {completedJobs.length} Completed Jobs
-            </span>
-          </div>
-
-          {completedJobs.length === 0 ? (
-            <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center shadow-sm">
-              <Check className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-              <h4 className="font-bold text-sm text-slate-900">No Completed Jobs Yet</h4>
-              <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
-                Completed assignments will appear in this history log.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {completedJobs.map((job) => (
-                <div
-                  key={job.requestId}
-                  className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-amber-700">
-                        #{job.requestId}
-                      </span>
-                      <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                        Completed
-                      </span>
-                    </div>
-                    <h4 className="text-sm font-extrabold text-slate-900">
-                      Train {job.trainNumber} · Coach {job.coachNumber || 'B3'} · {job.serviceCategory}
-                    </h4>
-                    <p className="text-xs text-slate-500">
-                      Passenger: {job.passengerName} ({job.passengerMobile})
-                    </p>
-                    {job.completionNotes && (
-                      <p className="text-xs text-slate-800 italic pt-1">
-                        Resolution: "{job.completionNotes}"
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="text-right text-xs text-slate-500 shrink-0">
-                    <span className="block font-mono text-[11px]">
-                      {job.updatedAt || job.createdAt}
-                    </span>
-                    <span className="text-[10px] text-emerald-700 font-semibold">
-                      Verified On-Spot Fix
-                    </span>
-                  </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {completedJobs.map((b) => (
+              <div key={b.requestId} className="bg-white rounded-2xl border border-[#DDE4E6] p-4 shadow-xs space-y-2 text-xs">
+                <div className="flex items-center justify-between border-b border-[#DDE4E6] pb-2">
+                  <span className="font-mono font-bold text-[#1E6B52]">#{b.requestId}</span>
+                  <span className="text-[10px] bg-[#DDF8EF] text-[#1E6B52] px-2 py-0.5 rounded font-bold">
+                    Completed
+                  </span>
                 </div>
-              ))}
-            </div>
-          )}
+                <div>Train: <strong>{b.trainNumber}</strong> · Coach: <strong>{b.coachNumber || 'B3'}</strong></div>
+                <p className="text-[#526365]">"{b.description}"</p>
+                {b.resolutionSummary && (
+                  <div className="p-2 bg-[#F8FAFB] rounded-lg border text-[11px]">
+                    <strong>Action:</strong> {b.resolutionSummary}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Rejection Reason Modal */}
+      {/* TAB 4: REVIEWS */}
+      {activeTab === 'feedback' && (
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {allReviews.map((r, i) => (
+              <div key={i} className="bg-white p-4 rounded-2xl border border-[#DDE4E6] shadow-xs space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-[#202A2B]">{r.passengerName}</span>
+                  <div className="flex items-center text-[#EAB308]">
+                    <Star className="w-3.5 h-3.5 fill-current" />
+                    <span className="font-bold ml-1">{r.rating}/5</span>
+                  </div>
+                </div>
+                {r.comment && <p className="text-[#526365]">"{r.comment}"</p>}
+                {r.tags && r.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {r.tags.map((t, ti) => (
+                      <span key={ti} className="text-[10px] bg-[#DDF8EF] text-[#1E6B52] px-2 py-0.5 rounded font-semibold">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Decline Reason Modal */}
       {rejectModalReq && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 space-y-5 shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-[#FBE0E6] text-[#B94A3A] flex items-center justify-center">
-                  <X className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-slate-900">
-                    Decline Booking #{rejectModalReq.requestId}
-                  </h3>
-                  <span className="text-[10px] text-slate-500">
-                    Train {rejectModalReq.trainNumber} · Coach {rejectModalReq.coachNumber || 'B3'}
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={() => setRejectModalReq(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-900 cursor-pointer"
-              >
-                &times;
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-600">
-              Please specify the reason so the central station coordinator can immediately route this request to another available specialist.
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-xl border border-[#DDE4E6]">
+            <h3 className="text-base font-black text-[#202A2B]">Decline Assignment</h3>
+            <p className="text-xs text-[#526365]">
+              Please state why you are unable to take task #{rejectModalReq.requestId}.
             </p>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-800 block">Quick Reason:</label>
-              {[
-                'Currently engaged in critical platform repair',
-                'Too far from platform halt position',
-                'Shift handover in progress',
-                'Tools/equipment currently unavailable',
-              ].map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => setRejectReason(preset)}
-                  className={`w-full text-left p-2.5 rounded-xl border text-xs font-medium transition cursor-pointer ${
-                    rejectReason === preset
-                      ? 'border-[#B94A3A] bg-[#FBE0E6] text-[#92182D] font-bold'
-                      : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700'
-                  }`}
-                >
-                  {preset}
-                </button>
-              ))}
-
-              <div className="pt-2">
-                <input
-                  type="text"
-                  value={rejectReason}
-                  onChange={(e) => setRejectReason(e.target.value)}
-                  placeholder="Or enter custom reason..."
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#B94A3A]"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
+            <input
+              type="text"
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="e.g. Attending another coach breakdown / Shift ended."
+              className="w-full px-3 py-2 text-xs rounded-xl border border-[#DDE4E6] focus:outline-none focus:ring-2 focus:ring-[#B94A3A]"
+            />
+            <div className="flex gap-2">
               <button
-                type="button"
                 onClick={() => setRejectModalReq(null)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                className="flex-1 py-2 text-xs font-bold border border-[#DDE4E6] rounded-xl cursor-pointer"
               >
                 Cancel
               </button>
               <button
-                type="button"
-                disabled={actionLoading}
-                onClick={() => handleReject(rejectModalReq.requestId, rejectReason)}
-                className="px-5 py-2 rounded-xl bg-[#B94A3A] hover:bg-[#B94A3A]/90 text-white text-xs font-black transition cursor-pointer shadow-xs"
+                onClick={() => handleReject(rejectModalReq.requestId)}
+                className="flex-1 py-2 text-xs font-bold bg-[#D72645] text-white rounded-xl cursor-pointer"
               >
                 Confirm Decline
               </button>

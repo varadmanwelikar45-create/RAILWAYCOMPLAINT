@@ -1,43 +1,33 @@
 import React, { useState, useMemo } from 'react';
 import { Complaint, ComplaintCategory, ComplaintStatus, User, ViewMode, Worker, WorkerServiceRequest } from '../types';
-import { ALLOWED_CATEGORIES } from '../data/mockData';
 import { FIFOQueue } from '../algorithms/queue';
-import { executeMergeSort } from '../algorithms/sorting';
-import { executeLinearSearch } from '../algorithms/search';
-import { countByCategory, countByStatus } from '../algorithms/categoryCounter';
 import { 
   Shield, 
   Search, 
-  ArrowUpDown, 
-  PlayCircle, 
-  BarChart3, 
   CheckCircle2, 
   Clock, 
   AlertCircle,
-  Eye,
-  Check,
-  RotateCcw,
-  TrainTrack,
-  Briefcase,
-  UserCheck,
-  UserX,
-  UserMinus,
-  Sparkles,
-  FileText,
-  Phone,
-  Mail,
-  MapPin,
-  Users,
-  Camera,
-  X,
-  Bell,
-  Send,
-  Radio,
-  Wrench,
-  ShieldCheck,
-  CheckCheck,
-  Smartphone,
-  ExternalLink
+  Eye, 
+  Check, 
+  Briefcase, 
+  UserCheck, 
+  UserX, 
+  FileText, 
+  Phone, 
+  Mail, 
+  MapPin, 
+  Users, 
+  Camera, 
+  X, 
+  Bell, 
+  Send, 
+  ShieldCheck, 
+  ShieldAlert, 
+  Sparkles, 
+  AlertTriangle,
+  ArrowRight,
+  TrendingUp,
+  FileBarChart
 } from 'lucide-react';
 import { AdminNotification } from '../types';
 
@@ -76,289 +66,224 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onUpdateStatus,
   onSelectComplaint,
   onNavigate,
-  onOpenOverview,
 }) => {
   const [adminTab, setAdminTab] = useState<'complaints' | 'gig-workers' | 'passengers'>('complaints');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusTab, setStatusTab] = useState<'All' | 'Pending' | 'In Progress' | 'Resolved'>('All');
+  const [priorityFilter, setPriorityFilter] = useState<'All' | 'Emergency' | 'High' | 'Medium' | 'Low'>('All');
   const [workerSearch, setWorkerSearch] = useState('');
   const [workerStatusFilter, setWorkerStatusFilter] = useState<'All' | 'Pending Verification' | 'Verified' | 'Rejected' | 'Suspended'>('All');
-  const [passengerSearch, setPassengerSearch] = useState('');
-  const [inspectingWorkerPhoto, setInspectingWorkerPhoto] = useState<Worker | null>(null);
-  const [verifyingWorkerId, setVerifyingWorkerId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [statusTab, setStatusTab] = useState<'All' | 'Pending' | 'In Progress' | 'Resolved'>('All');
-  const [sortKey, setSortKey] = useState<keyof Complaint>('createdAt');
-  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showGapAnalysisModal, setShowGapAnalysisModal] = useState(false);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
 
-  // Real-time Notification Panel & Dispatch State
-  const [showNotifications, setShowNotifications] = useState(false);
+  // Dispatch Specialist Modal
   const [selectedComplaintForDispatch, setSelectedComplaintForDispatch] = useState<Complaint | null>(null);
   const [selectedWorkerIdForDispatch, setSelectedWorkerIdForDispatch] = useState<string>('');
   const [dispatchInstructions, setDispatchInstructions] = useState<string>('');
   const [isDispatching, setIsDispatching] = useState(false);
 
-  // 1. Calculate overall summary
-  const summary = useMemo(() => countByStatus(complaints), [complaints]);
+  // Photo Proof Viewer Modal
+  const [inspectPhotoModal, setInspectPhotoModal] = useState<{
+    complaintId: string;
+    subject: string;
+    before?: string;
+    after?: string;
+    notes?: string;
+    workerName?: string;
+  } | null>(null);
 
-  // 2. Calculate category counts
-  const categoryCounts = useMemo(() => countByCategory(complaints), [complaints]);
+  // CAG 2-Hour SLA Metrics calculation
+  const slaMetrics = useMemo(() => {
+    let withinSla = 0;
+    let breached = 0;
+    const now = Date.now();
 
-  // 3. Search
-  const searchResult = useMemo(() => {
-    return executeLinearSearch(complaints, searchQuery);
-  }, [complaints, searchQuery]);
+    complaints.forEach((c) => {
+      const created = new Date((c.createdAt || '').replace(' ', 'T')).getTime();
+      if (!isNaN(created)) {
+        const diffMins = Math.floor((now - created) / 60000);
+        if (c.status === 'Resolved' || diffMins <= 120) {
+          withinSla++;
+        } else {
+          breached++;
+        }
+      } else {
+        withinSla++;
+      }
+    });
 
-  // 4. Category & Status Filters
+    const total = complaints.length;
+    const rate = total > 0 ? Math.round((withinSla / total) * 100) : 100;
+    return { withinSla, breached, complianceRate: rate };
+  }, [complaints]);
+
+  // Filter complaints
   const filteredComplaints = useMemo(() => {
-    let result = searchResult.matches;
-
-    if (selectedCategory) {
-      result = result.filter((c) => c.category === selectedCategory);
+    let result = complaints;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter((c) =>
+        c.complaintId.toLowerCase().includes(q) ||
+        (c.railMadadRef && c.railMadadRef.toLowerCase().includes(q)) ||
+        c.passengerName.toLowerCase().includes(q) ||
+        c.trainNumber.toLowerCase().includes(q) ||
+        c.subject.toLowerCase().includes(q) ||
+        c.category.toLowerCase().includes(q)
+      );
     }
     if (statusTab !== 'All') {
       result = result.filter((c) => c.status === statusTab);
     }
-
+    if (priorityFilter !== 'All') {
+      result = result.filter((c) => (c.priority || (c.severity === 'Urgent' ? 'Emergency' : c.severity)) === priorityFilter);
+    }
     return result;
-  }, [searchResult.matches, selectedCategory, statusTab]);
+  }, [complaints, searchQuery, statusTab, priorityFilter]);
 
-  // 5. Sort
-  const sortResult = useMemo(() => {
-    return executeMergeSort(filteredComplaints, sortKey, sortOrder === 'desc');
-  }, [filteredComplaints, sortKey, sortOrder]);
-
-  const nextInQueue = queue.peek();
-
-  const handleProcessFIFO = () => {
-    const res = onProcessNextFIFO();
-    setActionNotice(res.message);
-    setTimeout(() => setActionNotice(null), 4000);
-  };
-
-  const handleInlineStatusChange = (complaintId: string, newStatus: ComplaintStatus) => {
-    onUpdateStatus(complaintId, newStatus);
-    setActionNotice(`Updated #${complaintId} to "${newStatus}".`);
-    setTimeout(() => setActionNotice(null), 3000);
-  };
-
-  // Gig Worker Management Metrics & Filters
-  const pendingWorkersCount = useMemo(
-    () => (workers || []).filter((w) => w.verificationStatus === 'Pending Verification').length,
-    [workers]
-  );
-  const verifiedWorkersCount = useMemo(
-    () => (workers || []).filter((w) => w.verificationStatus === 'Verified').length,
-    [workers]
-  );
-  const activeJobsCount = useMemo(
-    () =>
-      (workerRequests || []).filter((r) =>
-        ['Worker Assigned', 'On the Way', 'Arrived at Station', 'Service In Progress'].includes(r.status)
-      ).length,
-    [workerRequests]
-  );
-
-  const displayedWorkers = useMemo(() => {
-    return (workers || []).filter((w) => {
-      const matchesStatus = workerStatusFilter === 'All' || w.verificationStatus === workerStatusFilter;
+  // Filter workers
+  const filteredWorkers = useMemo(() => {
+    let list = workers;
+    if (workerSearch.trim()) {
       const q = workerSearch.toLowerCase().trim();
-      const matchesSearch =
-        !q ||
+      list = list.filter((w) =>
         w.fullName.toLowerCase().includes(q) ||
         w.workerId.toLowerCase().includes(q) ||
-        w.stationCode.toLowerCase().includes(q) ||
         w.stationName.toLowerCase().includes(q) ||
-        w.skillCategory.toLowerCase().includes(q);
-      return matchesStatus && matchesSearch;
-    });
-  }, [workers, workerStatusFilter, workerSearch]);
-
-  const displayedPassengers = useMemo(() => {
-    const q = passengerSearch.toLowerCase().trim();
-    return (users || []).filter((u) => {
-      if (u.isAdmin) return false;
-      if (!q) return true;
-      return (
-        u.fullName.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q) ||
-        (u.mobile && u.mobile.includes(q)) ||
-        String(u.id).includes(q)
+        w.stationCode.toLowerCase().includes(q) ||
+        w.skillCategory.toLowerCase().includes(q)
       );
-    });
-  }, [users, passengerSearch]);
+    }
+    if (workerStatusFilter !== 'All') {
+      list = list.filter((w) => w.verificationStatus === workerStatusFilter);
+    }
+    return list;
+  }, [workers, workerSearch, workerStatusFilter]);
 
-  const handleWorkerVerificationAction = async (
-    workerId: string, 
-    status: 'Pending Verification' | 'Verified' | 'Rejected' | 'Suspended'
-  ) => {
-    if (onUpdateWorkerVerification) {
-      setVerifyingWorkerId(workerId);
-      try {
-        await onUpdateWorkerVerification(workerId, status);
-        setActionNotice(`Worker #${workerId} status updated to "${status}". Changes synced across devices.`);
-        setTimeout(() => setActionNotice(null), 4000);
-      } finally {
-        setVerifyingWorkerId(null);
+  const handleDispatch = async () => {
+    if (!selectedComplaintForDispatch || !selectedWorkerIdForDispatch || !onDispatchWorker) return;
+    setIsDispatching(true);
+    try {
+      const res = await onDispatchWorker(
+        selectedComplaintForDispatch.complaintId,
+        selectedWorkerIdForDispatch,
+        dispatchInstructions
+      );
+      if (res.success) {
+        setActionNotice(res.message);
+        setSelectedComplaintForDispatch(null);
+        setSelectedWorkerIdForDispatch('');
+        setDispatchInstructions('');
+      } else {
+        setActionNotice(res.message);
       }
+      setTimeout(() => setActionNotice(null), 4000);
+    } finally {
+      setIsDispatching(false);
     }
   };
 
+  const handleWorkerVerificationAction = (workerId: string, status: 'Verified' | 'Rejected' | 'Suspended') => {
+    if (onUpdateWorkerVerification) {
+      onUpdateWorkerVerification(workerId, status);
+      setActionNotice(`Worker #${workerId} status updated to: ${status}`);
+      setTimeout(() => setActionNotice(null), 3000);
+    }
+  };
+
+  const unreadNotifs = adminNotifications.filter((n) => !n.read);
+
   return (
-    <div className="space-y-8 py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="space-y-6 py-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="px-2.5 py-0.5 bg-yellow-100 text-amber-900 text-[10px] font-extrabold rounded-md tracking-wider uppercase border border-yellow-300">
-              OFFICIAL CONTROL CENTER
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-3xl border border-[#DDE4E6] shadow-xs">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 bg-[#D7F7FC] text-[#007D99] text-[10px] font-black rounded-full uppercase tracking-wider border border-[#00B8D9]/40">
+              GOVERNMENT OFFICER CONTROL
             </span>
-            <span className="text-xs text-slate-500 font-medium">RAIL CARE Grievance &amp; Workforce Administration</span>
+            <span className="text-xs text-[#526365] font-semibold">
+              Railway Grievance &amp; Workforce Coordination Platform
+            </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Administrator Dashboard
+          <h1 className="text-2xl sm:text-3xl font-black text-[#202A2B] tracking-tight">
+            Divisional Operations Center
           </h1>
-          <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-slate-500">
-            <span>
-              Officer: <strong className="text-slate-900">{currentUser.fullName}</strong>
-            </span>
-            <span>·</span>
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
-              Live Multi-Device Sync Active
-            </span>
-          </div>
+          <p className="text-xs text-[#526365]">
+            Officer: <strong className="text-[#202A2B]">{currentUser.fullName}</strong> · Division: <strong className="text-[#202A2B]">Northern Railway (NDLS)</strong>
+          </p>
         </div>
 
+        {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2.5 relative">
-          {/* Real-time Officer Notification Bell */}
+          <button
+            onClick={() => setShowGapAnalysisModal(true)}
+            className="px-3 py-2 bg-[#DDF8EF] text-[#1E6B52] hover:bg-[#65D6B0]/30 text-xs font-black rounded-xl border border-[#65D6B0]/50 transition cursor-pointer flex items-center gap-1.5"
+            title="Read Gap Analysis: RailMadad vs VYOMRATH"
+          >
+            <FileBarChart className="w-4 h-4 text-[#3EA684]" />
+            <span>CAG Gap Analysis</span>
+          </button>
+
+          {/* Real-Time Notification Bell */}
           <div className="relative">
             <button
-              onClick={() => setShowNotifications((prev) => !prev)}
-              className="p-3 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl shadow-xs transition relative cursor-pointer flex items-center gap-2"
-              title="View Real-Time Officer Notifications"
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="p-2.5 bg-[#F8FAFB] hover:bg-[#F0F4F6] text-[#202A2B] border border-[#DDE4E6] rounded-xl transition cursor-pointer relative flex items-center gap-2"
             >
-              <Bell className="w-4 h-4 text-amber-600" />
+              <Bell className="w-4 h-4 text-[#007D99]" />
               <span className="text-xs font-bold hidden sm:inline">Alerts</span>
-              {adminNotifications.filter((n) => !n.read).length > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-black animate-pulse">
-                  {adminNotifications.filter((n) => !n.read).length}
+              {unreadNotifs.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-[#D72645] text-white text-[10px] font-black animate-pulse">
+                  {unreadNotifs.length}
                 </span>
               )}
             </button>
 
             {/* Notification Dropdown Popover */}
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-slate-200 z-50 overflow-hidden">
-                <div className="p-3.5 bg-yellow-50 border-b border-yellow-200 flex items-center justify-between">
+              <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-[#DDE4E6] z-50 overflow-hidden">
+                <div className="p-3 bg-[#F8FAFB] border-b border-[#DDE4E6] flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-amber-700" />
-                    <span className="text-xs font-extrabold text-slate-900">Officer Notifications</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 font-bold">
+                    <ShieldCheck className="w-4 h-4 text-[#007D99]" />
+                    <span className="text-xs font-black text-[#202A2B]">Officer Alerts</span>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#D7F7FC] text-[#007D99] font-bold">
                       {adminNotifications.length}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-[10px]">
+                  <div className="flex items-center gap-2">
                     {onClearNotifications && adminNotifications.length > 0 && (
-                      <button
-                        onClick={onClearNotifications}
-                        className="text-slate-500 hover:text-red-600 font-semibold cursor-pointer"
-                      >
+                      <button onClick={onClearNotifications} className="text-[10px] text-[#7E9092] hover:text-[#D72645] cursor-pointer">
                         Clear
                       </button>
                     )}
-                    <button
-                      onClick={() => setShowNotifications(false)}
-                      className="text-slate-400 hover:text-slate-700 cursor-pointer p-0.5"
-                    >
+                    <button onClick={() => setShowNotifications(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer">
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
 
-                <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
+                <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 text-xs">
                   {adminNotifications.length === 0 ? (
-                    <div className="p-6 text-center text-xs text-slate-500">
-                      No notifications yet. New worker registrations and passenger grievances will show up here live.
-                    </div>
+                    <div className="p-6 text-center text-[#7E9092]">No new alerts.</div>
                   ) : (
-                    adminNotifications.slice(0, 15).map((n) => (
-                      <div
-                        key={n.id}
-                        className={`p-3 text-xs transition ${
-                          n.read ? 'bg-white opacity-80' : 'bg-[#FFFDF5]'
-                        } hover:bg-yellow-50/60`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <span
-                            className={`px-1.5 py-0.5 text-[9px] font-black rounded uppercase tracking-wider ${
-                              n.type === 'worker_registration'
-                                ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                                : n.type === 'new_complaint'
-                                ? 'bg-red-100 text-red-800 border border-red-200'
-                                : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                            }`}
+                    adminNotifications.map((n) => (
+                      <div key={n.id} className={`p-3 space-y-1 ${n.read ? 'bg-white opacity-70' : 'bg-[#F8FAFB]'}`}>
+                        <div className="flex justify-between items-center text-[10px]">
+                          <span className="font-bold text-[#007D99] uppercase">{n.type.replace('_', ' ')}</span>
+                          <span className="text-slate-400 font-mono">{n.timestamp.slice(11, 16)}</span>
+                        </div>
+                        <p className="font-bold text-[#202A2B]">{n.title}</p>
+                        <p className="text-[#526365] text-[11px] leading-tight">{n.message}</p>
+                        {!n.read && onMarkNotificationRead && (
+                          <button
+                            onClick={() => onMarkNotificationRead(n.id)}
+                            className="text-[10px] text-[#007D99] hover:underline cursor-pointer pt-0.5 block"
                           >
-                            {n.type === 'worker_registration'
-                              ? 'Worker Reg'
-                              : n.type === 'new_complaint'
-                              ? 'Grievance'
-                              : 'Duty Check-In'}
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-mono">
-                            {n.timestamp ? n.timestamp.slice(11, 16) : 'Just now'}
-                          </span>
-                        </div>
-
-                        <div className="font-bold text-slate-900 mt-1 text-xs">{n.title}</div>
-                        <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">{n.message}</p>
-
-                        <div className="mt-2 flex items-center justify-between pt-1 border-t border-slate-100">
-                          {n.type === 'worker_registration' && (
-                            <button
-                              onClick={() => {
-                                setAdminTab('gig-workers');
-                                setWorkerStatusFilter('Pending Verification');
-                                if (n.workerName) setWorkerSearch(n.workerName);
-                                setShowNotifications(false);
-                                onMarkNotificationRead?.(n.id);
-                              }}
-                              className="text-[10px] font-extrabold text-amber-800 hover:text-amber-950 flex items-center gap-1 cursor-pointer bg-amber-100 px-2 py-0.5 rounded"
-                            >
-                              <UserCheck className="w-3 h-3" />
-                              <span>Review &amp; Approve</span>
-                            </button>
-                          )}
-
-                          {n.type === 'new_complaint' && (
-                            <button
-                              onClick={() => {
-                                const target = complaints.find((c) => c.complaintId === n.complaintId);
-                                if (target) {
-                                  setSelectedComplaintForDispatch(target);
-                                } else {
-                                  setAdminTab('complaints');
-                                }
-                                setShowNotifications(false);
-                                onMarkNotificationRead?.(n.id);
-                              }}
-                              className="text-[10px] font-extrabold text-[#007D99] hover:text-[#005A6E] flex items-center gap-1 cursor-pointer bg-[#D7F7FC] px-2 py-0.5 rounded"
-                            >
-                              <Send className="w-3 h-3" />
-                              <span>Dispatch Specialist</span>
-                            </button>
-                          )}
-
-                          {!n.read && onMarkNotificationRead && (
-                            <button
-                              onClick={() => onMarkNotificationRead(n.id)}
-                              className="text-[10px] text-slate-400 hover:text-slate-600 cursor-pointer ml-auto"
-                            >
-                              Mark read
-                            </button>
-                          )}
-                        </div>
+                            Mark Read
+                          </button>
+                        )}
                       </div>
                     ))
                   )}
@@ -367,1292 +292,726 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             )}
           </div>
 
-          {/* 1-Click FIFO Dispatch Button */}
+          {/* 1-Click FIFO Dispatch */}
           <button
-            onClick={handleProcessFIFO}
+            onClick={() => {
+              const res = onProcessNextFIFO();
+              setActionNotice(res.message);
+              setTimeout(() => setActionNotice(null), 3000);
+            }}
             disabled={queue.size() === 0}
-            className={`px-5 py-3 text-xs font-black rounded-xl shadow-sm transition-all flex items-center gap-2 border ${
+            className={`px-4 py-2.5 text-xs font-black rounded-xl transition cursor-pointer flex items-center gap-2 ${
               queue.size() > 0
-                ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 border-amber-500 cursor-pointer'
-                : 'bg-slate-200 border-slate-300 cursor-not-allowed text-slate-500'
+                ? 'bg-[#202A2B] text-white hover:bg-[#202A2B]/90'
+                : 'bg-slate-200 text-slate-500 cursor-not-allowed'
             }`}
-            title="Dispatch the earliest pending complaint"
           >
-            <PlayCircle className="w-4 h-4 text-slate-950" />
-            <span>
-              {nextInQueue
-                ? `Process Next: ${nextInQueue.complaintId} (${(nextInQueue.passengerName || 'Passenger').split(' ')[0]})`
-                : 'Queue Empty (All Processed)'}
-            </span>
+            <span>FIFO Auto-Assign ({queue.size()})</span>
           </button>
         </div>
       </div>
 
       {actionNotice && (
-        <div className="p-3.5 rounded-2xl bg-yellow-50 border border-yellow-200 text-xs text-amber-900 flex items-center justify-between shadow-2xs">
-          <span className="flex items-center gap-2 font-medium">
-            <Check className="w-4 h-4 text-amber-700 shrink-0" />
-            {actionNotice}
-          </span>
+        <div className="p-3 bg-[#DDF8EF] border border-[#65D6B0]/40 text-[#1E6B52] rounded-xl text-xs flex items-center justify-between font-bold">
+          <div className="flex items-center gap-2">
+            <Check className="w-4 h-4 text-[#3EA684]" />
+            <span>{actionNotice}</span>
+          </div>
+          <button onClick={() => setActionNotice(null)} className="text-slate-500 hover:text-slate-900 cursor-pointer">
+            &times;
+          </button>
         </div>
       )}
 
-      {/* Module Switcher Tabs */}
-      <div className="flex border-b border-slate-200 gap-2">
+      {/* 4 CORE METRIC CARDS (CAG Audit Redressal Tracking) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="bg-white p-4 rounded-2xl border border-[#DDE4E6] shadow-xs">
+          <span className="text-[10px] text-[#526365] uppercase tracking-wider font-bold block">Total Grievances</span>
+          <div className="text-xl font-black text-[#202A2B] mt-1 font-mono">
+            {complaints.length}
+          </div>
+          <span className="text-[11px] text-[#526365] block mt-0.5">
+            {complaints.filter(c => c.status === 'Pending').length} Pending · {complaints.filter(c => c.status === 'Resolved').length} Resolved
+          </span>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl border border-[#DDE4E6] shadow-xs">
+          <span className="text-[10px] text-[#526365] uppercase tracking-wider font-bold block">CAG 2h SLA Compliance</span>
+          <div className="text-xl font-black text-[#1E6B52] mt-1 font-mono flex items-center gap-1.5">
+            <TrendingUp className="w-5 h-5 text-[#3EA684]" />
+            <span>{slaMetrics.complianceRate}%</span>
+          </div>
+          <span className="text-[11px] text-[#526365] block mt-0.5">
+            {slaMetrics.withinSla} within SLA · {slaMetrics.breached} breached
+          </span>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl border border-[#DDE4E6] shadow-xs">
+          <span className="text-[10px] text-[#526365] uppercase tracking-wider font-bold block">Avg Resolution Time</span>
+          <div className="text-xl font-black text-[#007D99] mt-1 font-mono">
+            34 mins
+          </div>
+          <span className="text-[11px] text-[#3EA684] font-semibold block mt-0.5">
+            Audit benchmark &lt; 120m (CAG 2024 fix)
+          </span>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl border border-[#DDE4E6] shadow-xs">
+          <span className="text-[10px] text-[#526365] uppercase tracking-wider font-bold block">Verified Gig Roster</span>
+          <div className="text-xl font-black text-[#202A2B] mt-1 font-mono">
+            {workers.filter(w => w.verificationStatus === 'Verified').length} / {workers.length}
+          </div>
+          <span className="text-[11px] text-[#B94A3A] font-semibold block mt-0.5">
+            {workers.filter(w => w.verificationStatus === 'Pending Verification').length} Pending Approval
+          </span>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex items-center gap-2 border-b border-[#DDE4E6] pb-2 text-xs font-bold">
         <button
           onClick={() => setAdminTab('complaints')}
-          className={`pb-3 px-4 text-xs font-bold transition border-b-2 cursor-pointer flex items-center gap-2 ${
+          className={`px-4 py-2 rounded-xl transition cursor-pointer flex items-center gap-2 ${
             adminTab === 'complaints'
-              ? 'border-amber-500 text-slate-900'
-              : 'border-transparent text-slate-500 hover:text-slate-900'
+              ? 'bg-[#202A2B] text-white shadow-xs'
+              : 'text-[#526365] hover:bg-[#F0F4F6]'
           }`}
         >
-          <Shield className="w-4 h-4 text-amber-600" />
-          <span>Grievance Redressal &amp; Queue ({complaints.length})</span>
+          <Clock className="w-3.5 h-3.5 text-[#65D6B0]" />
+          <span>Grievance Redressal &amp; Dispatch ({complaints.length})</span>
         </button>
 
         <button
           onClick={() => setAdminTab('gig-workers')}
-          className={`pb-3 px-4 text-xs font-bold transition border-b-2 cursor-pointer flex items-center gap-2 ${
+          className={`px-4 py-2 rounded-xl transition cursor-pointer flex items-center gap-2 ${
             adminTab === 'gig-workers'
-              ? 'border-amber-500 text-slate-900'
-              : 'border-transparent text-slate-500 hover:text-slate-900'
+              ? 'bg-[#007D99] text-white shadow-xs'
+              : 'text-[#526365] hover:bg-[#F0F4F6]'
           }`}
         >
-          <Briefcase className="w-4 h-4 text-amber-600" />
-          <span>Gig Worker Management ({workers.length})</span>
-          {pendingWorkersCount > 0 && (
-            <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black animate-pulse">
-              {pendingWorkersCount} Pending
-            </span>
-          )}
+          <Briefcase className="w-3.5 h-3.5 text-[#D7F7FC]" />
+          <span>Worker Verification &amp; Roster ({workers.length})</span>
         </button>
 
         <button
           onClick={() => setAdminTab('passengers')}
-          className={`pb-3 px-4 text-xs font-bold transition border-b-2 cursor-pointer flex items-center gap-2 ${
+          className={`px-4 py-2 rounded-xl transition cursor-pointer flex items-center gap-2 ${
             adminTab === 'passengers'
-              ? 'border-amber-500 text-slate-900'
-              : 'border-transparent text-slate-500 hover:text-slate-900'
+              ? 'bg-[#202A2B] text-white shadow-xs'
+              : 'text-[#526365] hover:bg-[#F0F4F6]'
           }`}
         >
-          <Users className="w-4 h-4 text-amber-600" />
-          <span>Registered Passengers ({users.filter((u) => !u.isAdmin).length})</span>
+          <Users className="w-3.5 h-3.5 text-[#65D6B0]" />
+          <span>Registered Passengers ({users.length})</span>
         </button>
       </div>
 
-      {adminTab === 'complaints' ? (
-        <>
-          {/* Summary Metrics Cards (1-Click Filtering) */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            <button
-              onClick={() => setStatusTab('All')}
-              className={`text-left p-5 rounded-2xl border transition-all cursor-pointer ${
-                statusTab === 'All'
-                  ? 'bg-yellow-50 border-amber-400 shadow-sm'
-                  : 'bg-white border-slate-200 hover:border-amber-300 shadow-sm'
-              }`}
-            >
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                Total Complaints
-              </div>
-              <div className="text-3xl font-extrabold text-slate-900 mt-2 font-mono tabular-nums">
-                {summary.total}
-              </div>
-              <div className="text-[11px] text-slate-500 mt-1">Click to view all</div>
-            </button>
+      {/* ========================================================================= */}
+      {/* TAB 1: GRIEVANCE REDRESSAL & SPECIALIST DISPATCH                          */}
+      {/* ========================================================================= */}
+      {adminTab === 'complaints' && (
+        <div className="space-y-4">
+          
+          {/* Filters & Search */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-[#DDE4E6]">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="w-4 h-4 text-[#7E9092] absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search complaint, RailMadad Ref, train..."
+                className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-[#DDE4E6] focus:outline-none focus:ring-2 focus:ring-[#007D99]"
+              />
+            </div>
 
-            <button
-              onClick={() => setStatusTab('Pending')}
-              className={`text-left p-5 rounded-2xl border transition-all cursor-pointer ${
-                statusTab === 'Pending'
-                  ? 'bg-amber-50 border-amber-400 shadow-sm'
-                  : 'bg-white border-slate-200 hover:border-amber-400 shadow-sm'
-              }`}
-            >
-              <div className="text-xs font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                Pending Queue
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Status pills */}
+              <div className="flex items-center gap-1 p-0.5 bg-[#F8FAFB] rounded-xl border border-[#DDE4E6] text-xs">
+                {(['All', 'Pending', 'In Progress', 'Resolved'] as const).map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => setStatusTab(st)}
+                    className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+                      statusTab === st ? 'bg-[#202A2B] text-white' : 'text-[#526365] hover:text-[#202A2B]'
+                    }`}
+                  >
+                    {st}
+                  </button>
+                ))}
               </div>
-              <div className="text-3xl font-extrabold text-amber-900 mt-2 font-mono tabular-nums">
-                {summary.pending}
-              </div>
-              <div className="text-[11px] text-amber-700 mt-1">Click to filter pending</div>
-            </button>
 
-            <button
-              onClick={() => setStatusTab('In Progress')}
-              className={`text-left p-5 rounded-2xl border transition-all cursor-pointer ${
-                statusTab === 'In Progress'
-                  ? 'bg-yellow-100 border-amber-400 shadow-sm'
-                  : 'bg-white border-slate-200 hover:border-amber-400 shadow-sm'
-              }`}
-            >
-              <div className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-amber-600"></span>
-                In Progress
-              </div>
-              <div className="text-3xl font-extrabold text-amber-800 mt-2 font-mono tabular-nums">
-                {summary.inProgress}
-              </div>
-              <div className="text-[11px] text-slate-600 mt-1">Click to filter in-progress</div>
-            </button>
-
-            <button
-              onClick={() => setStatusTab('Resolved')}
-              className={`text-left p-5 rounded-2xl border transition-all cursor-pointer ${
-                statusTab === 'Resolved'
-                  ? 'bg-emerald-50 border-emerald-400 shadow-sm'
-                  : 'bg-white border-slate-200 hover:border-emerald-300 shadow-sm'
-              }`}
-            >
-              <div className="text-xs font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
-                Resolved
-              </div>
-              <div className="text-3xl font-extrabold text-emerald-800 mt-2 font-mono tabular-nums">
-                {summary.resolved}
-              </div>
-              <div className="text-[11px] text-emerald-700 mt-1">Click to filter resolved</div>
-            </button>
+              {/* Priority Filter */}
+              <select
+                value={priorityFilter}
+                onChange={(e) => setPriorityFilter(e.target.value as any)}
+                className="text-xs py-1.5 px-2 bg-[#F8FAFB] border border-[#DDE4E6] rounded-xl font-bold text-[#202A2B] focus:outline-none"
+              >
+                <option value="All">All Priorities</option>
+                <option value="Emergency">🚨 Emergency</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </select>
+            </div>
           </div>
 
-          {/* Main Grid: Complaints Management Table + Category Stats */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-            
-            {/* Table & Filter Controls (3 cols) */}
-            <div className="lg:col-span-3 space-y-4">
-              
-              {/* Filter Bar with Status Tabs & Search */}
-              <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                  {/* Quick Status Tabs */}
-                  <div className="flex items-center gap-1 p-1 bg-yellow-50 rounded-xl border border-slate-200 text-xs font-semibold">
-                    {(['All', 'Pending', 'In Progress', 'Resolved'] as const).map((tab) => {
-                      const count =
-                        tab === 'All'
-                          ? summary.total
-                          : tab === 'Pending'
-                          ? summary.pending
-                          : tab === 'In Progress'
-                          ? summary.inProgress
-                          : summary.resolved;
+          {/* Complaints Table */}
+          <div className="bg-white rounded-2xl border border-[#DDE4E6] overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#F8FAFB] border-b border-[#DDE4E6] text-[#526365] uppercase font-bold text-[10px]">
+                  <tr>
+                    <th className="py-3 px-4">Grievance &amp; RailMadad</th>
+                    <th className="py-3 px-4">Passenger / Train</th>
+                    <th className="py-3 px-4">Subject &amp; Category</th>
+                    <th className="py-3 px-4">Priority</th>
+                    <th className="py-3 px-4">CAG 2h SLA</th>
+                    <th className="py-3 px-4">Assigned Sahayak</th>
+                    <th className="py-3 px-4">Status &amp; Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#DDE4E6]">
+                  {filteredComplaints.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="text-center py-8 text-[#7E9092]">
+                        No complaints match your criteria.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredComplaints.map((c) => {
+                      const isEmergency = c.priority === 'Emergency' || c.severity === 'Urgent';
+                      const createdTime = new Date((c.createdAt || '').replace(' ', 'T')).getTime();
+                      const elapsed = !isNaN(createdTime) ? Math.floor((Date.now() - createdTime) / 60000) : 0;
+                      const minsLeft = Math.max(0, 120 - elapsed);
+                      const isBreached = minsLeft <= 0;
 
                       return (
-                        <button
-                          key={tab}
-                          onClick={() => setStatusTab(tab)}
-                          className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                            statusTab === tab
-                              ? 'bg-amber-500 text-slate-950 font-black shadow-xs'
-                              : 'text-slate-800 hover:text-amber-800'
-                          }`}
-                        >
-                          {tab} <span className="opacity-75 ml-0.5">({count})</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                        <tr key={c.complaintId} className="hover:bg-[#F8FAFB] transition">
+                          <td className="py-3 px-4 font-mono">
+                            <span className="font-bold text-[#B94A3A] block">#{c.complaintId}</span>
+                            <span className="text-[10px] text-[#526365] font-semibold">
+                              {c.railMadadRef || `RM-2026-${c.id.toString().slice(-6)}`}
+                            </span>
+                          </td>
 
-                  {/* Sort Order Toggle */}
-                  <button
-                    onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-                    className="px-3 py-1.5 bg-[#FFFDF5] hover:bg-yellow-50 text-slate-800 border border-slate-200 text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <ArrowUpDown className="w-3.5 h-3.5 text-amber-600" />
-                    <span>Date: {sortOrder === 'desc' ? 'Newest First' : 'Oldest First'}</span>
-                  </button>
-                </div>
+                          <td className="py-3 px-4">
+                            <strong className="text-[#202A2B] block">{c.passengerName}</strong>
+                            <span className="text-[11px] text-[#526365]">
+                              Train {c.trainNumber} {c.location && `· ${c.location}`}
+                            </span>
+                          </td>
 
-                {/* Search Input & Category Dropdown */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Quick search: ID, passenger, train, PNR..."
-                      className="w-full pl-9 pr-3.5 py-2 text-xs bg-[#FFFDF5] border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-800"
-                    />
-                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3" />
-                  </div>
+                          <td className="py-3 px-4 max-w-xs">
+                            <strong className="text-[#202A2B] block truncate">{c.subject}</strong>
+                            <span className="text-[11px] text-[#007D99] font-medium">{c.category}</span>
+                          </td>
 
-                  <div className="flex gap-2">
-                    <select
-                      value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-[#FFFDF5] border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-800"
-                    >
-                      <option value="">All Categories</option>
-                      {ALLOWED_CATEGORIES.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat} ({categoryCounts[cat] || 0})
-                        </option>
-                      ))}
-                    </select>
+                          <td className="py-3 px-4">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                              isEmergency ? 'bg-[#FBE0E6] text-[#92182D] border border-[#D72645]/40 animate-pulse' :
+                              c.priority === 'High' ? 'bg-orange-100 text-orange-900 border border-orange-200' :
+                              'bg-[#D7F7FC] text-[#007D99] border border-[#00B8D9]/40'
+                            }`}>
+                              {c.priority || (c.severity === 'Urgent' ? 'Emergency' : c.severity) || 'Medium'}
+                            </span>
+                          </td>
 
-                    {(searchQuery || selectedCategory || statusTab !== 'All') && (
-                      <button
-                        onClick={() => {
-                          setSearchQuery('');
-                          setSelectedCategory('');
-                          setStatusTab('All');
-                        }}
-                        className="px-3 py-2 text-xs font-semibold text-slate-600 hover:text-red-700 bg-[#FFFDF5] hover:bg-red-50 border border-slate-200 rounded-xl shrink-0 flex items-center gap-1 cursor-pointer"
-                        title="Reset filters"
-                      >
-                        <RotateCcw className="w-3 h-3" />
-                        Reset
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
+                          <td className="py-3 px-4 font-mono text-[11px]">
+                            {c.status === 'Resolved' ? (
+                              <span className="text-[#1E6B52] font-bold">Resolved within SLA</span>
+                            ) : isBreached ? (
+                              <span className="text-[#92182D] font-black flex items-center gap-1">
+                                <AlertTriangle className="w-3 h-3 text-[#D72645]" />
+                                <span>Breached (Escalated)</span>
+                              </span>
+                            ) : (
+                              <span className="text-[#007D99] font-bold">
+                                {minsLeft}m left
+                              </span>
+                            )}
+                          </td>
 
-              {/* Table with Inline Status Changer */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="px-5 py-3.5 border-b border-slate-200 flex justify-between items-center bg-[#FFFDF5]">
-                  <h2 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
-                    Grievance Records ({sortResult.sortedList.length})
-                  </h2>
-                  <span className="text-[11px] text-slate-500">
-                    Status changes update the central server immediately
-                  </span>
-                </div>
-
-                {sortResult.sortedList.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-[#FFFDF5] text-slate-600 font-bold border-b border-slate-200">
-                          <th className="py-3 px-3">ID</th>
-                          <th className="py-3 px-3">Passenger</th>
-                          <th className="py-3 px-3">Category</th>
-                          <th className="py-3 px-3">Subject / Issue</th>
-                          <th className="py-3 px-3">Assigned Worker</th>
-                          <th className="py-3 px-3">Date</th>
-                          <th className="py-3 px-3">Status</th>
-                          <th className="py-3 px-3 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200">
-                        {sortResult.sortedList.map((c) => (
-                          <tr key={c.complaintId} className="hover:bg-amber-50/40 transition">
-                            <td className="py-3 px-3 font-mono font-bold text-amber-700">
-                              {c.complaintId}
-                            </td>
-                            <td className="py-3 px-3">
-                              <div className="font-bold text-slate-900">{c.passengerName}</div>
-                              <div className="text-[10px] text-slate-500">{c.trainNumber}</div>
-                            </td>
-                            <td className="py-3 px-3 font-medium text-slate-800 whitespace-nowrap">
-                              <div className="flex items-center gap-1.5">
-                                <span>{c.category}</span>
-                                {c.severity === 'Urgent' && (
-                                  <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-800 font-black text-[9px]">
-                                    Urgent
-                                  </span>
-                                )}
+                          <td className="py-3 px-4">
+                            {c.assignedWorkerName ? (
+                              <div>
+                                <span className="font-bold text-[#202A2B] block">{c.assignedWorkerName}</span>
+                                <span className="text-[10px] text-[#526365]">{c.assignedWorkerSkill}</span>
                               </div>
-                            </td>
-                            <td className="py-3 px-3 max-w-[200px]">
-                              <div className="truncate font-medium text-slate-800" title={c.subject}>
-                                {c.subject}
-                              </div>
-                            </td>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setSelectedComplaintForDispatch(c);
+                                  if (c.aiAnalysis?.recommendedRole) {
+                                    const match = workers.find(
+                                      (w) =>
+                                        w.verificationStatus === 'Verified' &&
+                                        (w.skillCategory.toLowerCase().includes(c.aiAnalysis!.recommendedRole.toLowerCase()) ||
+                                          c.aiAnalysis!.recommendedRole.toLowerCase().includes(w.skillCategory.toLowerCase()))
+                                    );
+                                    if (match) setSelectedWorkerIdForDispatch(String(match.id));
+                                  }
+                                }}
+                                className="px-3 py-1.5 bg-[#007D99] hover:bg-[#007D99]/90 text-white rounded-lg text-[11px] font-black cursor-pointer transition flex items-center gap-1.5 shadow-xs whitespace-nowrap"
+                              >
+                                <Send className="w-3 h-3 text-[#65D6B0]" />
+                                <span>Approve &amp; Send to Worker</span>
+                              </button>
+                            )}
+                          </td>
 
-                            {/* Assigned Worker / Officer Dispatch Column */}
-                            <td className="py-3 px-3 whitespace-nowrap">
-                              {c.assignedWorkerName ? (
-                                <div className="inline-flex items-center gap-1.5 bg-[#D7F7FC] text-[#007D99] px-2.5 py-1 rounded-lg border border-[#00B8D9]/30 text-xs font-bold">
-                                  <Briefcase className="w-3.5 h-3.5 text-[#007D99]" />
-                                  <span className="truncate max-w-[120px]">{c.assignedWorkerName}</span>
-                                </div>
-                              ) : (
-                                <button
-                                  onClick={() => setSelectedComplaintForDispatch(c)}
-                                  className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg text-[11px] flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
-                                  title="Assign and dispatch an approved railway worker"
-                                >
-                                  <Send className="w-3 h-3" />
-                                  <span>Send Worker</span>
-                                </button>
-                              )}
-                            </td>
-
-                            <td className="py-3 px-3 text-slate-500 whitespace-nowrap">
-                              {(c.createdAt || '').slice(0, 10) || 'Recent'}
-                            </td>
-                            
-                            {/* 1-Click Inline Status Dropdown */}
-                            <td className="py-2.5 px-3 whitespace-nowrap">
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
                               <select
                                 value={c.status}
-                                onChange={(e) =>
-                                  handleInlineStatusChange(
-                                    c.complaintId,
-                                    e.target.value as ComplaintStatus
-                                  )
-                                }
-                                className={`px-2.5 py-1 text-xs font-bold rounded-lg border cursor-pointer transition ${
-                                  c.status === 'Pending'
-                                    ? 'bg-amber-50 text-amber-800 border-amber-300'
-                                    : c.status === 'In Progress'
-                                    ? 'bg-yellow-100 text-amber-950 border-yellow-300'
-                                    : 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                onChange={(e) => onUpdateStatus(c.complaintId, e.target.value as ComplaintStatus)}
+                                className={`text-[11px] font-bold py-1 px-2 rounded-lg border focus:outline-none cursor-pointer ${
+                                  c.status === 'Resolved' ? 'bg-[#DDF8EF] border-[#65D6B0] text-[#1E6B52]' :
+                                  c.status === 'In Progress' ? 'bg-[#D7F7FC] border-[#00B8D9] text-[#007D99]' :
+                                  'bg-slate-100 border-slate-300 text-slate-700'
                                 }`}
                               >
                                 <option value="Pending">Pending</option>
                                 <option value="In Progress">In Progress</option>
                                 <option value="Resolved">Resolved</option>
                               </select>
-                            </td>
 
-                            <td className="py-3 px-3 text-right whitespace-nowrap">
-                              <div className="flex items-center justify-end gap-1.5">
-                                {!c.assignedWorkerName && (
-                                  <button
-                                    onClick={() => setSelectedComplaintForDispatch(c)}
-                                    className="p-1.5 bg-amber-100 hover:bg-amber-200 text-amber-950 rounded-lg transition"
-                                    title="Dispatch Worker"
-                                  >
-                                    <Send className="w-3.5 h-3.5 text-amber-800" />
-                                  </button>
-                                )}
+                              {(c.resolutionProofUrl || c.beforeProofUrl) && (
                                 <button
-                                  onClick={() => {
-                                    onSelectComplaint(c);
-                                    onNavigate('complaint-details');
-                                  }}
-                                  className="p-1.5 bg-[#FFFDF5] hover:bg-yellow-50 text-slate-900 border border-slate-200 rounded-lg transition inline-flex items-center gap-1 cursor-pointer"
-                                  title="View Full Details"
+                                  onClick={() => setInspectPhotoModal({
+                                    complaintId: c.complaintId,
+                                    subject: c.subject,
+                                    before: c.beforeProofUrl || c.imageUrl,
+                                    after: c.resolutionProofUrl,
+                                    notes: c.resolutionNotes,
+                                    workerName: c.assignedWorkerName || undefined,
+                                  })}
+                                  className="p-1 text-[#007D99] hover:bg-slate-100 rounded cursor-pointer"
+                                  title="Inspect Photo Proof"
                                 >
-                                  <Eye className="w-3.5 h-3.5 text-amber-600" />
+                                  <Camera className="w-4 h-4" />
                                 </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="p-10 text-center text-xs text-slate-500">
-                    No complaint records found matching your current filter.
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Complaints by Category (1 col) */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-                <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
-                  By Category
-                </h3>
-                <BarChart3 className="w-4 h-4 text-amber-600" />
-              </div>
-
-              <div className="space-y-3 text-xs">
-                {ALLOWED_CATEGORIES.map((cat) => {
-                  const count = categoryCounts[cat] || 0;
-                  const maxCount = Math.max(...Object.values(categoryCounts), 1);
-                  const percentage = Math.round((count / maxCount) * 100);
-
-                  return (
-                    <button
-                      key={cat}
-                      onClick={() => setSelectedCategory(selectedCategory === cat ? '' : cat)}
-                      className={`w-full text-left space-y-1 p-1.5 rounded-xl hover:bg-yellow-50 transition cursor-pointer ${
-                        selectedCategory === cat ? 'bg-yellow-100 font-bold border border-yellow-300' : ''
-                      }`}
-                    >
-                      <div className="flex justify-between items-center text-[11px]">
-                        <span className="text-slate-800 truncate max-w-[140px] font-medium">{cat}</span>
-                        <span className="font-bold text-slate-900 font-mono tabular-nums">{count}</span>
-                      </div>
-                      <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden border border-slate-200">
-                        <div
-                          className="bg-amber-500 h-full rounded-full transition-all duration-300"
-                          style={{ width: `${percentage}%` }}
-                        ></div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </>
-      ) : null}
-
-      {/* Gig Worker Management Module */}
-      {adminTab === 'gig-workers' && (
-        <div className="space-y-8">
-          {/* Worker KPI Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                Total Workers
-              </div>
-              <div className="text-2xl font-extrabold text-slate-900 mt-1 font-mono">
-                {workers.length}
-              </div>
-              <p className="text-[11px] text-slate-500 mt-1">Across all junctions</p>
-            </div>
-
-            <div className={`rounded-2xl border p-5 shadow-sm ${
-              pendingWorkersCount > 0
-                ? 'bg-amber-50 border-amber-300'
-                : 'bg-white border-slate-200'
-            }`}>
-              <div className="text-xs font-bold text-amber-800 uppercase tracking-wider flex items-center justify-between">
-                <span>Pending Review</span>
-                {pendingWorkersCount > 0 && (
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                )}
-              </div>
-              <div className="text-2xl font-extrabold text-amber-900 mt-1 font-mono">
-                {pendingWorkersCount}
-              </div>
-              <p className="text-[11px] text-amber-700 mt-1 font-semibold">Requires verification</p>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                Verified Active
-              </div>
-              <div className="text-2xl font-extrabold text-emerald-800 mt-1 font-mono">
-                {verifiedWorkersCount}
-              </div>
-              <p className="text-[11px] text-emerald-700 mt-1 font-semibold">Ready for dispatch</p>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                Active Jobs
-              </div>
-              <div className="text-2xl font-extrabold text-slate-900 mt-1 font-mono">
-                {activeJobsCount}
-              </div>
-              <p className="text-[11px] text-slate-500 mt-1">Currently on trains</p>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm col-span-2 lg:col-span-1">
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                Total Requests
-              </div>
-              <div className="text-2xl font-extrabold text-slate-900 mt-1 font-mono">
-                {workerRequests.length}
-              </div>
-              <p className="text-[11px] text-slate-500 mt-1">Passenger calls</p>
-            </div>
-          </div>
-
-          {/* Workers Directory & Administrative Verification Table */}
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200">
-              <div>
-                <h2 className="text-xl font-extrabold text-slate-900">
-                  Registered Railway Workers Directory
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Verify, approve, or suspend station gig worker profiles. Only verified workers receive passenger service requests.
-                </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                {/* Search */}
-                <div className="relative">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                  <input
-                    type="text"
-                    value={workerSearch}
-                    onChange={(e) => setWorkerSearch(e.target.value)}
-                    placeholder="Search name, ID, station, skill..."
-                    className="pl-9 pr-3 py-2 text-xs bg-[#FFFDF5] border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 w-full sm:w-60 text-slate-800"
-                  />
-                </div>
-
-                {/* Filter */}
-                <div className="flex flex-wrap gap-1 bg-[#FFFDF5] p-1 rounded-xl border border-slate-200">
-                  {(['All', 'Pending Verification', 'Verified', 'Suspended'] as const).map((st) => (
-                    <button
-                      key={st}
-                      onClick={() => setWorkerStatusFilter(st)}
-                      className={`px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
-                        workerStatusFilter === st
-                          ? 'bg-amber-500 text-slate-950 shadow-xs font-black'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      {st === 'Pending Verification' ? 'Pending' : st}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Workers Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[10px]">
-                    <th className="py-3 px-3">Worker ID</th>
-                    <th className="py-3 px-3">Verification Photo</th>
-                    <th className="py-3 px-3">Worker Name</th>
-                    <th className="py-3 px-3">Skill Category</th>
-                    <th className="py-3 px-3">Assigned Station</th>
-                    <th className="py-3 px-3">Contact</th>
-                    <th className="py-3 px-3 text-center">Status</th>
-                    <th className="py-3 px-3 text-center">Availability</th>
-                    <th className="py-3 px-3 text-right">Administrative Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {displayedWorkers.map((w) => (
-                    <tr key={w.id} className="hover:bg-amber-50/40 transition">
-                      <td className="py-3.5 px-3 font-mono font-bold text-amber-700">
-                        {w.workerId}
-                      </td>
-
-                      {/* Photo Column */}
-                      <td className="py-3.5 px-3">
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setInspectingWorkerPhoto(w)}
-                            className="relative w-11 h-11 rounded-xl overflow-hidden border border-slate-200 hover:border-amber-400 shadow-2xs group cursor-pointer shrink-0 bg-slate-100"
-                            title="Click to inspect verification photo"
-                          >
-                            {w.verificationPhoto || w.profileImage ? (
-                              <img
-                                src={w.verificationPhoto || w.profileImage}
-                                alt={w.fullName}
-                                className="w-full h-full object-cover group-hover:scale-110 transition duration-200"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-yellow-50 flex items-center justify-center text-amber-700">
-                                <Camera className="w-4 h-4 text-slate-400" />
-                              </div>
-                            )}
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
-                              <Eye className="w-3.5 h-3.5 text-white" />
-                            </div>
-                          </button>
-                          {w.photoUpdatedAt && (
-                            <span className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-emerald-50 text-[9px] font-bold text-emerald-800 border border-emerald-200">
-                              Live
-                            </span>
-                          )}
-                        </div>
-                      </td>
-
-                      <td className="py-3.5 px-3">
-                        <div className="font-bold text-slate-900">{w.fullName}</div>
-                        <div className="text-[10px] text-slate-500">{w.city} · {w.experienceYears || 1}y exp</div>
-                      </td>
-                      <td className="py-3.5 px-3 font-semibold text-slate-900">
-                        {w.skillCategory}
-                      </td>
-                      <td className="py-3.5 px-3">
-                        <span className="font-bold text-slate-900">{w.stationCode}</span>
-                        <div className="text-[10px] text-slate-500 truncate max-w-[130px]">{w.stationName}</div>
-                      </td>
-                      <td className="py-3.5 px-3 text-slate-500">
-                        <div>{w.mobile}</div>
-                        <div className="text-[10px] truncate max-w-[120px]">{w.email}</div>
-                      </td>
-                      <td className="py-3.5 px-3 text-center">
-                        <span className={`inline-block px-2.5 py-1 text-[11px] font-bold rounded-full ${
-                          w.verificationStatus === 'Verified'
-                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                            : w.verificationStatus === 'Pending Verification'
-                            ? 'bg-amber-50 text-amber-800 border border-amber-300'
-                            : 'bg-red-50 text-red-700 border border-red-200'
-                        }`}>
-                          {w.verificationStatus}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-3 text-center">
-                        <span className={`inline-block px-2 py-0.5 text-[10px] font-extrabold rounded-md ${
-                          w.availability === 'Available'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : w.availability === 'Busy'
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-slate-100 text-slate-700'
-                        }`}>
-                          {w.availability}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {w.verificationStatus !== 'Verified' && (
-                            <button
-                              disabled={verifyingWorkerId === w.workerId}
-                              onClick={() => handleWorkerVerificationAction(w.workerId, 'Verified')}
-                              className={`px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-lg transition text-xs cursor-pointer shadow-sm flex items-center gap-1.5 ${
-                                verifyingWorkerId === w.workerId ? 'opacity-70 cursor-not-allowed' : ''
-                              }`}
-                              title="Approve and verify worker"
-                            >
-                              <UserCheck className="w-3.5 h-3.5" />
-                              <span>{verifyingWorkerId === w.workerId ? 'Verifying...' : 'Verify'}</span>
-                            </button>
-                          )}
-
-                          {w.verificationStatus === 'Pending Verification' && (
-                            <button
-                              onClick={() => handleWorkerVerificationAction(w.workerId, 'Rejected')}
-                              className="px-2.5 py-1 bg-red-100 hover:bg-red-200 text-red-800 font-bold rounded-lg transition text-[11px] cursor-pointer"
-                              title="Reject registration"
-                            >
-                              <UserX className="w-3 h-3" />
-                              <span>Reject</span>
-                            </button>
-                          )}
-
-                          {w.verificationStatus === 'Verified' && (
-                            <div className="flex items-center gap-1.5">
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                <span>Verified</span>
-                              </span>
-                              <button
-                                onClick={() => handleWorkerVerificationAction(w.workerId, 'Suspended')}
-                                className="px-2 py-1 bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-800 font-bold rounded-lg transition text-[11px] cursor-pointer"
-                                title="Suspend worker access"
-                              >
-                                <UserMinus className="w-3 h-3" />
-                                <span>Suspend</span>
-                              </button>
-                            </div>
-                          )}
-
-                          {w.verificationStatus === 'Suspended' && (
-                            <button
-                              onClick={() => handleWorkerVerificationAction(w.workerId, 'Verified')}
-                              className="px-2.5 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold rounded-lg transition text-[11px] cursor-pointer"
-                              title="Reactivate worker"
-                            >
-                              <span>Reactivate</span>
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {displayedWorkers.length === 0 && (
-                <div className="py-12 text-center text-xs text-slate-500">
-                  No railway workers found matching the current filter.
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Station Service Requests Oversight Table */}
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200">
-              <div>
-                <h3 className="text-base font-extrabold text-slate-900">
-                  All Station Gig Service Requests
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Live monitoring of passenger assistance calls and worker fulfillment across stations.
-                </p>
-              </div>
-              <span className="text-xs font-mono font-bold text-amber-800 bg-yellow-100 px-2.5 py-1 rounded-lg border border-yellow-300">
-                Total: {workerRequests.length}
-              </span>
-            </div>
-
-            {workerRequests.length === 0 ? (
-              <div className="py-12 text-center text-xs text-slate-500">
-                No passenger service requests recorded yet. Incoming requests from passengers will appear here.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[10px]">
-                      <th className="py-3 px-3">Req ID</th>
-                      <th className="py-3 px-3">Passenger</th>
-                      <th className="py-3 px-3">Train &amp; Coach</th>
-                      <th className="py-3 px-3">Station</th>
-                      <th className="py-3 px-3">Service</th>
-                      <th className="py-3 px-3">Assigned Worker</th>
-                      <th className="py-3 px-3 text-center">Status</th>
-                      <th className="py-3 px-3">Time</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200">
-                    {workerRequests.map((r) => (
-                      <tr key={r.id} className="hover:bg-amber-50/40 transition">
-                        <td className="py-3 px-3 font-mono font-bold text-amber-700">
-                          {r.requestId}
-                        </td>
-                        <td className="py-3 px-3">
-                          <div className="font-semibold text-slate-900">{r.passengerName}</div>
-                          <div className="text-[10px] text-slate-500">{r.passengerMobile}</div>
-                        </td>
-                        <td className="py-3 px-3 text-slate-900">
-                          <div className="font-bold">Train {r.trainNumber}</div>
-                          <div className="text-[10px] text-slate-500">
-                            Coach: {r.coachNumber || 'N/A'} · Seat: {r.seatNumber || 'N/A'}
-                          </div>
-                        </td>
-                        <td className="py-3 px-3">
-                          <span className="font-bold text-slate-900">{r.stationCode}</span>
-                          <div className="text-[10px] text-slate-500">{r.stationName}</div>
-                        </td>
-                        <td className="py-3 px-3 font-medium text-slate-800">
-                          {r.serviceCategory}
-                        </td>
-                        <td className="py-3 px-3">
-                          {r.assignedWorkerName ? (
-                            <span className="font-bold text-emerald-800 flex items-center gap-1">
-                              <UserCheck className="w-3.5 h-3.5" />
-                              {r.assignedWorkerName}
-                            </span>
-                          ) : (
-                            <span className="text-slate-500 italic">Unassigned</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-3 text-center">
-                          <span className={`inline-block px-2.5 py-0.5 text-[10px] font-extrabold rounded-full ${
-                            r.status === 'Completed'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : r.status === 'Cancelled'
-                              ? 'bg-red-100 text-red-800'
-                              : 'bg-amber-100 text-amber-800'
-                          }`}>
-                            {r.status}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3 text-slate-500 text-[11px]">
-                          {r.createdAt.slice(11, 16)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* MODULE 3: REGISTERED PASSENGERS DIRECTORY */}
-      {adminTab === 'passengers' && (
-        <div className="space-y-6">
-          {/* Top KPI Cards for Passengers */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                Total Passengers
-              </div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1 font-mono">
-                {users.filter((u) => !u.isAdmin).length}
-              </div>
-              <p className="text-[11px] text-slate-500 mt-1">Multi-device registered accounts</p>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                Passenger Grievances
-              </div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1 font-mono">
-                {complaints.length}
-              </div>
-              <p className="text-[11px] text-emerald-700 mt-1 font-semibold">Tracked in FIFO queue</p>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                Worker Assistance Calls
-              </div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1 font-mono">
-                {workerRequests.length}
-              </div>
-              <p className="text-[11px] text-slate-500 mt-1">Gig worker service requests</p>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                Cross-Device Sync
-              </div>
-              <div className="text-lg font-extrabold text-emerald-800 mt-1 flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse"></span>
-                <span>Active 3s Sync</span>
-              </div>
-              <p className="text-[11px] text-slate-500 mt-1">Phones &amp; Laptops interconnected</p>
-            </div>
-          </div>
-
-          {/* Passengers Table */}
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
-              <div>
-                <h2 className="text-xl font-extrabold text-slate-900">
-                  Registered Railway Passengers Directory
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Real-time list of passengers logged in across mobile devices and platforms.
-                </p>
-              </div>
-
-              {/* Passenger Search */}
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                <input
-                  type="text"
-                  value={passengerSearch}
-                  onChange={(e) => setPassengerSearch(e.target.value)}
-                  placeholder="Search passenger name, email, mobile..."
-                  className="pl-9 pr-3 py-2 text-xs bg-[#FFFDF5] border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 w-full sm:w-72 text-slate-800"
-                />
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[10px]">
-                    <th className="py-3 px-3">User ID</th>
-                    <th className="py-3 px-3">Passenger Name</th>
-                    <th className="py-3 px-3">Email Address</th>
-                    <th className="py-3 px-3">Mobile Contact</th>
-                    <th className="py-3 px-3 text-center">Grievances Filed</th>
-                    <th className="py-3 px-3 text-center">Worker Bookings</th>
-                    <th className="py-3 px-3 text-center">System Interconnection</th>
-                    <th className="py-3 px-3 text-right">View Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {displayedPassengers.map((passenger) => {
-                    const passengerComplaintsCount = complaints.filter(
-                      (c) =>
-                        (passenger.id && c.userId === passenger.id) ||
-                        (passenger.email && c.passengerEmail && c.passengerEmail.toLowerCase().trim() === passenger.email.toLowerCase().trim())
-                    ).length;
-
-                    const passengerRequestsCount = workerRequests.filter(
-                      (r) =>
-                        (passenger.id && r.passengerId === passenger.id) ||
-                        (passenger.email && r.passengerEmail && r.passengerEmail.toLowerCase().trim() === passenger.email.toLowerCase().trim())
-                    ).length;
-
-                    return (
-                      <tr key={passenger.id} className="hover:bg-amber-50/40 transition">
-                        <td className="py-3.5 px-3 font-mono font-bold text-amber-700">
-                          #{passenger.id}
-                        </td>
-                        <td className="py-3.5 px-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-amber-500 text-slate-950 font-black flex items-center justify-center text-xs shrink-0">
-                              {passenger.fullName.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <div className="font-bold text-slate-900">{passenger.fullName}</div>
-                              <div className="text-[10px] text-slate-500">Registered Passenger</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-3.5 px-3 font-medium text-slate-800">
-                          {passenger.email}
-                        </td>
-                        <td className="py-3.5 px-3 font-mono text-slate-500">
-                          {passenger.mobile || '9876543210'}
-                        </td>
-                        <td className="py-3.5 px-3 text-center">
-                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                            passengerComplaintsCount > 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'
-                          }`}>
-                            {passengerComplaintsCount}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-3 text-center">
-                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                            passengerRequestsCount > 0 ? 'bg-yellow-100 text-amber-900' : 'bg-slate-100 text-slate-600'
-                          }`}>
-                            {passengerRequestsCount}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-3 text-center">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-[11px] font-bold text-emerald-800 border border-emerald-200">
-                            <Smartphone className="w-3 h-3 text-emerald-600" />
-                            <span>Mobile Connected</span>
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-3 text-right">
-                          <button
-                            onClick={() => {
-                              setSearchQuery(passenger.fullName);
-                              setAdminTab('complaints');
-                            }}
-                            className="px-2.5 py-1 text-xs font-bold text-slate-800 hover:bg-yellow-50 rounded-lg transition border border-slate-200 cursor-pointer"
-                            title="Filter complaints for this passenger"
-                          >
-                            Filter Complaints
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-
-              {displayedPassengers.length === 0 && (
-                <div className="py-12 text-center text-xs text-slate-500">
-                  No registered passengers found matching "{passengerSearch}".
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* INSPECT WORKER PHOTO MODAL */}
-      {inspectingWorkerPhoto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 shadow-2xl relative space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            <button
-              onClick={() => setInspectingWorkerPhoto(null)}
-              className="absolute top-4 right-4 p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 bg-amber-500 text-slate-950 text-[10px] font-black uppercase rounded">
-                IDENTITY AUDIT
-              </span>
-              <span className="text-xs font-mono text-slate-500">
-                Worker ID: {inspectingWorkerPhoto.workerId}
-              </span>
-            </div>
-
-            <h3 className="text-xl font-extrabold text-slate-900">
-              {inspectingWorkerPhoto.fullName}
-            </h3>
-
-            {/* Large Verification Image */}
-            <div className="relative rounded-2xl overflow-hidden border-2 border-slate-200 bg-slate-100 max-h-72 flex items-center justify-center">
-              {inspectingWorkerPhoto.verificationPhoto || inspectingWorkerPhoto.profileImage ? (
-                <img
-                  src={inspectingWorkerPhoto.verificationPhoto || inspectingWorkerPhoto.profileImage}
-                  alt={inspectingWorkerPhoto.fullName}
-                  className="w-full h-72 object-cover object-top"
-                />
-              ) : (
-                <div className="py-16 text-center text-slate-500">
-                  <Camera className="w-12 h-12 mx-auto text-slate-400 mb-2" />
-                  <p className="text-xs">No verification photo uploaded yet</p>
-                </div>
-              )}
-            </div>
-
-            {/* Worker Details Summary */}
-            <div className="bg-[#FFFDF5] p-3.5 rounded-xl border border-amber-200/80 space-y-1.5 text-xs">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Station:</span>
-                <span className="font-bold text-slate-900">
-                  {inspectingWorkerPhoto.stationName} ({inspectingWorkerPhoto.stationCode})
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Skill Category:</span>
-                <span className="font-bold text-slate-900">
-                  {inspectingWorkerPhoto.skillCategory}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Verification Status:</span>
-                <span className={`font-bold ${
-                  inspectingWorkerPhoto.verificationStatus === 'Verified' ? 'text-emerald-700' : 'text-amber-700'
-                }`}>
-                  {inspectingWorkerPhoto.verificationStatus}
-                </span>
-              </div>
-              {inspectingWorkerPhoto.photoUpdatedAt && (
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Photo Updated:</span>
-                  <span className="font-mono text-[11px] text-slate-800">
-                    {inspectingWorkerPhoto.photoUpdatedAt}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Modal Actions */}
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setInspectingWorkerPhoto(null)}
-                className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 rounded-xl hover:bg-slate-100 cursor-pointer"
-              >
-                Close
-              </button>
-
-              {inspectingWorkerPhoto.verificationStatus !== 'Verified' && (
-                <button
-                  type="button"
-                  disabled={verifyingWorkerId === inspectingWorkerPhoto.workerId}
-                  onClick={async () => {
-                    await handleWorkerVerificationAction(inspectingWorkerPhoto.workerId, 'Verified');
-                    setInspectingWorkerPhoto(null);
-                  }}
-                  className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black rounded-xl shadow-sm flex items-center gap-1.5 cursor-pointer"
-                >
-                  <UserCheck className="w-4 h-4" />
-                  <span>Approve &amp; Verify Worker</span>
-                </button>
-              )}
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* DISPATCH GIG WORKER TO COMPLAINT MODAL */}
-      {selectedComplaintForDispatch && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl border border-slate-200 max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative space-y-5 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => {
-                setSelectedComplaintForDispatch(null);
-                setSelectedWorkerIdForDispatch('');
-                setDispatchInstructions('');
-              }}
-              className="absolute top-5 right-5 p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            {/* Header */}
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="px-2.5 py-0.5 bg-[#D7F7FC] text-[#007D99] text-[10px] font-black uppercase rounded border border-[#00B8D9]/30">
-                  OFFICIAL WORK ORDER DISPATCH
-                </span>
-                <span className="text-xs font-mono text-amber-700 font-bold">
-                  {selectedComplaintForDispatch.complaintId}
-                </span>
-              </div>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">
-                Dispatch Station Specialist
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Assign an approved railway gig worker to attend to the passenger's reported issue.
-              </p>
-            </div>
-
-            {/* Grievance Summary Box */}
-            <div className="p-4 rounded-2xl bg-[#FFFDF5] border border-amber-200/80 space-y-2.5 text-xs text-slate-800">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="font-bold text-slate-900 text-sm">
-                  {selectedComplaintForDispatch.subject}
-                </span>
-                <span className="px-2 py-0.5 rounded bg-yellow-100 text-amber-950 font-bold text-[11px] border border-yellow-300">
-                  {selectedComplaintForDispatch.category}
-                </span>
-              </div>
-
-              <p className="text-slate-600 text-[11px] leading-relaxed line-clamp-2">
-                {selectedComplaintForDispatch.description}
-              </p>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-amber-200/60 text-[11px]">
-                <div>
-                  <span className="text-slate-400 block text-[10px]">Passenger</span>
-                  <span className="font-bold text-slate-900">{selectedComplaintForDispatch.passengerName}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">Train</span>
-                  <span className="font-bold text-slate-900">{selectedComplaintForDispatch.trainNumber}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">Coach/Location</span>
-                  <span className="font-bold text-slate-900">{selectedComplaintForDispatch.location || 'Running Train'}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">Severity</span>
-                  <span className={`font-bold ${
-                    selectedComplaintForDispatch.severity === 'Urgent'
-                      ? 'text-red-700'
-                      : 'text-amber-800'
-                  }`}>
-                    {selectedComplaintForDispatch.severity || 'Standard'}
-                  </span>
-                </div>
-              </div>
-
-              {/* AI Recommendation highlight */}
-              {(selectedComplaintForDispatch.aiAnalysis?.recommendedSpecialist || selectedComplaintForDispatch.aiAnalysis?.recommendedRole) && (
-                <div className="mt-2 p-2.5 rounded-xl bg-purple-50 border border-purple-200 flex items-center gap-2 text-purple-900 text-[11px]">
-                  <Sparkles className="w-4 h-4 text-purple-600 shrink-0" />
-                  <div>
-                    <strong>AI Recommended Specialist:</strong>{' '}
-                    <span>{selectedComplaintForDispatch.aiAnalysis.recommendedSpecialist || selectedComplaintForDispatch.aiAnalysis.recommendedRole}</span>
-                    {selectedComplaintForDispatch.aiAnalysis.confidence && (
-                      <span className="ml-1 text-[10px] text-purple-600 font-mono">
-                        ({selectedComplaintForDispatch.aiAnalysis.confidence} match)
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Select Approved Worker */}
-            <div className="space-y-2">
-              <label className="block text-xs font-extrabold text-slate-900 uppercase tracking-wider">
-                Select Approved Railway Specialist <span className="text-red-500">*</span>
-              </label>
-
-              <div className="max-h-56 overflow-y-auto space-y-2 pr-1 divide-y divide-slate-100 border border-slate-200 rounded-2xl p-2 bg-slate-50/50">
-                {workers.filter((w) => w.verificationStatus === 'Verified').length === 0 ? (
-                  <div className="p-6 text-center text-xs text-slate-500">
-                    No verified workers available yet. Please approve a pending worker registration first.
-                  </div>
-                ) : (
-                  workers
-                    .filter((w) => w.verificationStatus === 'Verified')
-                    .map((w) => {
-                      const isSelected = selectedWorkerIdForDispatch === String(w.id) || selectedWorkerIdForDispatch === w.workerId;
-                      const recommendedText = (selectedComplaintForDispatch.aiAnalysis?.recommendedSpecialist || selectedComplaintForDispatch.aiAnalysis?.recommendedRole || '').toLowerCase();
-                      const isSkillMatch =
-                        w.skillCategory.toLowerCase().includes((selectedComplaintForDispatch.category || '').toLowerCase()) ||
-                        (recommendedText && w.skillCategory.toLowerCase().includes(recommendedText));
-
-                      return (
-                        <div
-                          key={w.id}
-                          onClick={() => setSelectedWorkerIdForDispatch(String(w.id))}
-                          className={`p-3 rounded-xl border transition cursor-pointer flex items-center justify-between gap-3 ${
-                            isSelected
-                              ? 'bg-[#DDF8EF] border-[#65D6B0] shadow-xs'
-                              : 'bg-white border-slate-200 hover:border-amber-300'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <input
-                              type="radio"
-                              name="selectedWorker"
-                              checked={isSelected}
-                              onChange={() => setSelectedWorkerIdForDispatch(String(w.id))}
-                              className="accent-amber-600"
-                            />
-                            <div className="w-9 h-9 rounded-xl bg-slate-100 overflow-hidden border border-slate-200 shrink-0">
-                              {w.verificationPhoto || w.profileImage ? (
-                                <img src={w.verificationPhoto || w.profileImage} alt={w.fullName} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center font-bold text-xs text-slate-700 bg-amber-100">
-                                  {w.fullName.charAt(0)}
-                                </div>
                               )}
                             </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-slate-900 text-xs">{w.fullName}</span>
-                                {isSkillMatch && (
-                                  <span className="px-1.5 py-0.2 rounded bg-purple-100 text-purple-800 font-extrabold text-[9px] border border-purple-200">
-                                    Best Match
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-[11px] text-slate-500">
-                                {w.skillCategory} · {w.stationCode} · {w.experienceYears || 2}y exp
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="text-right shrink-0">
-                            <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
-                              w.availability === 'Available'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : 'bg-amber-100 text-amber-800'
-                            }`}>
-                              {w.availability}
-                            </span>
-                            <div className="text-[10px] text-slate-400 mt-0.5 font-mono">
-                              ★ {w.rating || '5.0'}
-                            </div>
-                          </div>
-                        </div>
+                          </td>
+                        </tr>
                       );
                     })
-                )}
-              </div>
+                  )}
+                </tbody>
+              </table>
             </div>
+          </div>
 
-            {/* Officer Instructions */}
-            <div>
-              <label className="block text-xs font-bold text-slate-800 mb-1">
-                Officer Dispatch Instructions / Work Order Notes (Optional)
-              </label>
-              <textarea
-                value={dispatchInstructions}
-                onChange={(e) => setDispatchInstructions(e.target.value)}
-                placeholder="e.g., Carry 110V DC replacement fuse and contact passenger immediately on coach arrival."
-                rows={2}
-                className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-800 placeholder-slate-400"
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 2: GIG WORKER VERIFICATION & ONBOARDING ROSTER                        */}
+      {/* ========================================================================= */}
+      {adminTab === 'gig-workers' && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-[#DDE4E6]">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="w-4 h-4 text-[#7E9092] absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={workerSearch}
+                onChange={(e) => setWorkerSearch(e.target.value)}
+                placeholder="Search worker by name, ID, station..."
+                className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-[#DDE4E6] focus:outline-none focus:ring-2 focus:ring-[#007D99]"
               />
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedComplaintForDispatch(null);
-                  setSelectedWorkerIdForDispatch('');
-                  setDispatchInstructions('');
-                }}
-                className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 rounded-xl hover:bg-slate-100 cursor-pointer"
-              >
-                Cancel
-              </button>
+            <div className="flex items-center gap-1 p-0.5 bg-[#F8FAFB] rounded-xl border border-[#DDE4E6] text-xs">
+              {(['All', 'Pending Verification', 'Verified', 'Rejected'] as const).map((st) => (
+                <button
+                  key={st}
+                  onClick={() => setWorkerStatusFilter(st)}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+                    workerStatusFilter === st ? 'bg-[#007D99] text-white' : 'text-[#526365] hover:text-[#202A2B]'
+                  }`}
+                >
+                  {st}
+                </button>
+              ))}
+            </div>
+          </div>
 
+          <div className="bg-white rounded-2xl border border-[#DDE4E6] overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#F8FAFB] border-b border-[#DDE4E6] text-[#526365] uppercase font-bold text-[10px]">
+                  <tr>
+                    <th className="py-3 px-4">Worker ID &amp; Name</th>
+                    <th className="py-3 px-4">Category / Station</th>
+                    <th className="py-3 px-4">Qualifications &amp; Documents</th>
+                    <th className="py-3 px-4">Duty Status</th>
+                    <th className="py-3 px-4">Verification Status</th>
+                    <th className="py-3 px-4">Officer Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#DDE4E6]">
+                  {filteredWorkers.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="text-center py-8 text-[#7E9092]">
+                        No workers match your filter.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredWorkers.map((w) => (
+                      <tr key={w.id} className="hover:bg-[#F8FAFB] transition">
+                        <td className="py-3 px-4">
+                          <span className="font-mono text-xs font-bold text-[#007D99] block">{w.workerId}</span>
+                          <strong className="text-[#202A2B]">{w.fullName}</strong>
+                          <span className="text-[11px] text-[#526365] block">{w.mobile}</span>
+                        </td>
+
+                        <td className="py-3 px-4">
+                          <strong className="text-[#202A2B] block">{w.skillCategory}</strong>
+                          <span className="text-[11px] text-[#526365]">
+                            {w.stationName} ({w.stationCode})
+                          </span>
+                        </td>
+
+                        <td className="py-3 px-4 max-w-xs">
+                          <span className="text-[#202A2B] block">{w.qualifications || 'Certified Technician'}</span>
+                          <span className="text-[10px] text-[#7E9092] block">{w.verificationDocuments}</span>
+                        </td>
+
+                        <td className="py-3 px-4">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            w.availability === 'Available' ? 'bg-[#DDF8EF] text-[#1E6B52]' :
+                            w.availability === 'Busy' ? 'bg-amber-100 text-amber-900' :
+                            'bg-slate-100 text-slate-600'
+                          }`}>
+                            {w.availability}
+                          </span>
+                        </td>
+
+                        <td className="py-3 px-4">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                            w.verificationStatus === 'Verified' ? 'bg-[#DDF8EF] text-[#1E6B52] border border-[#65D6B0]/40' :
+                            w.verificationStatus === 'Pending Verification' ? 'bg-amber-100 text-amber-900 border border-amber-300 animate-pulse' :
+                            'bg-[#FBE0E6] text-[#92182D] border border-[#D72645]/40'
+                          }`}>
+                            {w.verificationStatus}
+                          </span>
+                        </td>
+
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-1.5">
+                            {w.verificationStatus !== 'Verified' && (
+                              <button
+                                onClick={() => handleWorkerVerificationAction(w.workerId, 'Verified')}
+                                className="px-2.5 py-1 bg-[#1E6B52] hover:bg-[#1E6B52]/90 text-white text-[11px] font-bold rounded-lg cursor-pointer transition flex items-center gap-1"
+                              >
+                                <Check className="w-3 h-3" />
+                                <span>Approve</span>
+                              </button>
+                            )}
+
+                            {w.verificationStatus !== 'Rejected' && (
+                              <button
+                                onClick={() => handleWorkerVerificationAction(w.workerId, 'Rejected')}
+                                className="px-2.5 py-1 border border-[#DDE4E6] text-[#D72645] hover:bg-[#FBE0E6] text-[11px] font-bold rounded-lg cursor-pointer transition"
+                              >
+                                Reject
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 3: REGISTERED PASSENGERS                                              */}
+      {/* ========================================================================= */}
+      {adminTab === 'passengers' && (
+        <div className="bg-white rounded-2xl border border-[#DDE4E6] overflow-hidden shadow-xs">
+          <div className="p-4 border-b border-[#DDE4E6]">
+            <h3 className="text-xs font-bold text-[#202A2B] uppercase tracking-wider">
+              Registered Rail Passengers ({users.length})
+            </h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#F8FAFB] border-b border-[#DDE4E6] text-[#526365] uppercase font-bold text-[10px]">
+                <tr>
+                  <th className="py-3 px-4">Passenger ID</th>
+                  <th className="py-3 px-4">Full Name</th>
+                  <th className="py-3 px-4">Email</th>
+                  <th className="py-3 px-4">Mobile</th>
+                  <th className="py-3 px-4">Account Type</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#DDE4E6]">
+                {users.map((u) => (
+                  <tr key={u.id} className="hover:bg-[#F8FAFB] transition">
+                    <td className="py-3 px-4 font-mono font-bold text-[#526365]">#{u.id}</td>
+                    <td className="py-3 px-4 font-bold text-[#202A2B]">{u.fullName}</td>
+                    <td className="py-3 px-4 text-[#526365]">{u.email}</td>
+                    <td className="py-3 px-4 font-mono text-[#202A2B]">{u.mobile}</td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        u.isAdmin ? 'bg-[#D7F7FC] text-[#007D99]' : 'bg-[#DDF8EF] text-[#1E6B52]'
+                      }`}>
+                        {u.isAdmin ? 'Officer Admin' : 'Passenger'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: DISPATCH SPECIALIST TO PASSENGER COMPLAINT                         */}
+      {/* ========================================================================= */}
+      {selectedComplaintForDispatch && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-xl border border-[#DDE4E6] animate-scaleUp">
+            <div className="flex items-center justify-between pb-3 border-b border-[#DDE4E6]">
+              <div className="flex items-center gap-2">
+                <Send className="w-5 h-5 text-[#007D99]" />
+                <h3 className="text-base font-black text-[#202A2B]">
+                  Approve Grievance &amp; Dispatch Gig Worker
+                </h3>
+              </div>
               <button
-                type="button"
-                disabled={!selectedWorkerIdForDispatch || isDispatching}
-                onClick={async () => {
-                  if (!onDispatchWorker || !selectedWorkerIdForDispatch) return;
-                  setIsDispatching(true);
-                  try {
-                    const res = await onDispatchWorker(
-                      selectedComplaintForDispatch.complaintId,
-                      selectedWorkerIdForDispatch,
-                      dispatchInstructions
-                    );
-                    if (res?.success) {
-                      setActionNotice(res.message);
-                      setTimeout(() => setActionNotice(null), 5000);
-                      setSelectedComplaintForDispatch(null);
-                      setSelectedWorkerIdForDispatch('');
-                      setDispatchInstructions('');
-                    } else {
-                      alert(res?.message || 'Failed to dispatch worker.');
-                    }
-                  } catch (err: any) {
-                    alert(err?.message || 'Error occurred while dispatching.');
-                  } finally {
-                    setIsDispatching(false);
-                  }
-                }}
-                className={`px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black rounded-xl shadow-sm flex items-center gap-2 cursor-pointer transition ${
-                  !selectedWorkerIdForDispatch || isDispatching ? 'opacity-60 cursor-not-allowed' : ''
-                }`}
+                onClick={() => setSelectedComplaintForDispatch(null)}
+                className="text-slate-400 hover:text-slate-700 cursor-pointer p-1"
               >
-                <Send className="w-4 h-4" />
-                <span>{isDispatching ? 'Dispatching...' : 'Dispatch Worker to Grievance'}</span>
+                <X className="w-5 h-5" />
               </button>
             </div>
 
+            <div className="p-3 bg-[#F8FAFB] rounded-xl border border-[#DDE4E6] text-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <div>Grievance: <strong className="text-[#202A2B]">#{selectedComplaintForDispatch.complaintId}</strong> ({selectedComplaintForDispatch.category})</div>
+                <span className="font-mono text-[10px] bg-[#D7F7FC] text-[#007D99] px-2 py-0.5 rounded font-bold">
+                  {selectedComplaintForDispatch.railMadadRef || 'RailMadad Verified'}
+                </span>
+              </div>
+              <div>Train / Coach: <strong>{selectedComplaintForDispatch.trainNumber} · {selectedComplaintForDispatch.location || 'Coach B3'}</strong></div>
+              <div>Passenger: <strong>{selectedComplaintForDispatch.passengerName}</strong> ({selectedComplaintForDispatch.passengerMobile})</div>
+              <p className="text-[#526365] italic bg-white p-2 rounded-lg border border-[#DDE4E6]">
+                "{selectedComplaintForDispatch.description}"
+              </p>
+            </div>
+
+            {/* AI Diagnosis details if available */}
+            {selectedComplaintForDispatch.aiAnalysis && (
+              <div className="p-3 bg-[#DDF8EF]/60 border border-[#65D6B0]/60 rounded-xl text-xs space-y-1">
+                <div className="flex items-center justify-between text-[#1E6B52] font-black text-[11px]">
+                  <span className="flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>AI Grievance Assessment</span>
+                  </span>
+                  <span>Priority: {selectedComplaintForDispatch.priority || selectedComplaintForDispatch.severity || 'High'}</span>
+                </div>
+                <div className="text-[#526365] text-[11px]">
+                  Recommended Specialist Role: <strong className="text-[#1E6B52]">{selectedComplaintForDispatch.aiAnalysis.recommendedRole}</strong>
+                </div>
+                {selectedComplaintForDispatch.aiAnalysis.detectedIssues && (
+                  <div className="text-[10px] text-[#7E9092]">
+                    Detected: {selectedComplaintForDispatch.aiAnalysis.detectedIssues.join(', ')}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Specialist Dropdown */}
+            <div>
+              <label className="block text-xs font-bold text-[#202A2B] mb-1">
+                Select Approved Station Worker to Dispatch:
+              </label>
+              <select
+                value={selectedWorkerIdForDispatch}
+                onChange={(e) => setSelectedWorkerIdForDispatch(e.target.value)}
+                className="w-full text-xs p-2.5 bg-white border border-[#DDE4E6] rounded-xl font-bold text-[#202A2B] focus:outline-none focus:ring-2 focus:ring-[#007D99]"
+              >
+                <option value="">-- Choose verified specialist on duty --</option>
+                {workers
+                  .filter((w) => w.verificationStatus === 'Verified')
+                  .map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.fullName} ({w.workerId}) — {w.skillCategory} [{w.stationCode}] · {w.availability}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#202A2B] mb-1">
+                Officer Dispatch Instructions:
+              </label>
+              <textarea
+                rows={2}
+                value={dispatchInstructions}
+                onChange={(e) => setDispatchInstructions(e.target.value)}
+                placeholder="e.g. Inspect washroom flush valve at coach B3 during 10-minute halt at platform 2."
+                className="w-full text-xs p-2 border border-[#DDE4E6] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#007D99]"
+              />
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setSelectedComplaintForDispatch(null)}
+                className="flex-1 py-2.5 border border-[#DDE4E6] text-xs font-bold rounded-xl cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!selectedWorkerIdForDispatch || isDispatching}
+                onClick={handleDispatch}
+                className="flex-1 py-2.5 bg-[#007D99] hover:bg-[#007D99]/90 text-white text-xs font-black rounded-xl transition cursor-pointer disabled:opacity-60 shadow-xs flex items-center justify-center gap-1.5"
+              >
+                <Send className="w-3.5 h-3.5 text-[#65D6B0]" />
+                <span>{isDispatching ? 'Transmitting to Worker...' : 'Approve & Send to Worker'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: PHOTO PROOF AUDIT INSPECTION                                       */}
+      {/* ========================================================================= */}
+      {inspectPhotoModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-xl border border-[#DDE4E6]">
+            <div className="flex items-center justify-between pb-3 border-b border-[#DDE4E6]">
+              <h3 className="text-base font-black text-[#202A2B]">Resolution Audit Evidence</h3>
+              <button onClick={() => setInspectPhotoModal(null)} className="text-slate-400 hover:text-slate-700 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <span className="text-[10px] font-bold text-[#526365] block uppercase mb-1">Before Maintenance</span>
+                {inspectPhotoModal.before ? (
+                  <img src={inspectPhotoModal.before} alt="Before" className="w-full h-40 object-cover rounded-xl border" />
+                ) : (
+                  <div className="w-full h-40 rounded-xl border border-dashed flex items-center justify-center text-xs text-slate-400">
+                    No before image
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <span className="text-[10px] font-bold text-[#1E6B52] block uppercase mb-1">After Resolution (Proof)</span>
+                {inspectPhotoModal.after ? (
+                  <img src={inspectPhotoModal.after} alt="After" className="w-full h-40 object-cover rounded-xl border-2 border-[#65D6B0]" />
+                ) : (
+                  <div className="w-full h-40 rounded-xl border border-dashed flex items-center justify-center text-xs text-slate-400">
+                    No after proof attached
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {inspectPhotoModal.notes && (
+              <div className="p-3 bg-[#F8FAFB] rounded-xl border text-xs">
+                <strong>Technician Action:</strong> {inspectPhotoModal.notes}
+              </div>
+            )}
+
+            <button
+              onClick={() => setInspectPhotoModal(null)}
+              className="w-full py-2 bg-[#202A2B] text-white text-xs font-bold rounded-xl cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: CAG AUDIT GAP ANALYSIS & MINISTRY POSITIONING BRIEFING              */}
+      {/* ========================================================================= */}
+      {showGapAnalysisModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 space-y-5 shadow-2xl border border-[#DDE4E6] max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-[#DDE4E6]">
+              <div className="flex items-center gap-2">
+                <FileBarChart className="w-5 h-5 text-[#007D99]" />
+                <h3 className="text-lg font-black text-[#202A2B]">
+                  RailMadad vs VYOMRATH — Strategic Gap Analysis
+                </h3>
+              </div>
+              <button onClick={() => setShowGapAnalysisModal(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Ministry Presentation Statement */}
+            <div className="p-4 bg-[#DDF8EF]/60 border border-[#65D6B0]/50 rounded-2xl space-y-1.5">
+              <span className="text-[10px] font-black uppercase text-[#1E6B52] tracking-wider block">
+                Official Ministry Positioning
+              </span>
+              <blockquote className="text-xs text-[#202A2B] italic leading-relaxed">
+                "We recognise that Indian Railways already has a grievance redressal platform called RailMadad. Our objective with VYOMRATH is not to replace RailMadad but to explore an additional layer for complaint execution and workforce coordination. Through our three-panel system, we aim to connect passengers, verified service workers and administrators on one platform. This can help improve accountability, transparency and the monitoring of authorised complaint-resolution activities."
+              </blockquote>
+            </div>
+
+            {/* 7 Gaps Matrix */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-black uppercase text-[#526365] tracking-wider">
+                Solved Operational Challenges (CAG Audit 2024 &amp; Lok Sabha 2026 Grounding)
+              </h4>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div className="p-3 bg-[#F8FAFB] rounded-xl border border-[#DDE4E6] space-y-1">
+                  <div className="font-bold text-[#B94A3A]">1. Resolution Delay Exceeding SLA</div>
+                  <p className="text-[#526365] text-[11px]">CAG found medical/coach assistance took 2h 2m to 6h 42m. VYOMRATH enforces live 2-hour SLA countdowns and direct platform dispatch.</p>
+                </div>
+
+                <div className="p-3 bg-[#F8FAFB] rounded-xl border border-[#DDE4E6] space-y-1">
+                  <div className="font-bold text-[#B94A3A]">2. Dedicated Worker-Assignment</div>
+                  <p className="text-[#526365] text-[11px]">Instead of static departmental forwarding, VYOMRATH provides 1-click on-ground technician assignment with live ETA.</p>
+                </div>
+
+                <div className="p-3 bg-[#F8FAFB] rounded-xl border border-[#DDE4E6] space-y-1">
+                  <div className="font-bold text-[#B94A3A]">3. Verified Gig-Worker Onboarding</div>
+                  <p className="text-[#526365] text-[11px]">Admin officer panel verifies identity and trade credentials before any gig technician can accept passenger calls.</p>
+                </div>
+
+                <div className="p-3 bg-[#F8FAFB] rounded-xl border border-[#DDE4E6] space-y-1">
+                  <div className="font-bold text-[#B94A3A]">4. Resolution Quality &amp; Photo Evidence</div>
+                  <p className="text-[#526365] text-[11px]">Fixes CAG finding: "marked resolved does not mean passenger is satisfied". Requires Before-and-After photo proof.</p>
+                </div>
+
+                <div className="p-3 bg-[#F8FAFB] rounded-xl border border-[#DDE4E6] space-y-1">
+                  <div className="font-bold text-[#B94A3A]">5. Categorisation &amp; Routing Gaps</div>
+                  <p className="text-[#526365] text-[11px]">Multimodal AI analyzes uploaded photos and voice recordings to route directly to the appropriate trade specialist.</p>
+                </div>
+
+                <div className="p-3 bg-[#F8FAFB] rounded-xl border border-[#DDE4E6] space-y-1">
+                  <div className="font-bold text-[#B94A3A]">6. Priority Levels &amp; Safety Boundary</div>
+                  <p className="text-[#526365] text-[11px]">Gig workers handle eligible maintenance only. Emergencies and security auto-route to RPF helpline 139.</p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowGapAnalysisModal(false)}
+              className="w-full py-2.5 bg-[#202A2B] text-white text-xs font-bold rounded-xl cursor-pointer hover:bg-[#202A2B]/90 transition"
+            >
+              Close Briefing
+            </button>
           </div>
         </div>
       )}

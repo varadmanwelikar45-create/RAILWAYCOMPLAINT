@@ -1274,11 +1274,17 @@ export default function App() {
   const handleUpdateWorkerRequestStatus = async (
     requestId: string,
     newStatus: WorkerRequestStatus,
-    completionNotes?: string
+    completionNotes?: string,
+    proofData?: {
+      beforePhotoUrl?: string;
+      afterPhotoUrl?: string;
+      resolutionProofUrl?: string;
+      resolutionSummary?: string;
+    }
   ) => {
     const nowIso = new Date().toISOString().replace('T', ' ').slice(0, 19);
 
-    // 1. Optimistic local state update
+    // 1. Optimistic local state update for request
     setWorkerRequests((prev) =>
       prev.map((r) =>
         r.requestId === requestId || String(r.id) === requestId
@@ -1286,12 +1292,38 @@ export default function App() {
               ...r,
               status: newStatus,
               completionNotes: completionNotes || r.completionNotes,
+              beforePhotoUrl: proofData?.beforePhotoUrl || r.beforePhotoUrl,
+              afterPhotoUrl: proofData?.afterPhotoUrl || r.afterPhotoUrl,
+              resolutionProofUrl: proofData?.resolutionProofUrl || proofData?.afterPhotoUrl || r.resolutionProofUrl,
+              resolutionSummary: proofData?.resolutionSummary || completionNotes || r.resolutionSummary,
               updatedAt: nowIso,
               ...(newStatus === 'Completed' ? { completedAt: nowIso } : {}),
             }
           : r
       )
     );
+
+    // If completed and linked to a passenger complaint, synchronize complaint status and resolution photo proof
+    if (newStatus === 'Completed') {
+      const targetReq = workerRequests.find((r) => r.requestId === requestId || String(r.id) === requestId);
+      if (targetReq && targetReq.relatedComplaintId) {
+        setComplaints((prev) =>
+          prev.map((c) =>
+            c.complaintId === targetReq.relatedComplaintId || String(c.id) === targetReq.relatedComplaintId
+              ? {
+                  ...c,
+                  status: 'Resolved',
+                  resolvedAt: nowIso,
+                  updatedAt: nowIso,
+                  beforeProofUrl: proofData?.beforePhotoUrl || targetReq.beforePhotoUrl || c.beforeProofUrl || c.imageUrl,
+                  resolutionProofUrl: proofData?.resolutionProofUrl || proofData?.afterPhotoUrl || targetReq.resolutionProofUrl,
+                  resolutionNotes: proofData?.resolutionSummary || completionNotes || targetReq.resolutionSummary,
+                }
+              : c
+          )
+        );
+      }
+    }
 
     if (newStatus === 'Completed' && currentWorker) {
       const updatedWorker: Worker = {
@@ -1318,6 +1350,10 @@ export default function App() {
         sanitizeFirestorePayload({
           status: newStatus,
           completionNotes: completionNotes || undefined,
+          beforePhotoUrl: proofData?.beforePhotoUrl || undefined,
+          afterPhotoUrl: proofData?.afterPhotoUrl || undefined,
+          resolutionProofUrl: proofData?.resolutionProofUrl || proofData?.afterPhotoUrl || undefined,
+          resolutionSummary: proofData?.resolutionSummary || completionNotes || undefined,
           updatedAt: nowIso,
           ...(newStatus === 'Completed' ? { completedAt: nowIso } : {}),
         }),
@@ -1330,17 +1366,25 @@ export default function App() {
       const res = await fetch(`/api/worker-requests/${requestId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus, completionNotes }),
+        body: JSON.stringify({
+          status: newStatus,
+          completionNotes,
+          beforePhotoUrl: proofData?.beforePhotoUrl,
+          afterPhotoUrl: proofData?.afterPhotoUrl,
+          resolutionProofUrl: proofData?.resolutionProofUrl || proofData?.afterPhotoUrl,
+          resolutionSummary: proofData?.resolutionSummary || completionNotes,
+        }),
       });
       if (res.ok) {
         fetchWorkerRequestsFromServer();
         fetchWorkersFromServer();
+        fetchComplaintsFromServer();
       }
     } catch (e: any) {
       console.warn('Status update sync notice (Firestore real-time sync active):', e);
     }
 
-    setToast({ message: `Service request #${requestId} marked as "${newStatus}".`, type: 'success' });
+    setToast({ message: `Service request #${requestId} marked as "${newStatus}". Evidence recorded.`, type: 'success' });
     return { success: true, message: 'Updated successfully' };
   };
 
@@ -1741,8 +1785,10 @@ export default function App() {
           currentUser ? (
             <UserDashboard
               currentUser={currentUser}
+              complaints={complaints}
               workerRequests={workerRequests}
               workers={workers}
+              onSubmitComplaint={handleSubmitComplaint}
               onCancelWorkerRequest={handleCancelWorkerRequest}
               onSubmitWorkerFeedback={handleSubmitWorkerFeedback}
               onSelectWorkerForBooking={(worker, category) => {
@@ -1752,7 +1798,10 @@ export default function App() {
               }}
               onNavigate={navigateTo}
               onBack={handleBack}
-              onRefreshData={fetchWorkerRequestsFromServer}
+              onRefreshData={() => {
+                fetchWorkerRequestsFromServer();
+                fetchComplaintsFromServer();
+              }}
               onRefreshWorkers={fetchWorkersFromServer}
             />
           ) : (
@@ -1835,39 +1884,28 @@ export default function App() {
         )}
       </main>
 
-      {/* Production Grade VYOM RATH Footer */}
-      <footer className="bg-[#202A2B] text-slate-300 py-10 border-t border-[#202A2B] mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-white/10 text-center md:text-left">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#202A2B] border border-[#65D6B0]/40 flex items-center justify-center text-[#65D6B0] shadow-sm">
-                <CheckCircle className="w-5 h-5 text-[#65D6B0]" />
-              </div>
-              <div>
-                <span className="font-black text-xl text-white tracking-tight">VYOM RATH</span>
-                <p className="text-[11px] text-[#DDF8EF]">Indian Railways On-Demand Station Gig Workforce &amp; Passenger Assistance Network</p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-5 text-xs font-semibold text-slate-200">
-              <button onClick={() => navigateTo('landing')} className="hover:text-[#65D6B0] transition cursor-pointer">Home</button>
-              <button onClick={() => navigateTo(currentUser ? 'book-worker' : 'login')} className="hover:text-[#65D6B0] transition cursor-pointer">Book Station Worker</button>
-              {currentUser && (
-                <button onClick={() => navigateTo('user-dashboard')} className="hover:text-[#65D6B0] transition cursor-pointer">Passenger Dashboard</button>
-              )}
-              {currentWorker && (
-                <button onClick={() => navigateTo('worker-dashboard')} className="hover:text-[#00B8D9] transition cursor-pointer">Worker Station Duty</button>
-              )}
-            </div>
+      {/* Clean VYOM RATH Footer */}
+      <footer className="bg-[#202A2B] text-slate-400 py-6 border-t border-[#202A2B] mt-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="font-black text-white tracking-tight">VYOMRATH</span>
+            <span>·</span>
+            <span>Indian Railways Grievance &amp; Workforce Redressal</span>
           </div>
 
-          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left text-xs text-slate-400">
-            <p>
-              VYOM RATH · Connected Railway Station Services &amp; Rapid Coach Berth Assistance.
-            </p>
-            <p className="text-[11px]">
-              &copy; {new Date().getFullYear()} VYOM RATH. All Rights Reserved. Central Database Connected.
-            </p>
+          <div className="flex items-center gap-5 font-semibold text-slate-300">
+            <button onClick={() => navigateTo('landing')} className="hover:text-[#65D6B0] cursor-pointer">Home</button>
+            <button onClick={() => navigateTo('portal-selection')} className="hover:text-[#65D6B0] cursor-pointer">Portals</button>
+            {currentUser && (
+              <button onClick={() => navigateTo(currentUser.isAdmin ? 'admin-dashboard' : 'user-dashboard')} className="hover:text-[#65D6B0] cursor-pointer">
+                {currentUser.isAdmin ? 'Officer Panel' : 'Passenger Panel'}
+              </button>
+            )}
+            {currentWorker && (
+              <button onClick={() => navigateTo('worker-dashboard')} className="hover:text-[#00B8D9] cursor-pointer">
+                Worker Duty
+              </button>
+            )}
           </div>
         </div>
       </footer>

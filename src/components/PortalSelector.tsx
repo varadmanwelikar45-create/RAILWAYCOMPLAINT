@@ -66,14 +66,11 @@ export const PortalSelector: React.FC<PortalSelectorProps> = ({
                 <Users className="w-6 h-6 text-[#3EA684]" />
               </div>
               <div>
-                <span className="text-[10px] font-bold text-[#7E9092] uppercase tracking-wider">
-                  Action 1
-                </span>
-                <h2 className="text-lg font-black text-[#202A2B] group-hover:text-[#1E6B52] transition-colors mt-0.5">
-                  Passenger Login
+                <h2 className="text-lg font-black text-[#202A2B] group-hover:text-[#1E6B52] transition-colors">
+                  Passenger Portal
                 </h2>
-                <p className="text-xs text-[#526365] mt-1.5 leading-relaxed">
-                  Access your coach bookings, request station sahayaks, and view live technician radar.
+                <p className="text-xs text-[#526365] mt-1 leading-relaxed">
+                  Access your coach bookings, request station sahayaks, and track technician arrival.
                 </p>
               </div>
             </div>
@@ -88,9 +85,9 @@ export const PortalSelector: React.FC<PortalSelectorProps> = ({
                   }
                   onClose?.();
                 }}
-                className="w-full py-3 px-4 bg-[#202A2B] hover:bg-[#202A2B]/90 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-xs border border-[#202A2B]"
+                className="w-full py-2.5 px-4 bg-[#202A2B] hover:bg-[#202A2B]/90 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
               >
-                <span>{currentUser ? 'Open Dashboard' : 'Login as Passenger'}</span>
+                <span>{currentUser ? 'Open Dashboard' : 'Passenger Login'}</span>
                 <ArrowRight className="w-4 h-4 text-[#65D6B0]" />
               </button>
             </div>
@@ -103,14 +100,11 @@ export const PortalSelector: React.FC<PortalSelectorProps> = ({
                 <Briefcase className="w-6 h-6 text-[#007D99]" />
               </div>
               <div>
-                <span className="text-[10px] font-bold text-[#7E9092] uppercase tracking-wider">
-                  Action 2
-                </span>
-                <h2 className="text-lg font-black text-[#202A2B] group-hover:text-[#007D99] transition-colors mt-0.5">
-                  Worker Login
+                <h2 className="text-lg font-black text-[#202A2B] group-hover:text-[#007D99] transition-colors">
+                  Worker Portal
                 </h2>
-                <p className="text-xs text-[#526365] mt-1.5 leading-relaxed">
-                  For registered railway electricians, plumbers, OBHS cleaners, and station porters.
+                <p className="text-xs text-[#526365] mt-1 leading-relaxed">
+                  For registered railway electricians, plumbers, cleaners, and station attendants.
                 </p>
               </div>
             </div>
@@ -125,9 +119,9 @@ export const PortalSelector: React.FC<PortalSelectorProps> = ({
                   }
                   onClose?.();
                 }}
-                className="w-full py-3 px-4 bg-[#007D99] hover:bg-[#007D99]/90 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-xs border border-[#007D99]"
+                className="w-full py-2.5 px-4 bg-[#007D99] hover:bg-[#007D99]/90 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
               >
-                <span>{currentWorker ? 'Open Duty Hub' : 'Login as Worker'}</span>
+                <span>{currentWorker ? 'Open Duty Hub' : 'Worker Login'}</span>
                 <ArrowRight className="w-4 h-4 text-[#D7F7FC]" />
               </button>
             </div>
@@ -140,14 +134,11 @@ export const PortalSelector: React.FC<PortalSelectorProps> = ({
                 <UserPlus className="w-6 h-6 text-[#B94A3A]" />
               </div>
               <div>
-                <span className="text-[10px] font-bold text-[#7E9092] uppercase tracking-wider">
-                  Action 3
-                </span>
-                <h2 className="text-lg font-black text-[#202A2B] group-hover:text-[#B94A3A] transition-colors mt-0.5">
+                <h2 className="text-lg font-black text-[#202A2B] group-hover:text-[#B94A3A] transition-colors">
                   Create Account
                 </h2>
-                <p className="text-xs text-[#526365] mt-1.5 leading-relaxed">
-                  New to VYOM RATH? Register easily as either a passenger or a railway gig worker.
+                <p className="text-xs text-[#526365] mt-1 leading-relaxed">
+                  Register as a new passenger or apply as a railway gig service provider.
                 </p>
               </div>
             </div>
@@ -156,7 +147,7 @@ export const PortalSelector: React.FC<PortalSelectorProps> = ({
               {!showRegisterChoice ? (
                 <button
                   onClick={() => setShowRegisterChoice(true)}
-                  className="w-full py-3 px-4 bg-[#B94A3A] hover:bg-[#7D2E27] text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-xs border border-[#B94A3A]"
+                  className="w-full py-2.5 px-4 bg-[#B94A3A] hover:bg-[#7D2E27] text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                 >
                   <span>Register</span>
                   <ArrowRight className="w-4 h-4 text-white" />
@@ -225,11 +216,6 @@ export const PortalSelector: React.FC<PortalSelectorProps> = ({
             <span>{currentUser?.isAdmin ? 'Open Control Center' : 'Officer Login'}</span>
             <ArrowRight className="w-4 h-4 text-slate-950" />
           </button>
-        </div>
-
-        {/* Footer Note */}
-        <div className="pt-4 border-t border-[#DDE4E6] text-center text-xs text-[#7E9092]">
-          <span>VYOM RATH · Connected Indian Railways Passenger Assistance &amp; Gig Workforce Network</span>
         </div>
 
       </div>
